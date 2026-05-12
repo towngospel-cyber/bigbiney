@@ -11,6 +11,7 @@ const PrintingPressSystem = () => {
     { id: 2, email: 'user@printshop.com', password: 'user123', name: 'Standard User' },
   ];
 
+  // Historical data from Manus
   const historicalSales = [
     { date: '2026-05-11', amount: 1350 },
     { date: '2026-05-09', amount: 2000 },
@@ -22,21 +23,36 @@ const PrintingPressSystem = () => {
     { date: '2026-05-02', amount: 1000 },
     { date: '2026-05-01', amount: 2360 },
     { date: '2026-04-30', amount: 2462 },
+    { date: '2026-04-29', amount: 820 },
+    { date: '2026-04-28', amount: 1000 },
+    { date: '2026-04-27', amount: 1000 },
+    { date: '2026-04-26', amount: 800 },
+    { date: '2026-04-25', amount: 600 },
+    { date: '2026-04-24', amount: 1600 },
+    { date: '2026-04-23', amount: 2690 },
+    { date: '2026-04-22', amount: 1400 },
+    { date: '2026-04-21', amount: 900 },
+    { date: '2026-04-20', amount: 1150 },
   ];
 
   const historicalExpenses = [
     { date: '2026-05-11', category: 'Other', description: 'tshirt', amount: 600 },
-    { date: '2026-05-09', category: 'Other', description: 'supplies', amount: 950 },
-    { date: '2026-05-08', category: 'Paper', description: 'paper stock', amount: 1300 },
-    { date: '2026-05-02', category: 'Other', description: 'T-shirt', amount: 850 },
+    { date: '2026-05-09', category: 'Other', description: 'Other', amount: 950 },
+    { date: '2026-05-08', category: 'Paper', description: 'bought tshirt', amount: 1300 },
+    { date: '2026-05-02', category: 'Other', description: 'T-shirt for funeral', amount: 850 },
     { date: '2026-05-02', category: 'Other', description: 'Flexy', amount: 650 },
+    { date: '2026-05-02', category: 'Other', description: 'Stickers 4ft', amount: 620 },
+    { date: '2026-05-01', category: 'Salaries', description: 'Salary payment', amount: 700 },
+    { date: '2026-04-26', category: 'Other', description: 'bought chairs', amount: 1500 },
+    { date: '2026-04-25', category: 'Ink & Toner', description: '80a catridge', amount: 260 },
+    { date: '2026-04-25', category: 'Other', description: 'picture frame and ring', amount: 795 },
   ];
 
   const [sales, setSales] = useState(historicalSales);
   const [expenses, setExpenses] = useState(historicalExpenses);
   const [todos, setTodos] = useState([
     { id: 1, text: 'Refill ink cartridges', completed: false, priority: 'high' },
-    { id: 2, text: 'Check Press efficiency', completed: true, priority: 'medium' },
+    { id: 2, text: 'Check Press A efficiency', completed: true, priority: 'medium' },
     { id: 3, text: 'Order paper stock', completed: false, priority: 'high' },
   ]);
   const [notifications, setNotifications] = useState([
@@ -144,7 +160,7 @@ const PrintingPressSystem = () => {
     const stats = getMonthlyStats();
     const data = {
       exportDate: new Date().toISOString(),
-      user: currentUser?.name,
+      user: currentUser.name,
       monthlyStats: {
         monthlySales: stats.monthlySales,
         monthlyExpenses: stats.monthlyExpenses,
@@ -255,7 +271,7 @@ const PrintingPressSystem = () => {
         <div style={styles.headerRight}>
           <div style={styles.notificationBell}>
             <button onClick={() => setShowNotifications(!showNotifications)} style={styles.bellBtn}>
-              🔔
+              <Bell size={20} />
               {notifications.filter(n => !n.read).length > 0 && (
                 <span style={styles.badge}>{notifications.filter(n => !n.read).length}</span>
               )}
@@ -275,7 +291,8 @@ const PrintingPressSystem = () => {
           </div>
 
           <div style={styles.userInfo}>
-            👤 {currentUser?.name}
+            <User size={18} />
+            <span>{currentUser?.name}</span>
           </div>
           <button onClick={handleLogout} style={styles.btnSecondary}>Logout</button>
         </div>
@@ -316,9 +333,9 @@ const PrintingPressSystem = () => {
             </div>
 
             <div style={styles.actionButtons}>
-              <button onClick={handlePrint} style={styles.actionBtn}>🖨️ Print Report</button>
-              <button onClick={exportData} style={styles.actionBtn}>📥 Export Data</button>
-              <button onClick={() => setShowTodoForm(true)} style={styles.actionBtn}>➕ Add Task</button>
+              <button onClick={handlePrint} style={styles.actionBtn}><Printer size={18} /> Print Report</button>
+              <button onClick={exportData} style={styles.actionBtn}><Download size={18} /> Export Data</button>
+              <button onClick={() => setShowTodoForm(true)} style={styles.actionBtn}><Plus size={18} /> Add Task</button>
             </div>
 
             <div style={styles.section}>
@@ -336,7 +353,9 @@ const PrintingPressSystem = () => {
               <h2 style={styles.sectionTitle}>Recent Alerts</h2>
               {notifications.slice(0, 3).map(notif => (
                 <div key={notif.id} style={styles.alertItem}>
-                  <span>{notif.type === 'success' ? '✅' : '⚠️'} {notif.message}</span>
+                  {notif.type === 'success' && <CheckCircle size={16} style={{color: '#10b981'}} />}
+                  {notif.type === 'warning' && <AlertCircle size={16} style={{color: '#f59e0b'}} />}
+                  <span>{notif.message}</span>
                 </div>
               ))}
             </div>
@@ -510,10 +529,12 @@ const styles = {
   bellBtn: {
     background: '#f0f0f0',
     border: '1px solid #ddd',
-    padding: '8px 12px',
+    padding: '8px',
     borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   badge: {
     position: 'absolute',
@@ -630,7 +651,6 @@ const styles = {
     display: 'flex',
     gap: '12px',
     marginBottom: '30px',
-    flexWrap: 'wrap',
   },
   actionBtn: {
     display: 'flex',
@@ -752,7 +772,6 @@ const styles = {
     borderBottom: '1px solid #eee',
     alignItems: 'center',
     fontSize: '13px',
-    flexWrap: 'wrap',
   },
   deleteBtn: {
     background: '#ef4444',
