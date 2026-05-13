@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function PrintingPressSystem() {
+function PrintingPressSystem() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentUser, setCurrentUser] = useState(null);
   const [showLoginForm, setShowLoginForm] = useState(true);
@@ -325,3 +325,5 @@ export default function PrintingPressSystem() {
     </div>
   );
 }
+
+export default PrintingPressSystem;
