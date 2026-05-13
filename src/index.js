@@ -1,14 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import PrintingPressSystem from './App';
 
-document.body.style.margin = '0';
-document.body.style.padding = '0';
-
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(<App />);
-} else {
-  console.error('Root element not found');
-}
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <PrintingPressSystem />
+  </React.StrictMode>
+);
