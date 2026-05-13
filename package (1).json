@@ -1,12 +1,11 @@
 {
-  "name": "print-shop-manager",
+  "name": "bigbiney",
   "version": "1.0.0",
-  "description": "Print Shop Financial Management System with Task Tracking",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "^5.0.1",
+    "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -34,6 +33,6 @@
   },
   "engines": {
     "node": "18.x",
-    "npm": "9.x"
+    "npm": "8.x"
   }
 }
