@@ -1,7 +1,7 @@
 // ─── SUPABASE INTEGRATION FOR PRINT SHOP MANAGER ───────────────────────────
 // This module handles all database operations and syncing with Supabase
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+npm install @supabase/supabase-js
 
 // Initialize Supabase client
 // Get these values from your Supabase project settings
