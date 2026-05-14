@@ -4,8 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
 const SUPABASE_SECRET_KEY='sb_secret_wdOaMMVqEMztopFFeDhDOA_F0VWRnms';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 const db = {
   async signup(email, password, name, role = 'user') {
     const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
