@@ -1,794 +1,1447 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const PrintingPressSystem = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+// ─── INITIAL DATA ────────────────────────────────────────────────────────────
+
+const ACCOUNTS = [
+  { id: 1, email: 'admin@printshop.com', password: 'admin123', name: 'Admin User', role: 'admin' },
+  { id: 2, email: 'user@printshop.com', password: 'user123', name: 'Standard User', role: 'user' },
+];
+
+const INIT_CUSTOMERS = [
+  { id: 'c1', name: 'TechStart Inc', email: 'techstart@email.com', phone: '0244000001', address: 'Accra, Ghana', totalOrders: 3, totalSpent: 5800 },
+  { id: 'c2', name: 'GoldCoast Apparel', email: 'gc@apparel.com', phone: '0244000002', address: 'Tema, Ghana', totalOrders: 5, totalSpent: 12400 },
+  { id: 'c3', name: 'SwiftPrint Ltd', email: 'swift@print.com', phone: '0244000003', address: 'Kumasi, Ghana', totalOrders: 2, totalSpent: 3200 },
+];
+
+const INIT_JOBS = [
+  { id: 'j1', jobNo: 'PSM-001', customer: 'TechStart Inc', customerId: 'c1', description: 'Business Cards x500', type: 'Offset', status: 'completed', priority: 'normal', dueDate: '2026-05-10', startDate: '2026-05-08', price: 350, cost: 120, machine: 'Heidelberg SM52', notes: 'Gloss laminate finish', qrCode: 'PSM-001' },
+  { id: 'j2', jobNo: 'PSM-002', customer: 'GoldCoast Apparel', customerId: 'c2', description: 'T-Shirts x100 (Screen Print)', type: 'Screen Print', status: 'in-progress', priority: 'rush', dueDate: '2026-05-14', startDate: '2026-05-12', price: 1200, cost: 600, machine: 'Screen Press 1', notes: '3 colors, front & back', qrCode: 'PSM-002' },
+  { id: 'j3', jobNo: 'PSM-003', customer: 'SwiftPrint Ltd', customerId: 'c3', description: 'Flyers A5 x2000', type: 'Digital', status: 'queued', priority: 'normal', dueDate: '2026-05-16', startDate: '2026-05-15', price: 480, cost: 180, machine: 'Xerox Versant', notes: 'Full colour both sides', qrCode: 'PSM-003' },
+  { id: 'j4', jobNo: 'PSM-004', customer: 'TechStart Inc', customerId: 'c1', description: 'Letterheads x1000', type: 'Offset', status: 'quoting', priority: 'normal', dueDate: '2026-05-20', startDate: '2026-05-18', price: 600, cost: 200, machine: 'Heidelberg SM52', notes: '', qrCode: 'PSM-004' },
+];
+
+const INIT_INVENTORY = [
+  { id: 'i1', name: 'A4 Bond Paper 80gsm', category: 'Paper', unit: 'Ream', quantity: 45, reorderPoint: 20, unitCost: 12, supplier: 'PaperWorld GH' },
+  { id: 'i2', name: 'A3 Gloss Art Paper 150gsm', category: 'Paper', unit: 'Ream', quantity: 12, reorderPoint: 15, unitCost: 28, supplier: 'PaperWorld GH' },
+  { id: 'i3', name: 'Cyan Ink Cartridge', category: 'Ink', unit: 'Unit', quantity: 4, reorderPoint: 5, unitCost: 85, supplier: 'InkTech GH' },
+  { id: 'i4', name: 'Magenta Ink Cartridge', category: 'Ink', unit: 'Unit', quantity: 6, reorderPoint: 5, unitCost: 85, supplier: 'InkTech GH' },
+  { id: 'i5', name: 'Yellow Ink Cartridge', category: 'Ink', unit: 'Unit', quantity: 2, reorderPoint: 5, unitCost: 85, supplier: 'InkTech GH' },
+  { id: 'i6', name: 'Plain White T-Shirts (M)', category: 'Garments', unit: 'Piece', quantity: 80, reorderPoint: 50, unitCost: 15, supplier: 'TextilePro GH' },
+  { id: 'i7', name: 'Plain White T-Shirts (L)', category: 'Garments', unit: 'Piece', quantity: 35, reorderPoint: 50, unitCost: 15, supplier: 'TextilePro GH' },
+  { id: 'i8', name: 'Lamination Film (Gloss)', category: 'Finishing', unit: 'Roll', quantity: 3, reorderPoint: 2, unitCost: 120, supplier: 'FinishMaster GH' },
+];
+
+const INIT_INVOICES = [
+  { id: 'inv1', invoiceNo: 'INV-001', jobId: 'j1', customer: 'TechStart Inc', customerId: 'c1', date: '2026-05-10', dueDate: '2026-05-24', amount: 350, paid: 350, status: 'paid', items: [{ desc: 'Business Cards x500', qty: 1, rate: 350, total: 350 }] },
+  { id: 'inv2', invoiceNo: 'INV-002', jobId: 'j2', customer: 'GoldCoast Apparel', customerId: 'c2', date: '2026-05-12', dueDate: '2026-05-26', amount: 1200, paid: 600, status: 'partial', items: [{ desc: 'T-Shirts x100 Screen Print', qty: 1, rate: 1200, total: 1200 }] },
+];
+
+const INIT_SALES = [
+  { id: 's1', date: '2026-05-11', amount: 1350, jobId: 'j1' },
+  { id: 's2', date: '2026-05-09', amount: 2000, jobId: null },
+  { id: 's3', date: '2026-05-08', amount: 1950, jobId: null },
+  { id: 's4', date: '2026-05-07', amount: 2460, jobId: null },
+  { id: 's5', date: '2026-05-06', amount: 700, jobId: null },
+  { id: 's6', date: '2026-05-05', amount: 1450, jobId: null },
+  { id: 's7', date: '2026-05-04', amount: 1930, jobId: null },
+  { id: 's8', date: '2026-05-02', amount: 1000, jobId: null },
+  { id: 's9', date: '2026-05-01', amount: 2360, jobId: null },
+  { id: 's10', date: '2026-04-30', amount: 2462, jobId: null },
+];
+
+const INIT_EXPENSES = [
+  { id: 'e1', date: '2026-05-11', category: 'Other', description: 'tshirt', amount: 600 },
+  { id: 'e2', date: '2026-05-09', category: 'Other', description: 'supplies', amount: 950 },
+  { id: 'e3', date: '2026-05-08', category: 'Paper', description: 'paper stock', amount: 1300 },
+  { id: 'e4', date: '2026-05-02', category: 'Other', description: 'T-shirt', amount: 850 },
+  { id: 'e5', date: '2026-05-02', category: 'Other', description: 'Flexy', amount: 650 },
+];
+
+const MACHINES = ['Heidelberg SM52', 'Screen Press 1', 'Screen Press 2', 'Xerox Versant', 'Large Format Printer', 'Guillotine'];
+const JOB_TYPES = ['Offset', 'Digital', 'Screen Print', 'Large Format', 'Finishing', 'Other'];
+const JOB_STATUSES = ['quoting', 'queued', 'in-progress', 'on-hold', 'completed', 'cancelled'];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const fmt = (n) => `GH₵${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const todayStr = () => new Date().toISOString().split('T')[0];
+const getCurrentMonth = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; };
+
+const STATUS_COLORS = {
+  quoting:     { bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd' },
+  queued:      { bg: '#fefce8', color: '#854d0e', border: '#fde68a' },
+  'in-progress':{ bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
+  'on-hold':   { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' },
+  completed:   { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
+  cancelled:   { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' },
+};
+
+const PRIORITY_COLORS = {
+  normal: { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
+  rush:   { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+  urgent: { bg: '#7f1d1d', color: '#ffffff', border: '#7f1d1d' },
+};
+
+// ─── MINI COMPONENTS ──────────────────────────────────────────────────────────
+
+const Badge = ({ text, type = 'status' }) => {
+  const c = type === 'status' ? (STATUS_COLORS[text] || {}) : (PRIORITY_COLORS[text] || {});
+  return (
+    <span style={{ background: c.bg, color: c.color, border: `1px solid ${c.border || c.bg}`, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+      {text}
+    </span>
+  );
+};
+
+const Modal = ({ title, onClose, children, wide }) => (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+    <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: wide ? 800 : 600, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111' }}>{title}</h3>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280', lineHeight: 1 }}>×</button>
+      </div>
+      <div style={{ padding: 24 }}>{children}</div>
+    </div>
+  </div>
+);
+
+const StatCard = ({ label, value, sub, accent }) => (
+  <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '18px 20px', borderLeft: `4px solid ${accent || '#2563eb'}`, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+    <div style={{ fontSize: 22, fontWeight: 800, color: accent || '#2563eb', marginBottom: 4 }}>{value}</div>
+    <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+    {sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{sub}</div>}
+  </div>
+);
+
+const Inp = ({ label, ...props }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    {label && <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
+    <input style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }} {...props} />
+  </div>
+);
+
+const Sel = ({ label, children, ...props }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    {label && <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
+    <select style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none' }} {...props}>{children}</select>
+  </div>
+);
+
+const Btn = ({ children, onClick, variant = 'primary', small, style: s, disabled }) => {
+  const v = {
+    primary: { background: '#2563eb', color: '#fff', border: 'none' },
+    success: { background: '#16a34a', color: '#fff', border: 'none' },
+    danger:  { background: '#dc2626', color: '#fff', border: 'none' },
+    ghost:   { background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0' },
+    warning: { background: '#f59e0b', color: '#fff', border: 'none' },
+    purple:  { background: '#7c3aed', color: '#fff', border: 'none' },
+  };
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{ ...v[variant], padding: small ? '5px 10px' : '9px 16px', borderRadius: 6, cursor: disabled ? 'not-allowed' : 'pointer', fontSize: small ? 12 : 13, fontWeight: 600, opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap', ...s }}>
+      {children}
+    </button>
+  );
+};
+
+const TH = ({ children }) => (
+  <th style={{ padding: '10px 12px', fontSize: 11, fontWeight: 700, color: '#6b7280', textAlign: 'left', borderBottom: '1px solid #e5e7eb', textTransform: 'uppercase', whiteSpace: 'nowrap', background: '#f8fafc' }}>
+    {children}
+  </th>
+);
+
+const TD = ({ children, style: s }) => (
+  <td style={{ padding: '10px 12px', fontSize: 13, borderBottom: '1px solid #f1f5f9', ...s }}>{children}</td>
+);
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+
+export default function PrintingPressSystem() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [showLoginForm, setShowLoginForm] = useState(true);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [loginError, setLoginError] = useState(''); // FIX 6: login error state
+  const [loginError, setLoginError] = useState('');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showNotif, setShowNotif] = useState(false);
 
-  const accounts = [
-    { id: 1, email: 'admin@printshop.com', password: 'admin123', name: 'Admin User' },
-    { id: 2, email: 'user@printshop.com', password: 'user123', name: 'Standard User' },
-  ];
+  const load = (key, fb) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; } catch { return fb; } };
 
-  const historicalSales = [
-    { id: 's1', date: '2026-05-11', amount: 1350 },
-    { id: 's2', date: '2026-05-09', amount: 2000 },
-    { id: 's3', date: '2026-05-08', amount: 1950 },
-    { id: 's4', date: '2026-05-07', amount: 2460 },
-    { id: 's5', date: '2026-05-06', amount: 700 },
-    { id: 's6', date: '2026-05-05', amount: 1450 },
-    { id: 's7', date: '2026-05-04', amount: 1930 },
-    { id: 's8', date: '2026-05-02', amount: 1000 },
-    { id: 's9', date: '2026-05-01', amount: 2360 },
-    { id: 's10', date: '2026-04-30', amount: 2462 },
-  ];
+  const [customers, setCustomers]   = useState(() => load('psm_customers', INIT_CUSTOMERS));
+  const [jobs, setJobs]             = useState(() => load('psm_jobs', INIT_JOBS));
+  const [inventory, setInventory]   = useState(() => load('psm_inventory', INIT_INVENTORY));
+  const [invoices, setInvoices]     = useState(() => load('psm_invoices', INIT_INVOICES));
+  const [sales, setSales]           = useState(() => load('psm_sales', INIT_SALES));
+  const [expenses, setExpenses]     = useState(() => load('psm_expenses', INIT_EXPENSES));
+  const [notifs, setNotifs]         = useState(() => load('psm_notifs', [
+    { id: 1, type: 'warning', message: 'Low stock: Yellow Ink Cartridge (qty 2)', read: false },
+    { id: 2, type: 'warning', message: 'Low stock: T-Shirts (L) – qty 35', read: false },
+    { id: 3, type: 'info',    message: 'Job PSM-002 is due today!', read: false },
+  ]));
 
-  const historicalExpenses = [
-    { id: 'e1', date: '2026-05-11', category: 'Other', description: 'tshirt', amount: 600 },
-    { id: 'e2', date: '2026-05-09', category: 'Other', description: 'supplies', amount: 950 },
-    { id: 'e3', date: '2026-05-08', category: 'Paper', description: 'paper stock', amount: 1300 },
-    { id: 'e4', date: '2026-05-02', category: 'Other', description: 'T-shirt', amount: 850 },
-    { id: 'e5', date: '2026-05-02', category: 'Other', description: 'Flexy', amount: 650 },
-  ];
+  useEffect(() => { localStorage.setItem('psm_customers', JSON.stringify(customers)); }, [customers]);
+  useEffect(() => { localStorage.setItem('psm_jobs',      JSON.stringify(jobs)); },      [jobs]);
+  useEffect(() => { localStorage.setItem('psm_inventory', JSON.stringify(inventory)); }, [inventory]);
+  useEffect(() => { localStorage.setItem('psm_invoices',  JSON.stringify(invoices)); },  [invoices]);
+  useEffect(() => { localStorage.setItem('psm_sales',     JSON.stringify(sales)); },     [sales]);
+  useEffect(() => { localStorage.setItem('psm_expenses',  JSON.stringify(expenses)); },  [expenses]);
+  useEffect(() => { localStorage.setItem('psm_notifs',    JSON.stringify(notifs)); },    [notifs]);
 
-  const [sales, setSales] = useState(historicalSales);
-  const [expenses, setExpenses] = useState(historicalExpenses);
-  const [todos, setTodos] = useState([
-    { id: 1, text: 'Refill ink cartridges', completed: false, priority: 'high' },
-    { id: 2, text: 'Check Press efficiency', completed: true, priority: 'medium' },
-    { id: 3, text: 'Order paper stock', completed: false, priority: 'high' },
-  ]);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'success', message: 'Payment received from TechStart Inc', read: false },
-    { id: 2, type: 'warning', message: 'Low ink level detected', read: false },
-  ]);
-
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showTodoForm, setShowTodoForm] = useState(false);
-  const [todoInput, setTodoInput] = useState('');
-  const [showSalesForm, setShowSalesForm] = useState(false);
-  const [showExpenseForm, setShowExpenseForm] = useState(false);
-  const [salesFormData, setSalesFormData] = useState({ date: '', amount: '' });
-  const [expenseFormData, setExpenseFormData] = useState({ date: '', category: 'Paper', description: '', amount: '' });
+  const addNotif = (message, type = 'info') =>
+    setNotifs(n => [{ id: Date.now(), type, message, read: false }, ...n.slice(0, 19)]);
 
   const handleLogin = () => {
-    const user = accounts.find(a => a.email === loginData.email && a.password === loginData.password);
-    if (user) {
-      setCurrentUser(user);
-      setLoginData({ email: '', password: '' });
-      setLoginError(''); // FIX 6: clear error on success
-      setShowLoginForm(false);
-    } else {
-      setLoginError('Invalid email or password. Please try again.'); // FIX 6: show error
-    }
+    const user = ACCOUNTS.find(a => a.email === loginData.email && a.password === loginData.password);
+    if (user) { setCurrentUser(user); setLoginError(''); }
+    else setLoginError('Invalid email or password.');
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setShowLoginForm(true);
-    setLoginError('');
-  };
-
-  const getCurrentMonth = () => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  };
-
-  const getMonthlyStats = () => {
-    const currentMonth = getCurrentMonth();
-    const monthlySales = sales.filter(s => s.date.startsWith(currentMonth));
-    const monthlyExpenses = expenses.filter(e => e.date.startsWith(currentMonth));
-
-    return {
-      monthlySales: monthlySales.reduce((sum, s) => sum + s.amount, 0),
-      monthlyExpenses: monthlyExpenses.reduce((sum, e) => sum + e.amount, 0),
-      totalSales: sales.reduce((sum, s) => sum + s.amount, 0),
-      totalExpenses: expenses.reduce((sum, e) => sum + e.amount, 0),
-    };
-  };
-
-  const handlePrint = () => {
-    const stats = getMonthlyStats();
-    const printWindow = window.open('', '', 'width=900,height=600');
-    const html = `
-      <html>
-      <head><title>Print Shop Manager - Financial Report</title></head>
-      <body style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1>PRINT SHOP MANAGER - FINANCIAL REPORT</h1>
-        <p style="color: #666;">Generated: ${new Date().toLocaleString()}</p>
-        
-        <h2>MONTHLY STATISTICS (${getCurrentMonth()})</h2>
-        <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
-          <tr style="background: #f0f0f0;">
-            <td style="padding: 10px; border: 1px solid #ddd;">Monthly Income</td>
-            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: green;">GH₵${stats.monthlySales.toLocaleString()}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;">Monthly Expenses</td>
-            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: red;">GH₵${stats.monthlyExpenses.toLocaleString()}</td>
-          </tr>
-          <tr style="background: #f0f0f0;">
-            <td style="padding: 10px; border: 1px solid #ddd;">Monthly Profit</td>
-            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: blue;">GH₵${(stats.monthlySales - stats.monthlyExpenses).toLocaleString()}</td>
-          </tr>
-        </table>
-
-        <h2>ALL-TIME STATISTICS</h2>
-        <table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
-          <tr style="background: #f0f0f0;">
-            <td style="padding: 10px; border: 1px solid #ddd;">Total Income</td>
-            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: green;">GH₵${stats.totalSales.toLocaleString()}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border: 1px solid #ddd;">Total Expenses</td>
-            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: red;">GH₵${stats.totalExpenses.toLocaleString()}</td>
-          </tr>
-          <tr style="background: #f0f0f0;">
-            <td style="padding: 10px; border: 1px solid #ddd;">Net Profit</td>
-            <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: blue;">GH₵${(stats.totalSales - stats.totalExpenses).toLocaleString()}</td>
-          </tr>
-        </table>
-
-        <h2>TASKS SUMMARY</h2>
-        <p>Total Tasks: ${todos.length}</p>
-        <p>Completed: ${todos.filter(t => t.completed).length}</p>
-        <p>Pending: ${todos.filter(t => !t.completed).length}</p>
-
-        <p style="margin-top: 40px; color: #999; font-size: 12px;">Print Shop Manager - Generated ${new Date().toLocaleString()}</p>
-      </body>
-      </html>
-    `;
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const exportData = () => {
-    const stats = getMonthlyStats();
-    const data = {
-      exportDate: new Date().toISOString(),
-      user: currentUser?.name,
-      monthlyStats: {
-        monthlySales: stats.monthlySales,
-        monthlyExpenses: stats.monthlyExpenses,
-        monthlyProfit: stats.monthlySales - stats.monthlyExpenses,
-      },
-      allTimeStats: {
-        totalSales: stats.totalSales,
-        totalExpenses: stats.totalExpenses,
-        netProfit: stats.totalSales - stats.totalExpenses,
-      },
-      sales,
-      expenses,
-      todos,
-    };
-
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `print_shop_data_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const addTodo = () => {
-    if (todoInput.trim()) {
-      setTodos([...todos, { id: Date.now(), text: todoInput, completed: false, priority: 'medium' }]);
-      setTodoInput('');
-      setShowTodoForm(false);
-      setNotifications([{ id: Date.now(), type: 'success', message: 'Task added!', read: false }, ...notifications]);
-    }
-  };
-
-  const toggleTodo = (id) => {
-    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-  };
-
-  const deleteTodo = (id) => {
-    setTodos(todos.filter(t => t.id !== id));
-  };
-
-  const addSale = () => {
-    if (salesFormData.date && salesFormData.amount) {
-      // FIX 1: use unique id instead of array index for deletion
-      setSales([...sales, { id: `s${Date.now()}`, date: salesFormData.date, amount: parseFloat(salesFormData.amount) }]);
-      setSalesFormData({ date: '', amount: '' });
-      setShowSalesForm(false);
-      setNotifications([{ id: Date.now(), type: 'success', message: `Sale of GH₵${salesFormData.amount} recorded`, read: false }, ...notifications]);
-    }
-  };
-
-  const addExpense = () => {
-    if (expenseFormData.date && expenseFormData.amount) {
-      // FIX 2: use unique id instead of array index for deletion
-      setExpenses([...expenses, { id: `e${Date.now()}`, date: expenseFormData.date, category: expenseFormData.category, description: expenseFormData.description, amount: parseFloat(expenseFormData.amount) }]);
-      setExpenseFormData({ date: '', category: 'Paper', description: '', amount: '' });
-      setShowExpenseForm(false);
-      setNotifications([{ id: Date.now(), type: 'info', message: `Expense of GH₵${expenseFormData.amount} recorded`, read: false }, ...notifications]);
-    }
-  };
-
-  const stats = getMonthlyStats();
-
-  if (showLoginForm) {
+  // ── LOGIN ──
+  if (!currentUser) {
     return (
-      <div style={styles.loginContainer}>
-        <div style={styles.loginCard}>
-          <h1 style={styles.loginTitle}>🖨️ Print Shop Manager</h1>
-          <p style={styles.loginSubtitle}>Financial Management System</p>
-
-          <div style={styles.loginForm}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={loginData.email}
-              onChange={e => { setLoginData({ ...loginData, email: e.target.value }); setLoginError(''); }}
-              style={styles.input}
-              onKeyDown={e => e.key === 'Enter' && handleLogin()} // FIX 4: onKeyDown
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={loginData.password}
-              onChange={e => { setLoginData({ ...loginData, password: e.target.value }); setLoginError(''); }}
-              style={styles.input}
-              onKeyDown={e => e.key === 'Enter' && handleLogin()} // FIX 4: onKeyDown
-            />
-            {/* FIX 6: show login error */}
-            {loginError && (
-              <p style={styles.errorText}>{loginError}</p>
-            )}
-            <button onClick={handleLogin} style={styles.btnPrimary}>Sign In</button>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%)', fontFamily: '"Segoe UI", system-ui, sans-serif' }}>
+        <div style={{ background: '#fff', padding: 40, borderRadius: 12, width: '100%', maxWidth: 400, boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <div style={{ fontSize: 44, marginBottom: 8 }}>🖨️</div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', margin: 0 }}>Print Shop Manager</h1>
+            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 6 }}>Professional Print Management System</p>
           </div>
-
-          <div style={styles.demoSection}>
-            <p style={styles.demoTitle}>Demo Accounts:</p>
-            <button onClick={() => { setLoginData({ email: 'admin@printshop.com', password: 'admin123' }); setLoginError(''); }} style={styles.demoBtn}>Admin</button>
-            <button onClick={() => { setLoginData({ email: 'user@printshop.com', password: 'user123' }); setLoginError(''); }} style={styles.demoBtn}>User</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Inp label="Email" type="email" placeholder="admin@printshop.com" value={loginData.email}
+              onChange={e => { setLoginData({ ...loginData, email: e.target.value }); setLoginError(''); }}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+            <Inp label="Password" type="password" placeholder="••••••••" value={loginData.password}
+              onChange={e => { setLoginData({ ...loginData, password: e.target.value }); setLoginError(''); }}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+            {loginError && <p style={{ color: '#dc2626', fontSize: 12, margin: 0, padding: '6px 10px', background: '#fef2f2', borderRadius: 4, border: '1px solid #fecaca' }}>{loginError}</p>}
+            <Btn onClick={handleLogin} style={{ marginTop: 4 }}>Sign In →</Btn>
+          </div>
+          <div style={{ marginTop: 24, borderTop: '1px solid #f1f5f9', paddingTop: 16, textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Quick Demo Login</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              <Btn variant="ghost" small onClick={() => setLoginData({ email: 'admin@printshop.com', password: 'admin123' })}>Admin</Btn>
+              <Btn variant="ghost" small onClick={() => setLoginData({ email: 'user@printshop.com', password: 'user123' })}>User</Btn>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  const unread = notifs.filter(n => !n.read).length;
+  const lowStock = inventory.filter(i => i.quantity <= i.reorderPoint);
+
+  const TABS = [
+    { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'jobs',      label: '🗂️ Jobs' },
+    { id: 'customers', label: '👥 Customers' },
+    { id: 'quotes',    label: '💬 Quotes' },
+    { id: 'schedule',  label: '📅 Schedule' },
+    { id: 'inventory', label: '📦 Inventory' },
+    { id: 'invoices',  label: '🧾 Invoices' },
+    { id: 'finance',   label: '💰 Finance' },
+    { id: 'reports',   label: '📈 Reports' },
+  ];
+
   return (
-    <div style={styles.appContainer}>
-      <header style={styles.header}>
-        <div style={styles.headerLeft}>
-          <h1 style={styles.headerTitle}>🖨️ PRINT SHOP MANAGER</h1>
-          <p style={styles.headerSubtitle}>Financial Management & Task Tracking</p>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: '"Segoe UI", system-ui, sans-serif', color: '#111' }}>
+
+      {/* ── HEADER ── */}
+      <header style={{ background: '#0f172a', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 200 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 22 }}>🖨️</span>
+          <span style={{ color: '#fff', fontWeight: 800, fontSize: 16 }}>PrintShop Manager</span>
+          {lowStock.length > 0 && (
+            <span style={{ background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>
+              {lowStock.length} LOW STOCK
+            </span>
+          )}
         </div>
-        <div style={styles.headerRight}>
-          <div style={styles.notificationBell}>
-            <button onClick={() => setShowNotifications(!showNotifications)} style={styles.bellBtn}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Bell */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setShowNotif(v => !v)}
+              style={{ background: showNotif ? '#1e3a5f' : 'transparent', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 16, position: 'relative' }}>
               🔔
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span style={styles.badge}>{notifications.filter(n => !n.read).length}</span>
+              {unread > 0 && (
+                <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {unread}
+                </span>
               )}
             </button>
-
-            {showNotifications && (
-              <div style={styles.notifPanel}>
-                <h3>Notifications</h3>
-                {notifications.map(notif => (
-                  <div key={notif.id} style={styles.notifItem}>
-                    <p>{notif.message}</p>
-                    <button onClick={() => setNotifications(notifications.filter(n => n.id !== notif.id))} style={styles.closeBtn}>×</button>
+            {showNotif && (
+              <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, width: 320, maxHeight: 360, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.14)', zIndex: 300 }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff' }}>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>Notifications</span>
+                  <button onClick={() => setNotifs(n => n.map(x => ({ ...x, read: true })))} style={{ background: 'none', border: 'none', fontSize: 11, color: '#6b7280', cursor: 'pointer' }}>Mark all read</button>
+                </div>
+                {notifs.slice(0, 8).map(n => (
+                  <div key={n.id} style={{ padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'flex-start', borderBottom: '1px solid #f9fafb', background: n.read ? '#fff' : '#f0f9ff' }}>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{n.type === 'warning' ? '⚠️' : n.type === 'success' ? '✅' : 'ℹ️'}</span>
+                    <span style={{ fontSize: 12, color: '#374151', flex: 1 }}>{n.message}</span>
+                    <button onClick={() => setNotifs(prev => prev.filter(x => x.id !== n.id))} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>×</button>
                   </div>
                 ))}
+                {notifs.length === 0 && <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 12, padding: 20 }}>All clear!</p>}
               </div>
             )}
           </div>
-
-          <div style={styles.userInfo}>
-            👤 {currentUser?.name}
-          </div>
-          <button onClick={handleLogout} style={styles.btnSecondary}>Logout</button>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>👤 {currentUser.name}</span>
+          <button onClick={() => setCurrentUser(null)} style={{ background: '#1e3a5f', border: '1px solid #334155', color: '#94a3b8', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12 }}>Logout</button>
         </div>
       </header>
 
-      <div style={styles.navTabs}>
-        {['dashboard', 'sales', 'expenses', 'todos'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{ ...styles.navTab, ...(activeTab === tab ? styles.navTabActive : {}) }}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+      {/* ── NAV ── */}
+      <nav style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 24px', display: 'flex', overflowX: 'auto' }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setActiveTab(t.id)}
+            style={{ padding: '13px 14px', background: 'transparent', border: 'none', borderBottom: activeTab === t.id ? '3px solid #2563eb' : '3px solid transparent', cursor: 'pointer', fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500, color: activeTab === t.id ? '#2563eb' : '#6b7280', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* ── CONTENT ── */}
+      <main style={{ padding: '28px 24px', maxWidth: 1400, margin: '0 auto' }}>
+        {activeTab === 'dashboard' && <DashboardTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} setActiveTab={setActiveTab} />}
+        {activeTab === 'jobs'      && <JobsTab jobs={jobs} setJobs={setJobs} customers={customers} addNotif={addNotif} />}
+        {activeTab === 'customers' && <CustomersTab customers={customers} setCustomers={setCustomers} jobs={jobs} invoices={invoices} addNotif={addNotif} />}
+        {activeTab === 'quotes'    && <QuotesTab customers={customers} jobs={jobs} setJobs={setJobs} addNotif={addNotif} />}
+        {activeTab === 'schedule'  && <ScheduleTab jobs={jobs} setJobs={setJobs} />}
+        {activeTab === 'inventory' && <InventoryTab inventory={inventory} setInventory={setInventory} addNotif={addNotif} />}
+        {activeTab === 'invoices'  && <InvoicesTab invoices={invoices} setInvoices={setInvoices} jobs={jobs} customers={customers} setSales={setSales} addNotif={addNotif} />}
+        {activeTab === 'finance'   && <FinanceTab sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} />}
+        {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} />}
+      </main>
+    </div>
+  );
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+
+function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, setActiveTab }) {
+  const month = getCurrentMonth();
+  const monthlySales   = sales.filter(s => s.date.startsWith(month)).reduce((a, s) => a + s.amount, 0);
+  const monthlyExp     = expenses.filter(e => e.date.startsWith(month)).reduce((a, e) => a + e.amount, 0);
+  const activeJobs     = jobs.filter(j => j.status === 'in-progress').length;
+  const overdueJobs    = jobs.filter(j => !['completed','cancelled'].includes(j.status) && j.dueDate < todayStr()).length;
+  const lowStock       = inventory.filter(i => i.quantity <= i.reorderPoint);
+  const unpaidTotal    = invoices.filter(i => i.status !== 'paid').reduce((a, i) => a + (i.amount - i.paid), 0);
+
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+    const ds = d.toISOString().split('T')[0];
+    return { day: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()], amt: sales.filter(s => s.date === ds).reduce((a, s) => a + s.amount, 0) };
+  });
+  const maxBar = Math.max(...last7.map(d => d.amt), 1);
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 24 }}>
+        <StatCard label="Monthly Income"   value={fmt(monthlySales)} accent="#16a34a" />
+        <StatCard label="Monthly Expenses" value={fmt(monthlyExp)}   accent="#dc2626" />
+        <StatCard label="Monthly Profit"   value={fmt(monthlySales - monthlyExp)} accent={monthlySales >= monthlyExp ? '#2563eb' : '#dc2626'} />
+        <StatCard label="Active Jobs"      value={activeJobs} sub={overdueJobs > 0 ? `⚠️ ${overdueJobs} overdue` : 'On track'} accent="#f59e0b" />
+        <StatCard label="Outstanding"      value={fmt(unpaidTotal)} sub={`${invoices.filter(i=>i.status!=='paid').length} invoice(s)`} accent="#7c3aed" />
+        <StatCard label="Low Stock Items"  value={lowStock.length} sub={lowStock.length > 0 ? 'Needs reorder' : 'All good'} accent={lowStock.length > 0 ? '#dc2626' : '#16a34a'} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        {/* Revenue bar chart */}
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#374151' }}>Revenue — Last 7 Days</h3>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
+            {last7.map((d, i) => (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: '100%', background: d.amt > 0 ? '#2563eb' : '#e5e7eb', borderRadius: '3px 3px 0 0', height: `${Math.max(2, Math.round((d.amt / maxBar) * 100))}px`, transition: 'height 0.3s' }} title={fmt(d.amt)} />
+                <span style={{ fontSize: 10, color: '#6b7280' }}>{d.day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Job status overview */}
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#374151' }}>Job Pipeline</h3>
+          {JOB_STATUSES.map(s => {
+            const count = jobs.filter(j => j.status === s).length;
+            const pct   = jobs.length > 0 ? Math.round((count / jobs.length) * 100) : 0;
+            const col   = STATUS_COLORS[s] || {};
+            return (
+              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <span style={{ width: 80, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: col.color || '#555' }}>{s}</span>
+                <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 4, height: 8 }}>
+                  <div style={{ width: `${pct}%`, background: col.color || '#2563eb', height: 8, borderRadius: 4 }} />
+                </div>
+                <span style={{ fontSize: 12, color: '#6b7280', width: 20, textAlign: 'right' }}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent jobs table */}
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Recent Jobs</h3>
+          <Btn variant="ghost" small onClick={() => setActiveTab('jobs')}>View All →</Btn>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Job #','Customer','Description','Type','Due','Price','Status'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>
+              {[...jobs].sort((a,b) => b.jobNo.localeCompare(a.jobNo)).slice(0,5).map(j => (
+                <tr key={j.id}>
+                  <TD style={{ fontWeight: 700, color: '#2563eb' }}>{j.jobNo}</TD>
+                  <TD>{j.customer}</TD>
+                  <TD>{j.description}</TD>
+                  <TD>{j.type}</TD>
+                  <TD style={{ color: j.dueDate < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151', fontWeight: j.dueDate < todayStr() && !['completed','cancelled'].includes(j.status) ? 700 : 400 }}>{j.dueDate}</TD>
+                  <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
+                  <TD><Badge text={j.status} /></TD>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Low stock alert */}
+      {lowStock.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #fca5a5', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#dc2626' }}>⚠️ Low Stock Alerts</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {lowStock.map(i => (
+              <div key={i.id} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '6px 12px', fontSize: 12 }}>
+                <strong>{i.name}</strong> — {i.quantity} {i.unit} left (reorder at {i.reorderPoint})
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── JOBS ─────────────────────────────────────────────────────────────────────
+
+const EMPTY_JOB = { customer: '', customerId: '', description: '', type: 'Digital', status: 'queued', priority: 'normal', dueDate: '', startDate: '', price: '', cost: '', machine: '', notes: '' };
+
+function JobsTab({ jobs, setJobs, customers, addNotif }) {
+  const [filter, setFilter]   = useState('all');
+  const [search, setSearch]   = useState('');
+  const [modal, setModal]     = useState(false);
+  const [form, setForm]       = useState(EMPTY_JOB);
+  const [editId, setEditId]   = useState(null);
+  const [scanVal, setScanVal] = useState('');
+
+  const filtered = jobs.filter(j => {
+    const ms = filter === 'all' || j.status === filter;
+    const mq = !search || [j.jobNo, j.customer, j.description].some(v => v.toLowerCase().includes(search.toLowerCase()));
+    return ms && mq;
+  }).sort((a, b) => b.jobNo.localeCompare(a.jobNo));
+
+  const nextNo = () => {
+    const nums = jobs.map(j => parseInt(j.jobNo.split('-')[1] || 0));
+    return `PSM-${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`;
+  };
+
+  const openNew  = () => { setForm({ ...EMPTY_JOB, startDate: todayStr() }); setEditId(null); setModal(true); };
+  const openEdit = (j) => { setForm({ ...j, price: String(j.price), cost: String(j.cost) }); setEditId(j.id); setModal(true); };
+  const closeModal = () => { setModal(false); setForm(EMPTY_JOB); setEditId(null); };
+
+  const save = () => {
+    if (!form.customer || !form.description) return;
+    if (editId) {
+      setJobs(jobs.map(j => j.id === editId ? { ...j, ...form, price: parseFloat(form.price)||0, cost: parseFloat(form.cost)||0 } : j));
+      addNotif(`Job ${jobs.find(j=>j.id===editId)?.jobNo} updated`, 'success');
+    } else {
+      const no = nextNo();
+      setJobs([...jobs, { ...form, id: `j${Date.now()}`, jobNo: no, qrCode: no, price: parseFloat(form.price)||0, cost: parseFloat(form.cost)||0 }]);
+      addNotif(`Job ${no} created`, 'success');
+    }
+    closeModal();
+  };
+
+  const del = (id) => { if (window.confirm('Delete this job?')) { setJobs(jobs.filter(j => j.id !== id)); addNotif('Job deleted'); } };
+  const updateStatus = (id, status) => setJobs(jobs.map(j => j.id === id ? { ...j, status } : j));
+
+  const handleScan = () => {
+    const found = jobs.find(j => j.qrCode === scanVal.trim() || j.jobNo === scanVal.trim());
+    if (found) { openEdit(found); setScanVal(''); }
+    else alert(`No job found: ${scanVal}`);
+  };
+
+  const printTicket = (j) => {
+    const w = window.open('', '', 'width=600,height=500');
+    w.document.write(`<html><body style="font-family:Arial;padding:30px;max-width:500px">
+      <h2>🖨️ JOB TICKET — ${j.jobNo}</h2>
+      <p><b>Customer:</b> ${j.customer}</p>
+      <p><b>Description:</b> ${j.description}</p>
+      <p><b>Type:</b> ${j.type} &nbsp;&nbsp; <b>Machine:</b> ${j.machine||'TBD'}</p>
+      <p><b>Priority:</b> ${j.priority.toUpperCase()} &nbsp;&nbsp; <b>Status:</b> ${j.status}</p>
+      <p><b>Start:</b> ${j.startDate||'TBD'} &nbsp;&nbsp; <b>Due:</b> ${j.dueDate||'TBD'}</p>
+      <p><b>Price:</b> GH₵${j.price} &nbsp;&nbsp; <b>Est. Cost:</b> GH₵${j.cost}</p>
+      ${j.notes ? `<p><b>Notes:</b> ${j.notes}</p>` : ''}
+      <div style="margin-top:20px;padding:10px;border:2px solid #000;display:inline-block;font-size:20px;font-weight:bold;letter-spacing:4px">${j.qrCode}</div>
+      <p style="font-size:10px;color:#999">Printed ${new Date().toLocaleString()}</p>
+    </body></html>`);
+    w.document.close(); w.print();
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Job Management</h2>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search…" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+          <input value={scanVal} onChange={e => setScanVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleScan()} placeholder="📷 Scan / enter job #" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+          <Btn variant="ghost" onClick={handleScan}>Lookup</Btn>
+          <Btn onClick={openNew}>+ New Job</Btn>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+        {['all', ...JOB_STATUSES].map(s => (
+          <button key={s} onClick={() => setFilter(s)}
+            style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', background: filter === s ? '#2563eb' : '#fff', color: filter === s ? '#fff' : '#6b7280', borderColor: filter === s ? '#2563eb' : '#e5e7eb' }}>
+            {s === 'all' ? `All (${jobs.length})` : `${s} (${jobs.filter(j=>j.status===s).length})`}
           </button>
         ))}
       </div>
 
-      <div style={styles.content}>
-        {activeTab === 'dashboard' && (
-          <div>
-            <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
-                <div style={styles.statValue}>GH₵{stats.monthlySales.toLocaleString()}</div>
-                <div style={styles.statLabel}>Monthly Income</div>
-              </div>
-              <div style={styles.statCard}>
-                <div style={styles.statValue}>GH₵{stats.monthlyExpenses.toLocaleString()}</div>
-                <div style={styles.statLabel}>Monthly Expenses</div>
-              </div>
-              <div style={styles.statCard}>
-                <div style={styles.statValue}>GH₵{(stats.monthlySales - stats.monthlyExpenses).toLocaleString()}</div>
-                <div style={styles.statLabel}>Monthly Profit</div>
-              </div>
-              <div style={styles.statCard}>
-                <div style={styles.statValue}>{todos.filter(t => !t.completed).length}</div>
-                <div style={styles.statLabel}>Pending Tasks</div>
-              </div>
-            </div>
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Job #','Customer','Description','Type','Machine','Due','Price','Priority','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+          <tbody>
+            {filtered.map(j => (
+              <tr key={j.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <TD style={{ fontWeight: 700, color: '#2563eb' }}>{j.jobNo}</TD>
+                <TD>{j.customer}</TD>
+                <TD style={{ maxWidth: 180 }}>{j.description}</TD>
+                <TD>{j.type}</TD>
+                <TD style={{ color: '#6b7280' }}>{j.machine || '—'}</TD>
+                <TD style={{ color: j.dueDate < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151', fontWeight: j.dueDate < todayStr() && !['completed','cancelled'].includes(j.status) ? 700 : 400 }}>{j.dueDate || '—'}</TD>
+                <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
+                <TD><Badge text={j.priority} type="priority" /></TD>
+                <TD>
+                  <select value={j.status} onChange={e => updateStatus(j.id, e.target.value)}
+                    style={{ border: '1px solid #e5e7eb', borderRadius: 4, padding: '3px 6px', fontSize: 11, background: STATUS_COLORS[j.status]?.bg, color: STATUS_COLORS[j.status]?.color, cursor: 'pointer', fontWeight: 700 }}>
+                    {JOB_STATUSES.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </TD>
+                <TD>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <Btn variant="ghost" small onClick={() => openEdit(j)}>Edit</Btn>
+                    <Btn variant="ghost" small onClick={() => printTicket(j)}>🖨️</Btn>
+                    <Btn variant="danger" small onClick={() => del(j.id)}>Del</Btn>
+                  </div>
+                </TD>
+              </tr>
+            ))}
+            {filtered.length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No jobs found</td></tr>}
+          </tbody>
+        </table>
+      </div>
 
-            <div style={styles.actionButtons}>
-              <button onClick={handlePrint} style={styles.actionBtn}>🖨️ Print Report</button>
-              <button onClick={exportData} style={styles.actionBtn}>📥 Export Data</button>
-              {/* FIX 5: navigate to todos tab instead of toggling form from dashboard */}
-              <button onClick={() => { setActiveTab('todos'); setShowTodoForm(true); }} style={styles.actionBtn}>➕ Add Task</button>
+      {modal && (
+        <Modal title={editId ? `Edit Job — ${jobs.find(j=>j.id===editId)?.jobNo}` : 'New Job Ticket'} onClose={closeModal}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customerId: c?.id||'' }); }}>
+              <option value="">— Select Customer —</option>
+              {customers.map(c => <option key={c.id}>{c.name}</option>)}
+            </Sel>
+            <Sel label="Job Type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+              {JOB_TYPES.map(t => <option key={t}>{t}</option>)}
+            </Sel>
+            <div style={{ gridColumn: '1/-1' }}>
+              <Inp label="Description *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="e.g. Business Cards x500 (Gloss)" />
             </div>
-
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Pending Tasks</h2>
-              {todos.filter(t => !t.completed).map(todo => (
-                <div key={todo.id} style={styles.todoItem}>
-                  {/* FIX 3: controlled checkbox with checked prop */}
-                  <input type="checkbox" checked={todo.completed} onChange={() => toggleTodo(todo.id)} />
-                  <span>{todo.text}</span>
-                  <button onClick={() => deleteTodo(todo.id)} style={styles.deleteBtn}>×</button>
-                </div>
-              ))}
-            </div>
-
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Recent Alerts</h2>
-              {notifications.slice(0, 3).map(notif => (
-                <div key={notif.id} style={styles.alertItem}>
-                  <span>{notif.type === 'success' ? '✅' : '⚠️'} {notif.message}</span>
-                </div>
-              ))}
+            <Sel label="Machine" value={form.machine} onChange={e => setForm({ ...form, machine: e.target.value })}>
+              <option value="">— Unassigned —</option>
+              {MACHINES.map(m => <option key={m}>{m}</option>)}
+            </Sel>
+            <Sel label="Priority" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
+              <option value="normal">Normal</option>
+              <option value="rush">Rush (+25%)</option>
+              <option value="urgent">Urgent</option>
+            </Sel>
+            <Sel label="Status" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+              {JOB_STATUSES.map(s => <option key={s}>{s}</option>)}
+            </Sel>
+            <Inp label="Start Date" type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
+            <Inp label="Due Date" type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })} />
+            <Inp label="Price (GH₵)" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="0.00" />
+            <Inp label="Est. Cost (GH₵)" type="number" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} placeholder="0.00" />
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Notes / Instructions</label>
+              <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3}
+                style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+                placeholder="Special finishes, delivery, colour specs…" />
             </div>
           </div>
-        )}
-
-        {activeTab === 'sales' && (
-          <div>
-            <button onClick={() => setShowSalesForm(!showSalesForm)} style={styles.btnPrimary}>+ Record Sale</button>
-            {showSalesForm && (
-              <div style={styles.formContainer}>
-                <input type="date" value={salesFormData.date} onChange={e => setSalesFormData({ ...salesFormData, date: e.target.value })} style={styles.input} />
-                <input type="number" placeholder="Amount (GH₵)" value={salesFormData.amount} onChange={e => setSalesFormData({ ...salesFormData, amount: e.target.value })} style={styles.input} />
-                <button onClick={addSale} style={styles.btnPrimary}>Record Sale</button>
-              </div>
-            )}
-            <div style={styles.table}>
-              {/* FIX 1: sort a copy, delete by unique id not array index */}
-              {[...sales].sort((a, b) => new Date(b.date) - new Date(a.date)).map((sale) => (
-                <div key={sale.id} style={styles.tableRow}>
-                  <span>{new Date(sale.date).toLocaleDateString()}</span>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>GH₵{sale.amount.toLocaleString()}</span>
-                  <button onClick={() => setSales(sales.filter(s => s.id !== sale.id))} style={styles.deleteBtn}>×</button>
-                </div>
-              ))}
-            </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+            <Btn variant="ghost" onClick={closeModal}>Cancel</Btn>
+            <Btn onClick={save}>{editId ? 'Save Changes' : 'Create Job'}</Btn>
           </div>
-        )}
+        </Modal>
+      )}
+    </div>
+  );
+}
 
-        {activeTab === 'expenses' && (
-          <div>
-            <button onClick={() => setShowExpenseForm(!showExpenseForm)} style={styles.btnPrimary}>+ Add Expense</button>
-            {showExpenseForm && (
-              <div style={styles.formContainer}>
-                <input type="date" value={expenseFormData.date} onChange={e => setExpenseFormData({ ...expenseFormData, date: e.target.value })} style={styles.input} />
-                <select value={expenseFormData.category} onChange={e => setExpenseFormData({ ...expenseFormData, category: e.target.value })} style={styles.input}>
-                  <option>Paper</option>
-                  <option>Ink & Toner</option>
-                  <option>Maintenance</option>
-                  <option>Salaries</option>
-                  <option>Other</option>
-                </select>
-                <input type="text" placeholder="Description" value={expenseFormData.description} onChange={e => setExpenseFormData({ ...expenseFormData, description: e.target.value })} style={styles.input} />
-                <input type="number" placeholder="Amount (GH₵)" value={expenseFormData.amount} onChange={e => setExpenseFormData({ ...expenseFormData, amount: e.target.value })} style={styles.input} />
-                <button onClick={addExpense} style={styles.btnPrimary}>Record Expense</button>
-              </div>
-            )}
-            <div style={styles.table}>
-              {/* FIX 2: sort a copy, delete by unique id not array index */}
-              {[...expenses].sort((a, b) => new Date(b.date) - new Date(a.date)).map((exp) => (
-                <div key={exp.id} style={styles.tableRow}>
-                  <span>{new Date(exp.date).toLocaleDateString()}</span>
-                  <span>{exp.category}</span>
-                  <span>{exp.description}</span>
-                  <span style={{ color: '#ef4444', fontWeight: 'bold' }}>GH₵{exp.amount.toLocaleString()}</span>
-                  <button onClick={() => setExpenses(expenses.filter(e => e.id !== exp.id))} style={styles.deleteBtn}>×</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+// ─── CUSTOMERS ────────────────────────────────────────────────────────────────
 
-        {activeTab === 'todos' && (
-          <div>
-            <button onClick={() => setShowTodoForm(!showTodoForm)} style={styles.btnPrimary}>+ Add Task</button>
-            {showTodoForm && (
-              <div style={styles.formContainer}>
-                <input
-                  type="text"
-                  placeholder="Task description..."
-                  value={todoInput}
-                  onChange={e => setTodoInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addTodo()} // FIX 4: onKeyDown
-                  style={styles.input}
-                />
-                <button onClick={addTodo} style={styles.btnPrimary}>Add Task</button>
+const EMPTY_CX = { name: '', email: '', phone: '', address: '' };
+
+function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif }) {
+  const [modal, setModal]   = useState(false);
+  const [form, setForm]     = useState(EMPTY_CX);
+  const [editId, setEditId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(null);
+
+  const filtered = customers.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()));
+
+  const save = () => {
+    if (!form.name) return;
+    if (editId) {
+      setCustomers(customers.map(c => c.id === editId ? { ...c, ...form } : c));
+    } else {
+      setCustomers([...customers, { ...form, id: `c${Date.now()}`, totalOrders: 0, totalSpent: 0 }]);
+      addNotif(`Customer ${form.name} added`, 'success');
+    }
+    setModal(false); setForm(EMPTY_CX); setEditId(null);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Customer CRM</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search…" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+          <Btn onClick={() => { setForm(EMPTY_CX); setEditId(null); setModal(true); }}>+ Add Customer</Btn>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 380px' : '1fr', gap: 20 }}>
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Name','Email','Phone','Jobs','Revenue','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>
+              {filtered.map(c => {
+                const cJobs = jobs.filter(j => j.customerId === c.id);
+                const cRev  = invoices.filter(i => i.customerId === c.id).reduce((a, i) => a + i.paid, 0);
+                return (
+                  <tr key={c.id} onClick={() => setSelected(selected?.id === c.id ? null : c)}
+                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selected?.id === c.id ? '#eff6ff' : 'transparent' }}>
+                    <TD style={{ fontWeight: 600 }}>{c.name}</TD>
+                    <TD style={{ color: '#6b7280' }}>{c.email}</TD>
+                    <TD>{c.phone}</TD>
+                    <TD>{cJobs.length}</TD>
+                    <TD style={{ fontWeight: 600, color: '#16a34a' }}>{fmt(cRev || c.totalSpent)}</TD>
+                    <TD>
+                      <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+                        <Btn variant="ghost" small onClick={() => { setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address }); setEditId(c.id); setModal(true); }}>Edit</Btn>
+                        <Btn variant="danger" small onClick={() => setCustomers(customers.filter(x => x.id !== c.id))}>Del</Btn>
+                      </div>
+                    </TD>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {selected && (
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{selected.name}</h3>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20 }}>×</button>
+            </div>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>📧 {selected.email}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>📞 {selected.phone}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>📍 {selected.address}</p>
+            <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: 8 }}>Job History</h4>
+            {jobs.filter(j => j.customerId === selected.id).length === 0 && <p style={{ fontSize: 12, color: '#9ca3af' }}>No jobs yet</p>}
+            {jobs.filter(j => j.customerId === selected.id).map(j => (
+              <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', borderRadius: 6, marginBottom: 6 }}>
+                <div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>{j.jobNo}</span>
+                  <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 8 }}>{j.description.substring(0, 28)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>{fmt(j.price)}</span>
+                  <Badge text={j.status} />
+                </div>
               </div>
-            )}
-            <div>
-              <h3 style={styles.sectionTitle}>Pending Tasks</h3>
-              {todos.filter(t => !t.completed).map(todo => (
-                <div key={todo.id} style={styles.todoItem}>
-                  {/* FIX 3: controlled checkbox */}
-                  <input type="checkbox" checked={todo.completed} onChange={() => toggleTodo(todo.id)} />
-                  <span>{todo.text}</span>
-                  <button onClick={() => deleteTodo(todo.id)} style={styles.deleteBtn}>×</button>
-                </div>
-              ))}
-            </div>
-            <div>
-              <h3 style={styles.sectionTitle}>Completed Tasks</h3>
-              {todos.filter(t => t.completed).map(todo => (
-                <div key={todo.id} style={{ ...styles.todoItem, opacity: 0.6 }}>
-                  {/* FIX 3: controlled checkbox */}
-                  <input type="checkbox" checked={todo.completed} onChange={() => toggleTodo(todo.id)} />
-                  <span style={{ textDecoration: 'line-through' }}>{todo.text}</span>
-                  <button onClick={() => deleteTodo(todo.id)} style={styles.deleteBtn}>×</button>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         )}
       </div>
+
+      {modal && (
+        <Modal title={editId ? 'Edit Customer' : 'Add Customer'} onClose={() => { setModal(false); setForm(EMPTY_CX); setEditId(null); }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ gridColumn: '1/-1' }}><Inp label="Business / Customer Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+            <Inp label="Email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            <Inp label="Phone" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            <div style={{ gridColumn: '1/-1' }}><Inp label="Address" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+            <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_CX); setEditId(null); }}>Cancel</Btn>
+            <Btn onClick={save}>{editId ? 'Save Changes' : 'Add Customer'}</Btn>
+          </div>
+        </Modal>
+      )}
     </div>
   );
-};
+}
 
-const styles = {
-  appContainer: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%)',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-  loginContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  },
-  loginCard: {
-    background: 'white',
-    padding: '40px',
-    borderRadius: '8px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-    width: '100%',
-    maxWidth: '400px',
-  },
-  loginTitle: {
-    fontSize: '32px',
-    marginBottom: '8px',
-    color: '#333',
-  },
-  loginSubtitle: {
-    color: '#999',
-    fontSize: '14px',
-    marginBottom: '30px',
-  },
-  loginForm: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '30px',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: '13px',
-    margin: '0',
-    padding: '8px 12px',
-    background: '#fef2f2',
-    borderRadius: '4px',
-    border: '1px solid #fecaca',
-  },
-  header: {
-    background: 'white',
-    borderBottom: '2px solid #667eea',
-    padding: '20px 30px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: '4px',
-  },
-  headerSubtitle: {
-    fontSize: '12px',
-    color: '#999',
-  },
-  headerRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-  },
-  notificationBell: {
-    position: 'relative',
-  },
-  bellBtn: {
-    background: '#f0f0f0',
-    border: '1px solid #ddd',
-    padding: '8px 12px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '18px',
-  },
-  badge: {
-    position: 'absolute',
-    top: '-8px',
-    right: '-8px',
-    background: '#ef4444',
-    color: 'white',
-    borderRadius: '50%',
-    width: '20px',
-    height: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '11px',
-    fontWeight: 'bold',
-  },
-  notifPanel: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    background: 'white',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-    width: '300px',
-    maxHeight: '300px',
-    overflowY: 'auto',
-    padding: '15px',
-    marginTop: '10px',
-    zIndex: 1000,
-  },
-  notifItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px',
-    background: '#f9f9f9',
-    borderRadius: '4px',
-    marginBottom: '8px',
-    fontSize: '13px',
-  },
-  closeBtn: {
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '18px',
-    color: '#999',
-  },
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 12px',
-    background: '#f5f5f5',
-    borderRadius: '4px',
-    fontSize: '13px',
-    fontWeight: '500',
-  },
-  navTabs: {
-    display: 'flex',
-    gap: 0,
-    padding: '0 30px',
-    borderBottom: '1px solid #ddd',
-    background: 'white',
-  },
-  navTab: {
-    padding: '14px 20px',
-    background: 'transparent',
-    color: '#666',
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    fontSize: '12px',
-    letterSpacing: '0.5px',
-    borderBottom: '3px solid transparent',
-    transition: 'all 0.3s',
-  },
-  navTabActive: {
-    color: '#667eea',
-    borderBottomColor: '#667eea',
-  },
-  content: {
-    padding: '30px',
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '16px',
-    marginBottom: '30px',
-  },
-  statCard: {
-    background: 'white',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-    padding: '20px',
-    textAlign: 'center',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-  },
-  statValue: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    color: '#667eea',
-    marginBottom: '8px',
-  },
-  statLabel: {
-    fontSize: '12px',
-    color: '#999',
-    textTransform: 'uppercase',
-  },
-  actionButtons: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '30px',
-    flexWrap: 'wrap',
-  },
-  actionBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    border: 'none',
-    padding: '12px 20px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-  },
-  section: {
-    background: 'white',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-    padding: '20px',
-    marginBottom: '20px',
-  },
-  sectionTitle: {
-    fontSize: '16px',
-    fontWeight: 'bold',
-    marginBottom: '16px',
-    color: '#333',
-    textTransform: 'uppercase',
-    borderBottom: '2px solid #667eea',
-    paddingBottom: '8px',
-  },
-  todoItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '10px',
-    background: '#f9f9f9',
-    borderRadius: '4px',
-    marginBottom: '8px',
-    borderLeft: '4px solid #667eea',
-  },
-  alertItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '10px',
-    background: '#f9f9f9',
-    borderRadius: '4px',
-    marginBottom: '8px',
-    fontSize: '13px',
-  },
-  input: {
-    background: 'white',
-    border: '1px solid #ddd',
-    color: '#333',
-    padding: '10px 12px',
-    borderRadius: '4px',
-    fontFamily: 'inherit',
-    fontSize: '13px',
-  },
-  btnPrimary: {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-    color: 'white',
-    border: 'none',
-    padding: '10px 20px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-  },
-  btnSecondary: {
-    background: '#f0f0f0',
-    color: '#333',
-    border: '1px solid #ddd',
-    padding: '8px 16px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-  },
-  demoSection: {
-    textAlign: 'center',
-    borderTop: '1px solid #eee',
-    paddingTop: '20px',
-  },
-  demoTitle: {
-    fontSize: '12px',
-    color: '#999',
-    textTransform: 'uppercase',
-    marginBottom: '10px',
-    fontWeight: 'bold',
-  },
-  demoBtn: {
-    background: '#f0f0f0',
-    border: '1px solid #ddd',
-    padding: '8px 16px',
-    margin: '0 4px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: 'bold',
-  },
-  formContainer: {
-    background: '#f9f9f9',
-    border: '2px solid #667eea',
-    padding: '20px',
-    marginBottom: '20px',
-    borderRadius: '6px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  table: {
-    background: 'white',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-    overflow: 'hidden',
-  },
-  tableRow: {
-    display: 'flex',
-    gap: '12px',
-    padding: '15px',
-    borderBottom: '1px solid #eee',
-    alignItems: 'center',
-    fontSize: '13px',
-    flexWrap: 'wrap',
-  },
-  deleteBtn: {
-    background: '#ef4444',
-    color: 'white',
-    border: 'none',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginLeft: 'auto',
-  },
-};
+// ─── QUOTES ───────────────────────────────────────────────────────────────────
 
-export default PrintingPressSystem;
+function QuotesTab({ customers, jobs, setJobs, addNotif }) {
+  const [form, setForm] = useState({ customer: '', customerId: '', description: '', type: 'Digital', qty: '', unitPrice: '', rushFee: false, bulkDiscount: false, notes: '' });
+  const [quotes, setQuotes] = useState([]);
+
+  const qty  = parseFloat(form.qty) || 0;
+  const unit = parseFloat(form.unitPrice) || 0;
+  const sub  = qty * unit;
+  const rush = form.rushFee ? sub * 0.25 : 0;
+  const bulk = form.bulkDiscount && qty >= 100 ? sub * 0.10 : 0;
+  const total = sub + rush - bulk;
+
+  const save = () => {
+    if (!form.customer || !form.description || !qty || !unit) return alert('Please fill all required fields.');
+    const q = { ...form, id: `q${Date.now()}`, sub, rush, bulk, total, date: todayStr(), status: 'draft' };
+    setQuotes([q, ...quotes]);
+    addNotif(`Quote saved for ${form.customer}`, 'success');
+  };
+
+  const convert = (q) => {
+    const nums = jobs.map(j => parseInt(j.jobNo.split('-')[1] || 0));
+    const no   = `PSM-${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`;
+    setJobs([...jobs, { id: `j${Date.now()}`, jobNo: no, customer: q.customer, customerId: q.customerId, description: q.description, type: q.type, status: 'queued', priority: q.rushFee ? 'rush' : 'normal', dueDate: '', startDate: todayStr(), price: q.total, cost: 0, machine: '', notes: q.notes, qrCode: no }]);
+    setQuotes(quotes.map(x => x.id === q.id ? { ...x, status: 'converted' } : x));
+    addNotif(`Quote converted to job ${no}`, 'success');
+  };
+
+  const printQ = (q) => {
+    const w = window.open('', '', 'width=800,height=600');
+    w.document.write(`<html><head><title>Quotation</title></head><body style="font-family:Arial;padding:40px;max-width:650px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:30px">
+        <div><h1 style="margin:0">🖨️ Print Shop Manager</h1><p style="color:#666">Professional Print Services</p></div>
+        <div style="text-align:right"><h2 style="margin:0;color:#2563eb">QUOTATION</h2><p>Date: ${q.date}</p><p>Valid 14 days</p></div>
+      </div>
+      <p><b>To:</b> ${q.customer}</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0">
+        <tr style="background:#f0f4ff"><th style="padding:10px;border:1px solid #ddd;text-align:left">Description</th><th style="padding:10px;border:1px solid #ddd">Qty</th><th style="padding:10px;border:1px solid #ddd">Unit Price</th><th style="padding:10px;border:1px solid #ddd">Total</th></tr>
+        <tr><td style="padding:10px;border:1px solid #ddd">${q.description} (${q.type})</td><td style="padding:10px;border:1px solid #ddd;text-align:center">${q.qty}</td><td style="padding:10px;border:1px solid #ddd;text-align:right">GH₵${parseFloat(q.unitPrice).toFixed(2)}</td><td style="padding:10px;border:1px solid #ddd;text-align:right">GH₵${q.sub.toFixed(2)}</td></tr>
+      </table>
+      <div style="text-align:right">
+        <p>Subtotal: GH₵${q.sub.toFixed(2)}</p>
+        ${q.rush>0?`<p>Rush Fee (25%): +GH₵${q.rush.toFixed(2)}</p>`:''}
+        ${q.bulk>0?`<p>Bulk Discount (10%): -GH₵${q.bulk.toFixed(2)}</p>`:''}
+        <h2>TOTAL: GH₵${q.total.toFixed(2)}</h2>
+      </div>
+      ${q.notes?`<p><b>Notes:</b> ${q.notes}</p>`:''}
+      <p style="color:#999;font-size:11px;margin-top:40px">This quote is valid for 14 days from the date above.</p>
+    </body></html>`);
+    w.document.close(); w.print();
+  };
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+      {/* Builder */}
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 24 }}>
+        <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 800 }}>⚡ Quick Quote Builder</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customerId: c?.id||'' }); }}>
+            <option value="">— Select Customer —</option>
+            {customers.map(c => <option key={c.id}>{c.name}</option>)}
+          </Sel>
+          <Inp label="Description *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="e.g. Flyers A5 Full Colour" />
+          <Sel label="Job Type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+            {JOB_TYPES.map(t => <option key={t}>{t}</option>)}
+          </Sel>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Inp label="Quantity *" type="number" value={form.qty} onChange={e => setForm({ ...form, qty: e.target.value })} />
+            <Inp label="Unit Price (GH₵) *" type="number" value={form.unitPrice} onChange={e => setForm({ ...form, unitPrice: e.target.value })} />
+          </div>
+          <div style={{ display: 'flex', gap: 20 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', userSelect: 'none' }}>
+              <input type="checkbox" checked={form.rushFee} onChange={e => setForm({ ...form, rushFee: e.target.checked })} />
+              Rush Fee +25%
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', userSelect: 'none' }}>
+              <input type="checkbox" checked={form.bulkDiscount} onChange={e => setForm({ ...form, bulkDiscount: e.target.checked })} />
+              Bulk Discount −10% (qty≥100)
+            </label>
+          </div>
+          <Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Special instructions…" />
+        </div>
+
+        {/* Live breakdown */}
+        <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, marginTop: 16 }}>
+          <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700 }}>Price Breakdown</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}><span>Subtotal ({qty} × {fmt(unit)})</span><span>{fmt(sub)}</span></div>
+            {rush > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#f59e0b' }}><span>Rush Fee (25%)</span><span>+{fmt(rush)}</span></div>}
+            {bulk > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#16a34a' }}><span>Bulk Discount (10%)</span><span>−{fmt(bulk)}</span></div>}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 17, fontWeight: 800, borderTop: '1px solid #e5e7eb', paddingTop: 8, marginTop: 4 }}>
+              <span>Total</span><span style={{ color: '#2563eb' }}>{fmt(total)}</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ marginTop: 14 }}><Btn onClick={save}>💾 Save Quote</Btn></div>
+      </div>
+
+      {/* Saved quotes */}
+      <div>
+        <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 800 }}>Saved Quotes ({quotes.length})</h3>
+        {quotes.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>No quotes yet — build one on the left!</p>}
+        {quotes.map(q => (
+          <div key={q.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>{q.customer}</span>
+              <Badge text={q.status === 'converted' ? 'completed' : 'quoting'} />
+            </div>
+            <p style={{ margin: '0 0 2px', fontSize: 12, color: '#6b7280' }}>{q.description} — {q.type} — qty {q.qty}</p>
+            <p style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 800, color: '#2563eb' }}>{fmt(q.total)}</p>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Btn variant="ghost" small onClick={() => printQ(q)}>🖨️ Print</Btn>
+              {q.status !== 'converted' && <Btn variant="success" small onClick={() => convert(q)}>→ Convert to Job</Btn>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SCHEDULE ─────────────────────────────────────────────────────────────────
+
+function ScheduleTab({ jobs, setJobs }) {
+  const active = jobs.filter(j => !['cancelled','completed'].includes(j.status));
+
+  const byMachine = {};
+  MACHINES.forEach(m => { byMachine[m] = active.filter(j => j.machine === m); });
+  byMachine['Unassigned'] = active.filter(j => !j.machine);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Production Schedule</h2>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 12, color: '#6b7280' }}>
+          {['queued','in-progress','on-hold'].map(s => (
+            <span key={s} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 10, height: 10, background: STATUS_COLORS[s]?.color, borderRadius: 2, display: 'inline-block' }} />
+              {s}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Kanban board */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 28 }}>
+        {['queued','in-progress','on-hold'].map(col => {
+          const colJobs = jobs.filter(j => j.status === col);
+          const sc = STATUS_COLORS[col];
+          return (
+            <div key={col} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 8, padding: 16, minHeight: 200 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <span style={{ width: 10, height: 10, background: sc.color, borderRadius: '50%', display: 'inline-block' }} />
+                <h4 style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: sc.color }}>{col} ({colJobs.length})</h4>
+              </div>
+              {colJobs.map(j => (
+                <div key={j.id} style={{ background: '#fff', border: `1px solid ${sc.border}`, borderRadius: 6, padding: 10, marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>{j.jobNo}</span>
+                    <Badge text={j.priority} type="priority" />
+                  </div>
+                  <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 600 }}>{j.customer}</p>
+                  <p style={{ margin: '0 0 6px', fontSize: 11, color: '#6b7280' }}>{j.description.substring(0,40)}</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: j.dueDate < todayStr() ? '#dc2626' : '#6b7280', fontWeight: j.dueDate < todayStr() ? 700 : 400 }}>
+                      {j.dueDate ? `Due ${j.dueDate}` : 'No due date'}
+                    </span>
+                    <select value={j.status} onChange={e => setJobs(jobs.map(x => x.id === j.id ? { ...x, status: e.target.value } : x))}
+                      style={{ fontSize: 10, border: '1px solid #e5e7eb', borderRadius: 4, padding: '2px 4px', cursor: 'pointer' }}>
+                      {JOB_STATUSES.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+              ))}
+              {colJobs.length === 0 && <p style={{ fontSize: 12, color: sc.color, opacity: 0.6, textAlign: 'center', marginTop: 20 }}>Empty</p>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Machine load */}
+      <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>Machine Capacity</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 14 }}>
+        {Object.entries(byMachine).map(([machine, mJobs]) => (
+          <div key={machine} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+              <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>{machine}</h4>
+              <span style={{ fontSize: 11, fontWeight: 700, color: mJobs.length >= 3 ? '#dc2626' : mJobs.length >= 1 ? '#f59e0b' : '#16a34a' }}>
+                {mJobs.length === 0 ? 'IDLE' : `${mJobs.length} job${mJobs.length !== 1 ? 's' : ''}`}
+              </span>
+            </div>
+            {mJobs.length === 0
+              ? <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>No active jobs</p>
+              : mJobs.map(j => (
+                <div key={j.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: '#f8fafc', borderRadius: 4, marginBottom: 4, fontSize: 12 }}>
+                  <span style={{ fontWeight: 700, color: '#2563eb', whiteSpace: 'nowrap' }}>{j.jobNo}</span>
+                  <span style={{ color: '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.description}</span>
+                  <Badge text={j.status} />
+                </div>
+              ))
+            }
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── INVENTORY ────────────────────────────────────────────────────────────────
+
+const EMPTY_INV = { name: '', category: 'Paper', unit: 'Ream', quantity: '', reorderPoint: '', unitCost: '', supplier: '' };
+
+function InventoryTab({ inventory, setInventory, addNotif }) {
+  const [modal, setModal]   = useState(false);
+  const [form, setForm]     = useState(EMPTY_INV);
+  const [editId, setEditId] = useState(null);
+  const [cat, setCat]       = useState('All');
+
+  const cats     = ['All', ...Array.from(new Set(inventory.map(i => i.category)))];
+  const filtered = inventory.filter(i => cat === 'All' || i.category === cat);
+
+  const save = () => {
+    if (!form.name) return;
+    const item = { ...form, quantity: parseFloat(form.quantity)||0, reorderPoint: parseFloat(form.reorderPoint)||0, unitCost: parseFloat(form.unitCost)||0 };
+    if (editId) {
+      setInventory(inventory.map(i => i.id === editId ? { ...i, ...item } : i));
+    } else {
+      setInventory([...inventory, { ...item, id: `i${Date.now()}` }]);
+      addNotif(`${form.name} added to inventory`, 'success');
+    }
+    setModal(false); setForm(EMPTY_INV); setEditId(null);
+  };
+
+  const adjust = (id, delta) => {
+    setInventory(inventory.map(i => {
+      if (i.id !== id) return i;
+      const q = Math.max(0, i.quantity + delta);
+      if (q <= i.reorderPoint) addNotif(`⚠️ Low stock: ${i.name} (${q} ${i.unit})`, 'warning');
+      return { ...i, quantity: q };
+    }));
+  };
+
+  const totalValue = inventory.reduce((a, i) => a + i.quantity * i.unitCost, 0);
+  const lowCount   = inventory.filter(i => i.quantity <= i.reorderPoint).length;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Inventory & Procurement</h2>
+        <Btn onClick={() => { setForm(EMPTY_INV); setEditId(null); setModal(true); }}>+ Add Item</Btn>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard label="Total Items"    value={inventory.length}  accent="#2563eb" />
+        <StatCard label="Stock Value"    value={fmt(totalValue)}   accent="#16a34a" />
+        <StatCard label="Low Stock Alerts" value={lowCount}        accent={lowCount > 0 ? '#dc2626' : '#16a34a'} sub={lowCount > 0 ? 'Action needed' : 'All good'} />
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+        {cats.map(c => (
+          <button key={c} onClick={() => setCat(c)}
+            style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: cat === c ? '#2563eb' : '#fff', color: cat === c ? '#fff' : '#6b7280', borderColor: cat === c ? '#2563eb' : '#e5e7eb' }}>
+            {c}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Item','Category','Qty','Unit','Reorder At','Unit Cost','Value','Supplier','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+          <tbody>
+            {filtered.map(item => {
+              const low = item.quantity <= item.reorderPoint;
+              return (
+                <tr key={item.id} style={{ background: low ? '#fff5f5' : 'transparent' }}>
+                  <TD style={{ fontWeight: 600 }}>{item.name}</TD>
+                  <TD>{item.category}</TD>
+                  <TD style={{ fontWeight: 700, color: low ? '#dc2626' : '#111' }}>{item.quantity}</TD>
+                  <TD>{item.unit}</TD>
+                  <TD style={{ color: '#6b7280' }}>{item.reorderPoint}</TD>
+                  <TD>{fmt(item.unitCost)}</TD>
+                  <TD style={{ fontWeight: 600 }}>{fmt(item.quantity * item.unitCost)}</TD>
+                  <TD style={{ color: '#6b7280' }}>{item.supplier}</TD>
+                  <TD>
+                    {low
+                      ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>⚠️ LOW</span>
+                      : <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>OK</span>}
+                  </TD>
+                  <TD>
+                    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                      <button onClick={() => adjust(item.id, -1)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#dc2626', fontSize: 14 }}>−</button>
+                      <button onClick={() => adjust(item.id,  1)} style={{ background: '#dcfce7', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#16a34a', fontSize: 14 }}>+</button>
+                      <Btn variant="ghost" small onClick={() => { setForm({ ...item, quantity: String(item.quantity), reorderPoint: String(item.reorderPoint), unitCost: String(item.unitCost) }); setEditId(item.id); setModal(true); }}>Edit</Btn>
+                      <Btn variant="danger" small onClick={() => setInventory(inventory.filter(i => i.id !== item.id))}>Del</Btn>
+                    </div>
+                  </TD>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <Modal title={editId ? 'Edit Item' : 'Add Inventory Item'} onClose={() => { setModal(false); setForm(EMPTY_INV); setEditId(null); }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ gridColumn: '1/-1' }}><Inp label="Item Name *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+            <Sel label="Category" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
+              {['Paper','Ink','Garments','Finishing','Equipment','Other'].map(c => <option key={c}>{c}</option>)}
+            </Sel>
+            <Inp label="Unit" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} placeholder="Ream, Piece, Roll…" />
+            <Inp label="Current Qty" type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} />
+            <Inp label="Reorder Point" type="number" value={form.reorderPoint} onChange={e => setForm({ ...form, reorderPoint: e.target.value })} />
+            <Inp label="Unit Cost (GH₵)" type="number" value={form.unitCost} onChange={e => setForm({ ...form, unitCost: e.target.value })} />
+            <Inp label="Supplier" value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+            <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_INV); setEditId(null); }}>Cancel</Btn>
+            <Btn onClick={save}>{editId ? 'Save Changes' : 'Add Item'}</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ─── INVOICES ─────────────────────────────────────────────────────────────────
+
+function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNotif }) {
+  const [modal, setModal] = useState(false);
+  const [form, setForm]   = useState({ jobId: '', customer: '', customerId: '', dueDate: '', items: [{ desc: '', qty: 1, rate: '', total: 0 }] });
+
+  const calcTotal = (items) => items.reduce((a, i) => a + ((parseFloat(i.qty)||0) * (parseFloat(i.rate)||0)), 0);
+
+  const updateItem = (idx, field, val) => {
+    const items = form.items.map((it, i) => {
+      if (i !== idx) return it;
+      const u = { ...it, [field]: val };
+      u.total = (parseFloat(u.qty)||0) * (parseFloat(u.rate)||0);
+      return u;
+    });
+    setForm({ ...form, items });
+  };
+
+  const create = () => {
+    const total = calcTotal(form.items);
+    if (!form.customer || total === 0) return alert('Select a customer and add at least one line item.');
+    const inv = { ...form, id: `inv${Date.now()}`, invoiceNo: `INV-${String(invoices.length + 1).padStart(3,'0')}`, date: todayStr(), amount: total, paid: 0, status: 'unpaid' };
+    setInvoices([...invoices, inv]);
+    addNotif(`Invoice ${inv.invoiceNo} created for ${inv.customer}`, 'success');
+    setModal(false);
+    setForm({ jobId: '', customer: '', customerId: '', dueDate: '', items: [{ desc: '', qty: 1, rate: '', total: 0 }] });
+  };
+
+  const markPaid = (id) => {
+    setInvoices(invoices.map(inv => {
+      if (inv.id !== id) return inv;
+      setSales(s => [...s, { id: `s${Date.now()}`, date: todayStr(), amount: inv.amount, jobId: inv.jobId }]);
+      addNotif(`Invoice ${inv.invoiceNo} paid — ${fmt(inv.amount)} recorded`, 'success');
+      return { ...inv, paid: inv.amount, status: 'paid' };
+    }));
+  };
+
+  const recordPartial = (id) => {
+    const raw = prompt('Enter amount received (GH₵):');
+    const amt = parseFloat(raw);
+    if (!amt || isNaN(amt)) return;
+    setInvoices(invoices.map(inv => {
+      if (inv.id !== id) return inv;
+      const newPaid = Math.min(inv.paid + amt, inv.amount);
+      setSales(s => [...s, { id: `s${Date.now()}`, date: todayStr(), amount: amt, jobId: null }]);
+      addNotif(`Partial payment of ${fmt(amt)} recorded`, 'info');
+      return { ...inv, paid: newPaid, status: newPaid >= inv.amount ? 'paid' : 'partial' };
+    }));
+  };
+
+  const printInv = (inv) => {
+    const w = window.open('', '', 'width=800,height=700');
+    w.document.write(`<html><head><title>${inv.invoiceNo}</title></head><body style="font-family:Arial;padding:40px;max-width:700px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;margin-bottom:30px">
+        <div><h1 style="margin:0">🖨️ Print Shop Manager</h1><p style="color:#666;margin:4px 0">Professional Print Services, Accra</p></div>
+        <div style="text-align:right"><h2 style="margin:0;color:#2563eb">INVOICE</h2><p style="margin:4px 0">${inv.invoiceNo}</p></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:30px">
+        <div><b>Bill To:</b><br>${inv.customer}</div>
+        <div style="text-align:right"><p style="margin:4px 0">Invoice Date: <b>${inv.date}</b></p><p style="margin:4px 0">Due Date: <b>${inv.dueDate}</b></p></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+        <tr style="background:#eff6ff"><th style="padding:10px;text-align:left;border:1px solid #ddd">Description</th><th style="padding:10px;border:1px solid #ddd">Qty</th><th style="padding:10px;border:1px solid #ddd">Rate</th><th style="padding:10px;border:1px solid #ddd">Total</th></tr>
+        ${(inv.items||[]).map(it => `<tr><td style="padding:10px;border:1px solid #ddd">${it.desc}</td><td style="padding:10px;border:1px solid #ddd;text-align:center">${it.qty}</td><td style="padding:10px;border:1px solid #ddd;text-align:right">GH₵${parseFloat(it.rate||0).toFixed(2)}</td><td style="padding:10px;border:1px solid #ddd;text-align:right">GH₵${(it.total||0).toFixed(2)}</td></tr>`).join('')}
+      </table>
+      <div style="text-align:right">
+        <h2 style="margin:0">Total: GH₵${inv.amount.toFixed(2)}</h2>
+        <p>Paid: GH₵${inv.paid.toFixed(2)}</p>
+        <h3 style="color:#dc2626;margin:0">Balance Due: GH₵${(inv.amount-inv.paid).toFixed(2)}</h3>
+      </div>
+      <p style="color:#999;font-size:11px;margin-top:40px;border-top:1px solid #eee;padding-top:10px">Payment due within 14 days. Thank you for your business!</p>
+    </body></html>`);
+    w.document.close(); w.print();
+  };
+
+  const outstanding = invoices.filter(i => i.status !== 'paid').reduce((a, i) => a + (i.amount - i.paid), 0);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Invoices & Payments</h2>
+        <Btn onClick={() => setModal(true)}>+ Create Invoice</Btn>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard label="Total Invoiced" value={fmt(invoices.reduce((a,i)=>a+i.amount,0))} accent="#2563eb" />
+        <StatCard label="Collected"      value={fmt(invoices.reduce((a,i)=>a+i.paid,0))}   accent="#16a34a" />
+        <StatCard label="Outstanding"    value={fmt(outstanding)} accent="#dc2626" />
+        <StatCard label="Overdue"        value={invoices.filter(i=>i.status!=='paid'&&i.dueDate<todayStr()).length} accent="#f59e0b" />
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Invoice #','Customer','Date','Due','Amount','Paid','Balance','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+          <tbody>
+            {invoices.map(inv => (
+              <tr key={inv.id}>
+                <TD style={{ fontWeight: 700, color: '#2563eb' }}>{inv.invoiceNo}</TD>
+                <TD>{inv.customer}</TD>
+                <TD>{inv.date}</TD>
+                <TD style={{ color: inv.dueDate < todayStr() && inv.status !== 'paid' ? '#dc2626' : '#374151', fontWeight: inv.dueDate < todayStr() && inv.status !== 'paid' ? 700 : 400 }}>{inv.dueDate}</TD>
+                <TD style={{ fontWeight: 600 }}>{fmt(inv.amount)}</TD>
+                <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(inv.paid)}</TD>
+                <TD style={{ color: inv.amount - inv.paid > 0 ? '#dc2626' : '#16a34a', fontWeight: 600 }}>{fmt(inv.amount - inv.paid)}</TD>
+                <TD><Badge text={inv.status === 'paid' ? 'completed' : inv.status === 'partial' ? 'in-progress' : 'queued'} /></TD>
+                <TD>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <Btn variant="ghost" small onClick={() => printInv(inv)}>🖨️</Btn>
+                    {inv.status !== 'paid' && <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid ✓</Btn>}
+                    {inv.status !== 'paid' && <Btn variant="ghost" small onClick={() => recordPartial(inv.id)}>Partial</Btn>}
+                    <Btn variant="danger" small onClick={() => setInvoices(invoices.filter(i => i.id !== inv.id))}>Del</Btn>
+                  </div>
+                </TD>
+              </tr>
+            ))}
+            {invoices.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No invoices yet</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <Modal title="Create Invoice" onClose={() => setModal(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customerId: c?.id||'' }); }}>
+              <option value="">— Select Customer —</option>
+              {customers.map(c => <option key={c.id}>{c.name}</option>)}
+            </Sel>
+            <Sel label="Link to Completed Job (optional)" value={form.jobId} onChange={e => {
+              const j = jobs.find(x => x.id === e.target.value);
+              if (j) setForm({ ...form, jobId: e.target.value, customer: j.customer, customerId: j.customerId, items: [{ desc: j.description, qty: 1, rate: String(j.price), total: j.price }] });
+              else   setForm({ ...form, jobId: e.target.value });
+            }}>
+              <option value="">— None —</option>
+              {jobs.filter(j => j.status === 'completed').map(j => <option key={j.id} value={j.id}>{j.jobNo} — {j.description}</option>)}
+            </Sel>
+            <Inp label="Due Date" type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })} />
+            <h4 style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 700 }}>Line Items</h4>
+            {form.items.map((item, idx) => (
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 6, alignItems: 'end' }}>
+                <Inp placeholder="Description" value={item.desc} onChange={e => updateItem(idx, 'desc', e.target.value)} />
+                <Inp placeholder="Qty" type="number" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
+                <Inp placeholder="Rate (GH₵)" type="number" value={item.rate} onChange={e => updateItem(idx, 'rate', e.target.value)} />
+                <button onClick={() => setForm({ ...form, items: form.items.filter((_,i) => i !== idx) })}
+                  style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '8px 10px', cursor: 'pointer', color: '#dc2626', fontWeight: 700 }}>×</button>
+              </div>
+            ))}
+            <Btn variant="ghost" onClick={() => setForm({ ...form, items: [...form.items, { desc: '', qty: 1, rate: '', total: 0 }] })}>+ Add Line</Btn>
+            <div style={{ textAlign: 'right', fontSize: 17, fontWeight: 800, color: '#2563eb' }}>Total: {fmt(calcTotal(form.items))}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+            <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
+            <Btn onClick={create}>Create Invoice</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ─── FINANCE ──────────────────────────────────────────────────────────────────
+
+function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif }) {
+  const [sf, setSf] = useState({ date: todayStr(), amount: '' });
+  const [ef, setEf] = useState({ date: todayStr(), category: 'Paper', description: '', amount: '' });
+  const [showSF, setShowSF] = useState(false);
+  const [showEF, setShowEF] = useState(false);
+
+  const month = getCurrentMonth();
+  const mSales = sales.filter(s => s.date.startsWith(month)).reduce((a, s) => a + s.amount, 0);
+  const mExp   = expenses.filter(e => e.date.startsWith(month)).reduce((a, e) => a + e.amount, 0);
+
+  const addSale = () => {
+    if (!sf.date || !sf.amount) return;
+    setSales([...sales, { id: `s${Date.now()}`, date: sf.date, amount: parseFloat(sf.amount), jobId: null }]);
+    setSf({ date: todayStr(), amount: '' }); setShowSF(false);
+    addNotif(`Sale of ${fmt(sf.amount)} recorded`, 'success');
+  };
+
+  const addExp = () => {
+    if (!ef.date || !ef.amount) return;
+    setExpenses([...expenses, { id: `e${Date.now()}`, date: ef.date, category: ef.category, description: ef.description, amount: parseFloat(ef.amount) }]);
+    setEf({ date: todayStr(), category: 'Paper', description: '', amount: '' }); setShowEF(false);
+    addNotif(`Expense of ${fmt(ef.amount)} recorded`, 'info');
+  };
+
+  const exportJSON = () => {
+    const data = { exportDate: new Date().toISOString(), month, monthlySales: mSales, monthlyExpenses: mExp, monthlyProfit: mSales - mExp, sales, expenses };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a'); a.href = url; a.download = `finance_${todayStr()}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+
+  const printReport = () => {
+    const w = window.open('', '', 'width=800,height=700');
+    const tSales = sales.reduce((a, s) => a + s.amount, 0);
+    const tExp   = expenses.reduce((a, e) => a + e.amount, 0);
+    w.document.write(`<html><head><title>Financial Report</title></head><body style="font-family:Arial;padding:30px">
+      <h1>🖨️ PRINT SHOP MANAGER — FINANCIAL REPORT</h1>
+      <p style="color:#666">Generated: ${new Date().toLocaleString()}</p>
+      <h2>Monthly Summary — ${month}</h2>
+      <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
+        <tr style="background:#f0f4ff"><th style="padding:10px;border:1px solid #ddd;text-align:left">Metric</th><th style="padding:10px;border:1px solid #ddd;text-align:right">Amount</th></tr>
+        <tr><td style="padding:10px;border:1px solid #ddd">Income</td><td style="padding:10px;border:1px solid #ddd;text-align:right;color:green;font-weight:bold">GH₵${mSales.toFixed(2)}</td></tr>
+        <tr><td style="padding:10px;border:1px solid #ddd">Expenses</td><td style="padding:10px;border:1px solid #ddd;text-align:right;color:red;font-weight:bold">GH₵${mExp.toFixed(2)}</td></tr>
+        <tr style="background:#f0f4ff"><td style="padding:10px;border:1px solid #ddd;font-weight:bold">Net Profit</td><td style="padding:10px;border:1px solid #ddd;text-align:right;font-weight:bold;color:${mSales-mExp>=0?'blue':'red'}">GH₵${(mSales-mExp).toFixed(2)}</td></tr>
+      </table>
+      <h2>All-Time Summary</h2>
+      <p>Total Revenue: <b>GH₵${tSales.toFixed(2)}</b> &nbsp; Total Expenses: <b>GH₵${tExp.toFixed(2)}</b> &nbsp; Net Profit: <b>GH₵${(tSales-tExp).toFixed(2)}</b></p>
+      <h2>Income Records (${sales.length})</h2>
+      <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
+        <tr style="background:#f0f4ff"><th style="padding:8px;border:1px solid #ddd">Date</th><th style="padding:8px;border:1px solid #ddd;text-align:right">Amount</th></tr>
+        ${[...sales].sort((a,b)=>b.date.localeCompare(a.date)).map(s=>`<tr><td style="padding:8px;border:1px solid #ddd">${s.date}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">GH₵${s.amount.toFixed(2)}</td></tr>`).join('')}
+      </table>
+      <h2>Expense Records (${expenses.length})</h2>
+      <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
+        <tr style="background:#f0f4ff"><th style="padding:8px;border:1px solid #ddd">Date</th><th style="padding:8px;border:1px solid #ddd">Category</th><th style="padding:8px;border:1px solid #ddd">Description</th><th style="padding:8px;border:1px solid #ddd;text-align:right">Amount</th></tr>
+        ${[...expenses].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<tr><td style="padding:8px;border:1px solid #ddd">${e.date}</td><td style="padding:8px;border:1px solid #ddd">${e.category}</td><td style="padding:8px;border:1px solid #ddd">${e.description}</td><td style="padding:8px;border:1px solid #ddd;text-align:right">GH₵${e.amount.toFixed(2)}</td></tr>`).join('')}
+      </table>
+    </body></html>`);
+    w.document.close(); w.print();
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Finance</h2>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Btn variant="ghost"    onClick={printReport}>🖨️ Print Report</Btn>
+          <Btn variant="ghost"    onClick={exportJSON}>📥 Export JSON</Btn>
+          <Btn variant="success"  onClick={() => { setShowSF(v=>!v); setShowEF(false); }}>+ Record Sale</Btn>
+          <Btn variant="warning"  onClick={() => { setShowEF(v=>!v); setShowSF(false); }}>+ Add Expense</Btn>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard label="Monthly Income"   value={fmt(mSales)}   accent="#16a34a" />
+        <StatCard label="Monthly Expenses" value={fmt(mExp)}     accent="#dc2626" />
+        <StatCard label="Monthly Profit"   value={fmt(mSales - mExp)} accent={mSales >= mExp ? '#2563eb' : '#dc2626'} />
+        <StatCard label="All-Time Revenue" value={fmt(sales.reduce((a,s)=>a+s.amount,0))} accent="#7c3aed" />
+      </div>
+
+      {showSF && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#15803d' }}>Record Sale</h4>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <Inp label="Date" type="date" value={sf.date} onChange={e => setSf({ ...sf, date: e.target.value })} />
+            <Inp label="Amount (GH₵)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} placeholder="0.00" />
+            <Btn variant="success" onClick={addSale}>Record</Btn>
+            <Btn variant="ghost" onClick={() => setShowSF(false)}>Cancel</Btn>
+          </div>
+        </div>
+      )}
+
+      {showEF && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>Record Expense</h4>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <Inp label="Date" type="date" value={ef.date} onChange={e => setEf({ ...ef, date: e.target.value })} />
+            <Sel label="Category" value={ef.category} onChange={e => setEf({ ...ef, category: e.target.value })}>
+              {['Paper','Ink & Toner','Maintenance','Salaries','Utilities','Other'].map(c => <option key={c}>{c}</option>)}
+            </Sel>
+            <Inp label="Description" value={ef.description} onChange={e => setEf({ ...ef, description: e.target.value })} placeholder="Details…" />
+            <Inp label="Amount (GH₵)" type="number" value={ef.amount} onChange={e => setEf({ ...ef, amount: e.target.value })} placeholder="0.00" />
+            <Btn variant="warning" onClick={addExp}>Record</Btn>
+            <Btn variant="ghost" onClick={() => setShowEF(false)}>Cancel</Btn>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#15803d' }}>💚 Income ({sales.length})</h3>
+          </div>
+          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            {[...sales].sort((a,b) => b.date.localeCompare(a.date)).map(s => (
+              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f9fafb' }}>
+                <span style={{ fontSize: 12, color: '#6b7280' }}>{s.date}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{fmt(s.amount)}</span>
+                <button onClick={() => setSales(sales.filter(x => x.id !== s.id))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>❤️ Expenses ({expenses.length})</h3>
+          </div>
+          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            {[...expenses].sort((a,b) => b.date.localeCompare(a.date)).map(e => (
+              <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f9fafb', gap: 8 }}>
+                <span style={{ fontSize: 12, color: '#6b7280', whiteSpace: 'nowrap' }}>{e.date}</span>
+                <span style={{ fontSize: 11, background: '#f1f5f9', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{e.category}</span>
+                <span style={{ fontSize: 12, flex: 1, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', whiteSpace: 'nowrap' }}>{fmt(e.amount)}</span>
+                <button onClick={() => setExpenses(expenses.filter(x => x.id !== e.id))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── REPORTS ──────────────────────────────────────────────────────────────────
+
+function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
+  const month      = getCurrentMonth();
+  const mSales     = sales.filter(s => s.date.startsWith(month)).reduce((a, s) => a + s.amount, 0);
+  const mExp       = expenses.filter(e => e.date.startsWith(month)).reduce((a, e) => a + e.amount, 0);
+  const tRev       = sales.reduce((a, s) => a + s.amount, 0);
+  const tExp       = expenses.reduce((a, e) => a + e.amount, 0);
+  const doneJobs   = jobs.filter(j => j.status === 'completed');
+  const avgJob     = doneJobs.length ? doneJobs.reduce((a, j) => a + j.price, 0) / doneJobs.length : 0;
+  const margin     = tRev > 0 ? Math.round(((tRev - tExp) / tRev) * 100) : 0;
+
+  // 6-month trend
+  const trend = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(); d.setMonth(d.getMonth() - (5 - i));
+    const m = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    return { label: d.toLocaleString('default', { month: 'short' }), income: sales.filter(s => s.date.startsWith(m)).reduce((a,s)=>a+s.amount,0), expense: expenses.filter(e => e.date.startsWith(m)).reduce((a,e)=>a+e.amount,0) };
+  });
+  const maxTrend = Math.max(...trend.flatMap(t => [t.income, t.expense]), 1);
+
+  // Expense by category
+  const expCats = ['Paper','Ink & Toner','Maintenance','Salaries','Utilities','Other'].map(cat => ({ cat, total: expenses.filter(e => e.category === cat).reduce((a,e)=>a+e.amount,0) })).filter(c => c.total > 0);
+  const maxExp  = Math.max(...expCats.map(c => c.total), 1);
+
+  // Top customers
+  const topCx = customers.map(c => ({ ...c, rev: invoices.filter(i=>i.customerId===c.id).reduce((a,i)=>a+i.amount,0), jobs: jobs.filter(j=>j.customerId===c.id).length })).sort((a,b)=>b.rev-a.rev).slice(0,5);
+
+  // By job type
+  const byType = JOB_TYPES.map(t => ({ type: t, count: jobs.filter(j=>j.type===t).length, rev: jobs.filter(j=>j.type===t).reduce((a,j)=>a+j.price,0) })).filter(t=>t.count>0).sort((a,b)=>b.rev-a.rev);
+  const CHART_COLORS = ['#2563eb','#16a34a','#f59e0b','#dc2626','#7c3aed','#0891b2'];
+
+  return (
+    <div>
+      <h2 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 800 }}>Reports & Analytics</h2>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 24 }}>
+        <StatCard label="Total Revenue"  value={fmt(tRev)}            accent="#16a34a" />
+        <StatCard label="Total Expenses" value={fmt(tExp)}            accent="#dc2626" />
+        <StatCard label="Net Profit"     value={fmt(tRev - tExp)}     accent={tRev>=tExp?'#2563eb':'#dc2626'} />
+        <StatCard label="Profit Margin"  value={`${margin}%`}         accent="#7c3aed" />
+        <StatCard label="Avg Job Value"  value={fmt(avgJob)}          accent="#f59e0b" />
+        <StatCard label="Jobs Completed" value={doneJobs.length}      accent="#0891b2" />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+        {/* 6-month trend */}
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Income vs Expenses — 6 Months</h3>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height: 140 }}>
+            {trend.map((t, i) => (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 110 }}>
+                  <div style={{ width: 12, background: '#16a34a', borderRadius: '2px 2px 0 0', height: `${Math.max(2, Math.round((t.income/maxTrend)*100))}px` }} title={`Income: ${fmt(t.income)}`} />
+                  <div style={{ width: 12, background: '#dc2626', borderRadius: '2px 2px 0 0', height: `${Math.max(2, Math.round((t.expense/maxTrend)*100))}px` }} title={`Expense: ${fmt(t.expense)}`} />
+                </div>
+                <span style={{ fontSize: 10, color: '#6b7280' }}>{t.label}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+            {[['#16a34a','Income'],['#dc2626','Expenses']].map(([col,lbl]) => (
+              <span key={lbl} style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 10, height: 10, background: col, display: 'inline-block', borderRadius: 2 }} />{lbl}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Expense breakdown */}
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Expense Breakdown</h3>
+          {expCats.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>No expenses recorded</p>}
+          {expCats.map((c, i) => (
+            <div key={c.cat} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ width: 80, fontSize: 12, color: '#374151' }}>{c.cat}</span>
+              <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 4, height: 10 }}>
+                <div style={{ width: `${Math.round((c.total/maxExp)*100)}%`, background: CHART_COLORS[i % CHART_COLORS.length], height: 10, borderRadius: 4 }} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600, width: 90, textAlign: 'right' }}>{fmt(c.total)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        {/* Top customers */}
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>🏆 Top Customers</h3>
+          {topCx.map((c, i) => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <span style={{ width: 24, height: 24, background: i === 0 ? '#fef3c7' : '#f1f5f9', color: i === 0 ? '#b45309' : '#2563eb', borderRadius: '50%', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i+1}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{c.jobs} job(s)</div>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{fmt(c.rev)}</span>
+            </div>
+          ))}
+          {topCx.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>No customer data</p>}
+        </div>
+
+        {/* Revenue by job type */}
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Revenue by Job Type</h3>
+          {byType.map((t, i) => (
+            <div key={t.type} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ width: 12, height: 12, background: CHART_COLORS[i % CHART_COLORS.length], borderRadius: 2, display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 13 }}>{t.type} <span style={{ color: '#9ca3af', fontSize: 11 }}>({t.count})</span></span>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>{fmt(t.rev)}</span>
+            </div>
+          ))}
+          {byType.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>No job data yet</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
