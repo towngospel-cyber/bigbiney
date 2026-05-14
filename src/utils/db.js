@@ -1,8 +1,8 @@
 /* eslint-disable */
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_PUBLISHABLE_KEY='sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
-const SUPABASE_SECRET_KEY='sb_secret_wdOaMMVqEMztopFFeDhDOA_F0VWRnms';
+const VITE_SUPABASE_URL='https://uqprhvcolkohgbnnfrgq.supabase.co';
+const VITE_SUPABASE_PUBLISHABLE_KEY='sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
 
 const db = {
   async signup(email, password, name, role = 'user') {
