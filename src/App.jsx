@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import db from './utils/db'; // Import your Supabase connection
+import db from 'utils/db'; // Import your Supabase connection
 
 // Then you can use it like:
 // db.getCustomers(userId)
@@ -7,10 +7,20 @@ import db from './utils/db'; // Import your Supabase connection
 // etc.
 // ─── INITIAL DATA ────────────────────────────────────────────────────────────
 
-const ACCOUNTS = [
-  { id: 1, email: 'admin@printshop.com', password: 'admin123', name: 'Admin User', role: 'admin' },
-  { id: 2, email: 'user@printshop.com', password: 'user123', name: 'Standard User', role: 'user' },
-];
+import db from 'utils/db';
+
+const handleLogin = async () => {
+  const { data, error } = await db.signin(loginData.email, loginData.password);
+  
+  if (error) {
+    setLoginError(error);
+  } else {
+    setCurrentUser(data.user);
+    // Now load data from Supabase instead of localStorage
+    const { data: customers } = await db.getCustomers(data.user.id);
+    setCustomers(customers);
+  }
+};
 
 const INIT_CUSTOMERS = [
   { id: 'c1', name: 'TechStart Inc', email: 'techstart@email.com', phone: '0244000001', address: 'Accra, Ghana', totalOrders: 3, totalSpent: 5800 },
