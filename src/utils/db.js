@@ -50,9 +50,15 @@ const db = {
 
   subscribeToTable(table, userId, onInsert, onUpdate, onDelete) {
     const channel = supabase.channel(`${table}-${userId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => onInsert(p.new))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => onUpdate(p.new))
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => onDelete(p.old))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => {
+        if (p.new && p.new.id) onInsert(p.new);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => {
+        if (p.new && p.new.id) onUpdate(p.new);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => {
+        if (p.old && p.old.id) onDelete(p.old);
+      })
       .subscribe();
     return () => supabase.removeChannel(channel);
   },
