@@ -8,6 +8,7 @@ npm install @supabase/supabase-js
 export const SUPABASE_URL = 'https://uqprhvcolkohgbnnfrgq.supabase.co/rest/v1/';
 export const SUPABASE_ANON_KEY = 'sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
 
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ─── AUTHENTICATION ───────────────────────────────────────────────────────
 const db = {
   // Sign up / Register
