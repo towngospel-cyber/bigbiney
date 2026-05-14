@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import db, { supabase } from './utils/db';
 
 // ─── STATIC DATA (no longer stored in localStorage) ───────────────────────
 const MACHINES   = ['Heidelberg SM52', 'Screen Press 1', 'Screen Press 2', 'Xerox Versant', 'Large Format Printer', 'Guillotine'];
