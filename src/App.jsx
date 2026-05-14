@@ -1,26 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import db from './utils/db'; // Import your Supabase connection
 
-// Then you can use it like:
-// db.getCustomers(userId)
-// db.addJob(userId, jobData)
-// etc.
-// ─── INITIAL DATA ────────────────────────────────────────────────────────────
-
-import db from './utils/db';
-
-const handleLogin = async () => {
-  const { data, error } = await db.signin(loginData.email, loginData.password);
-  
-  if (error) {
-    setLoginError(error);
-  } else {
-    setCurrentUser(data.user);
-    // Now load data from Supabase instead of localStorage
-    const { data: customers } = await db.getCustomers(data.user.id);
-    setCustomers(customers);
-  }
-};
 
 const INIT_CUSTOMERS = [
   { id: 'c1', name: 'TechStart Inc', email: 'techstart@email.com', phone: '0244000001', address: 'Accra, Ghana', totalOrders: 3, totalSpent: 5800 },
