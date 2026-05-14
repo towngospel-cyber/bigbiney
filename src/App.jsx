@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import db from 'utils/db'; // Import your Supabase connection
+import db from './utils/db'; // Import your Supabase connection
 
 // Then you can use it like:
 // db.getCustomers(userId)
@@ -7,7 +7,7 @@ import db from 'utils/db'; // Import your Supabase connection
 // etc.
 // ─── INITIAL DATA ────────────────────────────────────────────────────────────
 
-import db from 'utils/db';
+import db from './utils/db';
 
 const handleLogin = async () => {
   const { data, error } = await db.signin(loginData.email, loginData.password);
