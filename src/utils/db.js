@@ -1,6 +1,4 @@
 /* eslint-disable */
-import { createClient } from '@supabase/supabase-js';
-
 const VITE_SUPABASE_URL='https://uqprhvcolkohgbnnfrgq.supabase.co';
 const VITE_SUPABASE_PUBLISHABLE_KEY='sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
 
