@@ -1,8 +1,8 @@
 /* eslint-disable */
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://uqprhvcolkohgbnnfrgq.supabase.co';
-const SUPABASE_ANON_KEY = '5yPsvdSG7f7fytEx3bBZ0AwNktfyGKrK640b5gsNY3sqYWg4wZWXlH6+DPTFpFOU+Gl4QHqQtKVRlawSaF3Iiw==';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
+const SUPABASE_SECRET_KEY='sb_secret_wdOaMMVqEMztopFFeDhDOA_F0VWRnms';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
