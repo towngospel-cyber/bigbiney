@@ -5,13 +5,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Initialize Supabase client
 // Get these values from your Supabase project settings
-const SUPABASE_URL = 'https://uqprhvcolkohgbnnfrgq.supabase.co/rest/v1/';
-const SUPABASE_ANON_KEY = 'sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
+export const SUPABASE_URL = 'https://uqprhvcolkohgbnnfrgq.supabase.co/rest/v1/';
+export const SUPABASE_ANON_KEY = 'sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ─── AUTHENTICATION ───────────────────────────────────────────────────────
-export const db = {
+const db = {
   // Sign up / Register
   async signup(email, password, name, role = 'user') {
     const { data: authData, error: authError } = await supabase.auth.signUp({
