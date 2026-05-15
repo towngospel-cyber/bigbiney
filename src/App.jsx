@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import db, { supabase } from './utils/db';
 
-// \u2500\u2500\u2500 STATIC DATA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// \u2500\u2500\u2500STATICDATA\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const MACHINES   = ['Heidelberg SM52', 'Screen Press 1', 'Screen Press 2', 'Xerox Versant', 'Large Format Printer', 'Guillotine'];
 const JOB_TYPES  = ['Offset', 'Digital', 'Screen Print', 'Large Format', 'Finishing', 'Other'];
 const JOB_STATUSES = ['quoting', 'queued', 'in-progress', 'on-hold', 'completed', 'cancelled'];
@@ -9,7 +9,7 @@ const DELIVERY_STATUSES = ['pending', 'ready', 'out-for-delivery', 'delivered', 
 const STAFF_LIST = ['Unassigned', 'Kwame', 'Ama', 'Kofi', 'Abena', 'Yaw', 'Akosua'];
 const ADMIN_WHATSAPP = '+233246307773';
 
-// \u2500\u2500\u2500 HELPERS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// \u2500\u2500\u2500HELPERS\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const fmt = (n) => `GH\u20b5${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const todayStr = () => new Date().toISOString().split('T')[0];
 const getCurrentMonth = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; };
@@ -37,7 +37,7 @@ const DELIVERY_COLORS = {
   collected:        { bg: '#f0fdf4', color: '#15803d' },
 };
 
-// \u2500\u2500\u2500 MINI COMPONENTS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// \u2500\u2500\u2500MINICOMPONENTS\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const Badge = ({ text, type = 'status' }) => {
   const c = type === 'status' ? (STATUS_COLORS[text] || {}) : type === 'priority' ? (PRIORITY_COLORS[text] || {}) : (DELIVERY_COLORS[text] || {});
   return (
@@ -109,7 +109,7 @@ const TD = ({ children, style: s }) => (
   <td style={{ padding: '10px 12px', fontSize: 13, borderBottom: '1px solid #f1f5f9', ...s }}>{children}</td>
 );
 
-// \u2500\u2500\u2500 WHATSAPP HELPERS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// \u2500\u2500\u2500WHATSAPPHELPERS\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const openWhatsApp = (phone, message) => {
   const clean = phone.replace(/\D/g, '');
   const num = clean.startsWith('0') ? '233' + clean.slice(1) : clean;
@@ -185,7 +185,7 @@ const generateWeeklySummaryMsg = (sales, expenses, jobs) => {
     `_Sent automatically from PrintShop Manager_`;
 };
 
-// \u2500\u2500\u2500 MAIN APP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// \u2500\u2500\u2500 MAIN APP\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export default function PrintingPressSystem() {
   const [currentUser, setCurrentUser]   = useState(null);
   const [loginData,   setLoginData]     = useState({ email: '', password: '' });
@@ -859,15 +859,27 @@ function WhatsAppMsgModal({ job, onClose }) {
 const EMPTY_CX = { name: '', email: '', phone: '', address: '', whatsapp: '' };
 
 function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userId }) {
-  const [modal,    setModal]    = useState(false);
-  const [form,     setForm]     = useState(EMPTY_CX);
-  const [editId,   setEditId]   = useState(null);
-  const [search,   setSearch]   = useState('');
-  const [selected, setSelected] = useState(null);
-  const [saving,   setSaving]   = useState(false);
+  const [modal,        setModal]        = useState(false);
+  const [importModal,  setImportModal]  = useState(false);
+  const [form,         setForm]         = useState(EMPTY_CX);
+  const [editId,       setEditId]       = useState(null);
+  const [search,       setSearch]       = useState('');
+  const [selected,     setSelected]     = useState(null);
+  const [saving,       setSaving]       = useState(false);
+  const [importTab,    setImportTab]    = useState('phone');
+  const [importList,   setImportList]   = useState([]);   // staged contacts to review
+  const [bulkText,     setBulkText]     = useState('');
+  const [importing,    setImporting]    = useState(false);
+  const [csvError,     setCsvError]     = useState('');
 
-  const filtered = customers.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.email||'').toLowerCase().includes(search.toLowerCase()));
+  const filtered = customers.filter(c =>
+    !search ||
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    (c.email||'').toLowerCase().includes(search.toLowerCase()) ||
+    (c.phone||'').includes(search)
+  );
 
+  // \u2500\u2500 Save single customer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   const save = async () => {
     if (!form.name) return;
     setSaving(true);
@@ -876,7 +888,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
       if (!error) setCustomers(customers.map(c => c.id === editId ? data : c));
     } else {
       const { data, error } = await db.addCustomer(userId, form);
-      if (!error) { setCustomers([...customers, data]); addNotif(`${form.name} added`, 'success'); }
+      if (!error) { setCustomers(prev => [...prev, data]); addNotif(`${form.name} added`, 'success'); }
     }
     setSaving(false); setModal(false); setForm(EMPTY_CX); setEditId(null);
   };
@@ -886,38 +898,167 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
     if (!error) setCustomers(customers.filter(x => x.id !== id));
   };
 
+  // \u2500\u2500 Bulk save staged contacts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const saveImportList = async () => {
+    if (!importList.length) return;
+    setImporting(true);
+    const toAdd = importList.filter(c => c.selected);
+    let added = 0;
+    for (const c of toAdd) {
+      const exists = customers.some(x =>
+        x.name.toLowerCase() === c.name.toLowerCase() ||
+        (c.phone && x.phone === c.phone)
+      );
+      if (!exists) {
+        const { data, error } = await db.addCustomer(userId, {
+          name: c.name, phone: c.phone || '', email: c.email || '',
+          whatsapp: c.whatsapp || c.phone || '', address: ''
+        });
+        if (!error && data) { setCustomers(prev => [...prev, data]); added++; }
+      }
+    }
+    addNotif(`${added} customer(s) imported successfully`, 'success');
+    setImporting(false); setImportModal(false); setImportList([]); setBulkText('');
+  };
+
+  // \u2500\u2500 1. Phone Contact Picker API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const importFromPhone = async () => {
+    if (!('contacts' in navigator && 'ContactsManager' in window)) {
+      alert('Contact Picker is only supported on Android Chrome. Try CSV or manual import instead.');
+      return;
+    }
+    try {
+      const props = ['name', 'tel', 'email'];
+      const contacts = await navigator.contacts.select(props, { multiple: true });
+      const staged = contacts.map(c => ({
+        id: Math.random().toString(36).slice(2),
+        name:     (c.name?.[0] || 'Unknown').trim(),
+        phone:    (c.tel?.[0]  || '').trim(),
+        email:    (c.email?.[0]|| '').trim(),
+        whatsapp: (c.tel?.[0]  || '').trim(),
+        selected: true,
+        source: 'phone',
+      })).filter(c => c.name && c.name !== 'Unknown');
+      if (!staged.length) { addNotif('No contacts selected', 'info'); return; }
+      setImportList(staged);
+    } catch (e) {
+      addNotif('Contact picker cancelled or failed', 'info');
+    }
+  };
+
+  // \u2500\u2500 2. CSV import \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const handleCsvFile = (e) => {
+    setCsvError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text   = ev.target.result;
+        const lines  = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const header = lines[0].toLowerCase().split(',').map(h => h.replace(/"/g,'').trim());
+
+        const nameIdx  = header.findIndex(h => h.includes('name'));
+        const phoneIdx = header.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('tel'));
+        const emailIdx = header.findIndex(h => h.includes('email') || h.includes('mail'));
+
+        if (nameIdx === -1) { setCsvError('CSV must have a "Name" column'); return; }
+
+        const staged = lines.slice(1).map((line, i) => {
+          const cols = line.split(',').map(c => c.replace(/"/g,'').trim());
+          return {
+            id: `csv_${i}`,
+            name:     cols[nameIdx]  || '',
+            phone:    phoneIdx  >= 0 ? cols[phoneIdx]  : '',
+            email:    emailIdx  >= 0 ? cols[emailIdx]  : '',
+            whatsapp: phoneIdx  >= 0 ? cols[phoneIdx]  : '',
+            selected: true,
+            source: 'csv',
+          };
+        }).filter(c => c.name);
+
+        if (!staged.length) { setCsvError('No valid rows found in CSV'); return; }
+        setImportList(staged);
+      } catch {
+        setCsvError('Could not parse CSV. Make sure it is a valid CSV file.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // \u2500\u2500 3. Manual bulk paste \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const parseBulkText = () => {
+    const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean);
+    const staged = lines.map((line, i) => {
+      // Support: "Name, Phone", "Name - Phone", "Name Phone" or just "Name"
+      const parts = line.split(/[,\-\t]/).map(p => p.trim());
+      const name  = parts[0] || '';
+      const phone = parts[1] || '';
+      return { id: `bulk_${i}`, name, phone, email: '', whatsapp: phone, selected: true, source: 'manual' };
+    }).filter(c => c.name);
+    if (!staged.length) { addNotif('No valid entries found. Use format: Name, Phone', 'info'); return; }
+    setImportList(staged);
+  };
+
+  const toggleContact = (id) =>
+    setImportList(list => list.map(c => c.id === id ? { ...c, selected: !c.selected } : c));
+
+  const selectedCount = importList.filter(c => c.selected).length;
+  const dupCount = importList.filter(c =>
+    customers.some(x =>
+      x.name.toLowerCase() === c.name.toLowerCase() ||
+      (c.phone && x.phone === c.phone)
+    )
+  ).length;
+
   return (
     <div>
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Customer CRM</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="\ud83d\udd0d Search\u2026" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="\ud83d\udd0d Search name, email, phone\u2026"
+            style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13, minWidth: 200 }} />
+          <Btn variant="ghost" onClick={() => { setImportList([]); setBulkText(''); setCsvError(''); setImportModal(true); }}>
+            \ud83d\udce5 Import Contacts
+          </Btn>
           <Btn onClick={() => { setForm(EMPTY_CX); setEditId(null); setModal(true); }}>+ Add Customer</Btn>
         </div>
       </div>
 
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard label="Total Customers" value={customers.length} accent="#2563eb" />
+        <StatCard label="With WhatsApp"   value={customers.filter(c => c.whatsapp).length} accent="#25D366" />
+        <StatCard label="Active (have jobs)" value={[...new Set(jobs.map(j => j.customer_id))].filter(Boolean).length} accent="#f59e0b" />
+        <StatCard label="Outstanding"     value={fmt(invoices.filter(i=>i.status!=='paid').reduce((a,i)=>a+(i.amount-i.paid),0))} accent="#dc2626" />
+      </div>
+
+      {/* Main table + detail panel */}
       <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 380px' : '1fr', gap: 20 }}>
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Name','Email','Phone','WhatsApp','Jobs','Revenue','Outstanding','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
             <tbody>
               {filtered.map(c => {
-                const cJobs = jobs.filter(j => j.customer_id === c.id);
-                const cRev  = invoices.filter(i => i.customer_id === c.id).reduce((a, i) => a + (i.paid||0), 0);
+                const cJobs        = jobs.filter(j => j.customer_id === c.id);
+                const cRev         = invoices.filter(i => i.customer_id === c.id).reduce((a, i) => a + (i.paid||0), 0);
                 const cOutstanding = invoices.filter(i => i.customer_id === c.id && i.status !== 'paid').reduce((a, i) => a + (i.amount - i.paid), 0);
                 return (
                   <tr key={c.id} onClick={() => setSelected(selected?.id === c.id ? null : c)}
                     style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selected?.id === c.id ? '#eff6ff' : 'transparent' }}>
                     <TD style={{ fontWeight: 600 }}>{c.name}</TD>
-                    <TD style={{ color: '#6b7280' }}>{c.email}</TD>
-                    <TD>{c.phone}</TD>
+                    <TD style={{ color: '#6b7280', fontSize: 12 }}>{c.email || '\u2014'}</TD>
+                    <TD>{c.phone || '\u2014'}</TD>
                     <TD>
                       {(c.whatsapp || c.phone) ? (
                         <button onClick={e => { e.stopPropagation(); openWhatsApp(c.whatsapp || c.phone, `Hi ${c.name}!`); }}
                           style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
                           \ud83d\udcac Chat
                         </button>
-                      ) : '\u2014'}
+                      ) : <span style={{ color: '#fca5a5', fontSize: 11 }}>No number</span>}
                     </TD>
                     <TD>{cJobs.length}</TD>
                     <TD style={{ fontWeight: 600, color: '#16a34a' }}>{fmt(cRev)}</TD>
@@ -926,32 +1067,39 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
                     </TD>
                     <TD>
                       <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
-                        <Btn variant="ghost" small onClick={() => { setForm({ name: c.name, email: c.email, phone: c.phone, address: c.address, whatsapp: c.whatsapp||'' }); setEditId(c.id); setModal(true); }}>Edit</Btn>
+                        <Btn variant="ghost" small onClick={() => {
+                          setForm({ name: c.name, email: c.email||'', phone: c.phone||'', address: c.address||'', whatsapp: c.whatsapp||'' });
+                          setEditId(c.id); setModal(true);
+                        }}>Edit</Btn>
                         <Btn variant="danger" small onClick={() => del(c.id)}>Del</Btn>
                       </div>
                     </TD>
                   </tr>
                 );
               })}
+              {filtered.length === 0 && (
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No customers found</td></tr>
+              )}
             </tbody>
           </table>
         </div>
 
+        {/* Detail panel */}
         {selected && (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{selected.name}</h3>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20 }}>\u00d7</button>
             </div>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>\ud83d\udce7 {selected.email}</p>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>\ud83d\udcde {selected.phone}</p>
-            {selected.whatsapp && (
-              <button onClick={() => openWhatsApp(selected.whatsapp, `Hi ${selected.name}!`)}
-                style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>\ud83d\udce7 {selected.email || 'No email'}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 6px' }}>\ud83d\udcde {selected.phone || 'No phone'}</p>
+            {(selected.whatsapp || selected.phone) && (
+              <button onClick={() => openWhatsApp(selected.whatsapp || selected.phone, `Hi ${selected.name}!`)}
+                style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 10, display: 'block' }}>
                 \ud83d\udcac Open WhatsApp
               </button>
             )}
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>\ud83d\udccd {selected.address}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>\ud83d\udccd {selected.address || 'No address'}</p>
             <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: 8 }}>Job History</h4>
             {jobs.filter(j => j.customer_id === selected.id).map(j => (
               <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', borderRadius: 6, marginBottom: 6 }}>
@@ -965,10 +1113,13 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
                 </div>
               </div>
             ))}
+            {jobs.filter(j => j.customer_id === selected.id).length === 0 &&
+              <p style={{ fontSize: 12, color: '#9ca3af' }}>No jobs yet</p>}
           </div>
         )}
       </div>
 
+      {/* \u2500\u2500 Add / Edit Modal \u2500\u2500 */}
       {modal && (
         <Modal title={editId ? 'Edit Customer' : 'Add Customer'} onClose={() => { setModal(false); setForm(EMPTY_CX); setEditId(null); }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -982,6 +1133,166 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
             <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_CX); setEditId(null); }}>Cancel</Btn>
             <Btn onClick={save} disabled={saving}>{saving ? 'Saving\u2026' : editId ? 'Save Changes' : 'Add Customer'}</Btn>
           </div>
+        </Modal>
+      )}
+
+      {/* \u2500\u2500 Import Modal \u2500\u2500 */}
+      {importModal && (
+        <Modal title="\ud83d\udce5 Import Contacts" onClose={() => { setImportModal(false); setImportList([]); setBulkText(''); }} wide>
+          {/* Import method tabs */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 20, borderBottom: '1px solid #e5e7eb', paddingBottom: 14 }}>
+            {[
+              { id: 'phone',  label: '\ud83d\udcf1 Phone Contacts' },
+              { id: 'csv',    label: '\ud83d\udcc4 CSV File' },
+              { id: 'manual', label: '\u270f\ufe0f Paste / Manual' },
+            ].map(t => (
+              <button key={t.id} onClick={() => { setImportTab(t.id); setImportList([]); setBulkText(''); setCsvError(''); }}
+                style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  background: importTab === t.id ? '#2563eb' : '#fff',
+                  color:      importTab === t.id ? '#fff'    : '#6b7280',
+                  borderColor: importTab === t.id ? '#2563eb' : '#e5e7eb' }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* \u2500\u2500 Phone Contacts \u2500\u2500 */}
+          {importTab === 'phone' && importList.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '30px 20px' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>\ud83d\udcf1</div>
+              <h3 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700 }}>Import from Phone</h3>
+              <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 6 }}>
+                Uses your browser\u2019s Contact Picker API. Works on <strong>Android Chrome</strong>.
+              </p>
+              <p style={{ color: '#9ca3af', fontSize: 12, marginBottom: 20 }}>
+                You\u2019ll see your phone\u2019s contact list and can select who to import.
+              </p>
+              <button onClick={importFromPhone}
+                style={{ background: '#2563eb', border: 'none', color: '#fff', borderRadius: 8, padding: '12px 28px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                \ud83d\udcf1 Open Phone Contacts
+              </button>
+              <p style={{ marginTop: 16, fontSize: 11, color: '#9ca3af' }}>
+                Not working? Your browser may not support it. Use CSV or manual import instead.
+              </p>
+            </div>
+          )}
+
+          {/* \u2500\u2500 CSV Upload \u2500\u2500 */}
+          {importTab === 'csv' && importList.length === 0 && (
+            <div style={{ padding: '10px 0' }}>
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700, color: '#0369a1' }}>\ud83d\udca1 How to export contacts as CSV:</p>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#0369a1', lineHeight: 1.8 }}>
+                  <li><strong>Gmail:</strong> contacts.google.com \u2192 Export \u2192 Google CSV</li>
+                  <li><strong>iPhone:</strong> Use an app like \u201cContacts to CSV\u201d from App Store</li>
+                  <li><strong>Android:</strong> Contacts app \u2192 Menu \u2192 Export \u2192 .vcf, then convert online</li>
+                  <li><strong>WhatsApp Business:</strong> Settings \u2192 Business Tools \u2192 Contacts \u2192 Export</li>
+                  <li><strong>Excel / Sheets:</strong> Save as CSV with columns: Name, Phone, Email</li>
+                </ul>
+              </div>
+              {csvError && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#dc2626' }}>
+                  \u26a0\ufe0f {csvError}
+                </div>
+              )}
+              <label style={{ display: 'block', border: '2px dashed #d1d5db', borderRadius: 8, padding: '32px 20px', textAlign: 'center', cursor: 'pointer', background: '#fafafa' }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>\ud83d\udcc4</div>
+                <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#374151' }}>Click to upload CSV file</p>
+                <p style={{ margin: 0, fontSize: 12, color: '#9ca3af' }}>Supports Gmail, Google Contacts, Excel exports</p>
+                <input type="file" accept=".csv,.txt" onChange={handleCsvFile} style={{ display: 'none' }} />
+              </label>
+            </div>
+          )}
+
+          {/* \u2500\u2500 Manual / Paste \u2500\u2500 */}
+          {importTab === 'manual' && importList.length === 0 && (
+            <div style={{ padding: '10px 0' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, marginBottom: 14 }}>
+                <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700 }}>Format (one per line):</p>
+                <code style={{ fontSize: 12, color: '#6b7280', lineHeight: 2 }}>
+                  John Mensah, +233244123456<br/>
+                  Ama Owusu, 0201234567<br/>
+                  Kofi Boateng<br/>
+                  Abena Asante - 0551234567
+                </code>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+                  Paste names and numbers (one per line):
+                </label>
+                <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} rows={10}
+                  placeholder={'John Mensah, +233244123456\nAma Owusu, 0201234567\nKofi Boateng'}
+                  style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'monospace' }} />
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <Btn onClick={parseBulkText} disabled={!bulkText.trim()}>Parse Contacts \u2192</Btn>
+              </div>
+            </div>
+          )}
+
+          {/* \u2500\u2500 Review & Confirm staged contacts \u2500\u2500 */}
+          {importList.length > 0 && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Review {importList.length} contacts</h4>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#6b7280' }}>
+                    {selectedCount} selected \u00b7 {dupCount} already in your list (will be skipped)
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setImportList(l => l.map(c => ({ ...c, selected: true })))}
+                    style={{ fontSize: 12, background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: 700 }}>
+                    Select All
+                  </button>
+                  <button onClick={() => setImportList(l => l.map(c => ({ ...c, selected: false })))}
+                    style={{ fontSize: 12, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontWeight: 700 }}>
+                    None
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ maxHeight: 320, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, marginBottom: 16 }}>
+                {importList.map(c => {
+                  const isDup = customers.some(x =>
+                    x.name.toLowerCase() === c.name.toLowerCase() ||
+                    (c.phone && x.phone === c.phone)
+                  );
+                  return (
+                    <div key={c.id} onClick={() => !isDup && toggleContact(c.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: '1px solid #f1f5f9',
+                        background: isDup ? '#f8fafc' : c.selected ? '#f0fdf4' : '#fff',
+                        cursor: isDup ? 'default' : 'pointer', opacity: isDup ? 0.6 : 1 }}>
+                      <input type="checkbox" checked={c.selected && !isDup} disabled={isDup} onChange={() => toggleContact(c.id)}
+                        style={{ accentColor: '#16a34a', width: 16, height: 16 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700 }}>{c.name}</div>
+                        <div style={{ fontSize: 11, color: '#6b7280' }}>
+                          {c.phone && <span>\ud83d\udcde {c.phone}</span>}
+                          {c.email && <span style={{ marginLeft: 8 }}>\ud83d\udce7 {c.email}</span>}
+                        </div>
+                      </div>
+                      {isDup && <span style={{ fontSize: 10, background: '#f1f5f9', color: '#6b7280', borderRadius: 4, padding: '2px 6px', fontWeight: 700 }}>ALREADY EXISTS</span>}
+                      <span style={{ fontSize: 10, color: '#9ca3af' }}>{c.source}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
+                <button onClick={() => setImportList([])}
+                  style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 13 }}>
+                  \u2190 Back
+                </button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Btn variant="ghost" onClick={() => { setImportModal(false); setImportList([]); }}>Cancel</Btn>
+                  <Btn variant="success" onClick={saveImportList} disabled={importing || selectedCount === 0}>
+                    {importing ? 'Importing\u2026' : `Import ${selectedCount} Contact${selectedCount !== 1 ? 's' : ''}`}
+                  </Btn>
+                </div>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
     </div>
@@ -2244,4 +2555,4 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
       )}
     </div>
   );
-    }
+}
