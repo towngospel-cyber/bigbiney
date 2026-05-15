@@ -178,6 +178,14 @@ export default function PrintingPressSystem() {
   useEffect(() => {
     if (!currentUser) return;
     const unsubs = [
+      db.subscribeToTable('recurring_expenses', currentUser.id,
+      (r) => setRecurringExpenses(p => [...p.filter(x=>x.id!==r.id), r]),
+      (r) => setRecurringExpenses(p => p.map(x=>x.id===r.id?r:x)),
+      (r) => setRecurringExpenses(p => p.filter(x=>x.id!==r.id))),
+    db.subscribeToTable('job_materials', currentUser.id,
+      (r) => setJobMaterials(p => [...p.filter(x=>x.id!==r.id), r]),
+      (r) => setJobMaterials(p => p.map(x=>x.id===r.id?r:x)),
+      (r) => setJobMaterials(p => p.filter(x=>x.id!==r.id))),
       db.subscribeToTable('customers', currentUser.id, (r) => setCustomers(p => [...p.filter(x=>x.id!==r.id), r]), (r) => setCustomers(p => p.map(x=>x.id===r.id?r:x)), (r) => setCustomers(p => p.filter(x=>x.id!==r.id))),
       db.subscribeToTable('jobs',      currentUser.id, (r) => setJobs(p => [...p.filter(x=>x.id!==r.id), r]),      (r) => setJobs(p => p.map(x=>x.id===r.id?r:x)),      (r) => setJobs(p => p.filter(x=>x.id!==r.id))),
       db.subscribeToTable('inventory', currentUser.id, (r) => setInventory(p => [...p.filter(x=>x.id!==r.id), r]), (r) => setInventory(p => p.map(x=>x.id===r.id?r:x)), (r) => setInventory(p => p.filter(x=>x.id!==r.id))),
