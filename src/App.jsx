@@ -1979,62 +1979,59 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
 // \u2500\u2500\u2500 LOANS TAB (local storage only) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const EMPTY_LOAN = { name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' };
 
-function LoansTab({ loans, saveLoans, addNotif }) {
+function LoansTab({ loans, setLoans, addNotif, userId }) {
   const [modal, setModal] = useState(false);
-  const [form, setForm]   = useState(EMPTY_LOAN);
+  const [form, setForm]   = useState({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' });
   const [editId, setEditId] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const totalBorrowed = loans.filter(l => l.type === 'borrowed').reduce((a, l) => a + (l.amount - l.paid), 0);
   const totalLent     = loans.filter(l => l.type === 'lent').reduce((a, l) => a + (l.amount - l.paid), 0);
 
-  const save = () => {
+  const save = async () => {
     if (!form.name || !form.amount) return;
+    setSaving(true);
     const loan = { ...form, amount: parseFloat(form.amount)||0, rate: parseFloat(form.rate)||0, paid: parseFloat(form.paid)||0 };
     if (editId) {
-      saveLoans(loans.map(l => l.id === editId ? { ...loan, id: editId } : l));
-      addNotif('Loan updated', 'success');
+      const { data, error } = await db.updateLoan(editId, loan);
+      if (!error) { setLoans(loans.map(l => l.id === editId ? data : l)); addNotif('Loan updated', 'success'); }
     } else {
-      saveLoans([...loans, { ...loan, id: `loan_${Date.now()}` }]);
-      addNotif('Loan recorded', 'success');
+      const { data, error } = await db.addLoan(userId, loan);
+      if (!error) { setLoans([...loans, data]); addNotif('Loan recorded', 'success'); }
     }
-    setModal(false); setForm(EMPTY_LOAN); setEditId(null);
+    setSaving(false); setModal(false); setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' }); setEditId(null);
   };
 
-  const del = (id) => {
+  const del = async (id) => {
     if (!window.confirm('Delete this loan?')) return;
-    saveLoans(loans.filter(l => l.id !== id));
+    const { error } = await db.deleteLoan(id);
+    if (!error) setLoans(loans.filter(l => l.id !== id));
   };
 
-  const recordPayment = (id) => {
-    const raw = prompt('Enter payment amount (GH\u20b5):');
+  const recordPayment = async (id) => {
+    const raw = prompt('Enter payment amount (GH₵):');
     const amt = parseFloat(raw);
     if (!amt || isNaN(amt)) return;
-    saveLoans(loans.map(l => {
-      if (l.id !== id) return l;
-      const newPaid = Math.min(l.paid + amt, l.amount);
-      return { ...l, paid: newPaid };
-    }));
-    addNotif(`Payment of ${fmt(amt)} recorded`, 'success');
+    const loan = loans.find(l => l.id === id);
+    const newPaid = Math.min(loan.paid + amt, loan.amount);
+    const { data, error } = await db.updateLoan(id, { paid: newPaid });
+    if (!error) { setLoans(loans.map(l => l.id === id ? data : l)); addNotif(`Payment of ${fmt(amt)} recorded`, 'success'); }
   };
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>\ud83c\udfe6 Loans & Credit</h2>
-        <Btn onClick={() => { setForm(EMPTY_LOAN); setEditId(null); setModal(true); }}>+ Add Loan</Btn>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>🏦 Loans & Credit</h2>
+        <Btn onClick={() => { setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' }); setEditId(null); setModal(true); }}>+ Add Loan</Btn>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Total Borrowed" value={fmt(totalBorrowed)} accent="#dc2626" />
-        <StatCard label="Total Lent Out" value={fmt(totalLent)}     accent="#f59e0b" />
-        <StatCard label="Active Loans"   value={loans.filter(l => l.paid < l.amount).length} accent="#2563eb" />
+        <StatCard label="Total Lent Out" value={fmt(totalLent)} accent="#f59e0b" />
+        <StatCard label="Active Loans" value={loans.filter(l => l.paid < l.amount).length} accent="#2563eb" />
       </div>
-
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>{['Name','Type','Amount','Rate %','Date','Due','Paid','Balance','Notes','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr>
-          </thead>
+          <thead><tr>{['Name','Type','Amount','Rate','Date','Due','Paid','Balance','Notes','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
             {loans.map(l => {
               const balance = l.amount - l.paid;
@@ -2042,64 +2039,46 @@ function LoansTab({ loans, saveLoans, addNotif }) {
               return (
                 <tr key={l.id} style={{ background: overdue ? '#fff5f5' : 'transparent' }}>
                   <TD style={{ fontWeight: 600 }}>{l.name}</TD>
-                  <TD>
-                    <span style={{ background: l.type === 'borrowed' ? '#fee2e2' : '#dcfce7', color: l.type === 'borrowed' ? '#dc2626' : '#16a34a', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-                      {l.type === 'borrowed' ? 'Borrowed' : 'Lent'}
-                    </span>
-                  </TD>
+                  <TD><span style={{ background: l.type === 'borrowed' ? '#fee2e2' : '#dcfce7', color: l.type === 'borrowed' ? '#dc2626' : '#16a34a', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{l.type === 'borrowed' ? 'Borrowed' : 'Lent'}</span></TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(l.amount)}</TD>
-                  <TD>{l.rate ? `${l.rate}%` : '\u2014'}</TD>
+                  <TD>{l.rate ? `${l.rate}%` : '—'}</TD>
                   <TD>{l.date}</TD>
-                  <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>
-                    {l.due_date || '\u2014'}{overdue ? ' \u26a0\ufe0f' : ''}
-                  </TD>
+                  <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>{l.due_date || '—'}{overdue ? ' ⚠️' : ''}</TD>
                   <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(l.paid)}</TD>
-                  <TD style={{ fontWeight: 700, color: balance > 0 ? '#dc2626' : '#16a34a' }}>
-                    {balance > 0 ? fmt(balance) : '\u2713 Settled'}
-                  </TD>
+                  <TD style={{ fontWeight: 700, color: balance > 0 ? '#dc2626' : '#16a34a' }}>{balance > 0 ? fmt(balance) : '✓ Settled'}</TD>
                   <TD style={{ color: '#6b7280', fontSize: 12 }}>{l.notes}</TD>
                   <TD>
-                    <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 3 }}>
                       {balance > 0 && <Btn variant="success" small onClick={() => recordPayment(l.id)}>Pay</Btn>}
-                      <Btn variant="ghost" small onClick={() => {
-                        setForm({ ...l, amount: String(l.amount), rate: String(l.rate), paid: String(l.paid) });
-                        setEditId(l.id); setModal(true);
-                      }}>Edit</Btn>
+                      <Btn variant="ghost" small onClick={() => { setForm({ ...l, amount: String(l.amount), rate: String(l.rate), paid: String(l.paid) }); setEditId(l.id); setModal(true); }}>Edit</Btn>
                       <Btn variant="danger" small onClick={() => del(l.id)}>Del</Btn>
                     </div>
                   </TD>
                 </tr>
               );
             })}
-            {loans.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No loans recorded</td></tr>
-            )}
+            {loans.length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No loans recorded</td></tr>}
           </tbody>
         </table>
       </div>
-
       {modal && (
-        <Modal title={editId ? 'Edit Loan' : 'Add Loan'} onClose={() => { setModal(false); setForm(EMPTY_LOAN); setEditId(null); }}>
+        <Modal title={editId ? 'Edit Loan' : 'Add Loan'} onClose={() => { setModal(false); setEditId(null); }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: '1/-1' }}>
-              <Inp label="Name / Lender / Borrower *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-            </div>
+            <div style={{ gridColumn: '1/-1' }}><Inp label="Name / Lender / Borrower *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
             <Sel label="Type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
               <option value="borrowed">Borrowed (we owe)</option>
               <option value="lent">Lent (they owe us)</option>
             </Sel>
-            <Inp label="Amount (GH\u20b5) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            <Inp label="Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
             <Inp label="Interest Rate (%)" type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} />
-            <Inp label="Amount Already Paid" type="number" value={form.paid} onChange={e => setForm({ ...form, paid: e.target.value })} />
+            <Inp label="Already Paid" type="number" value={form.paid} onChange={e => setForm({ ...form, paid: e.target.value })} />
             <Inp label="Start Date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
-            <div style={{ gridColumn: '1/-1' }}>
-              <Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
-            </div>
+            <div style={{ gridColumn: '1/-1' }}><Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
-            <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_LOAN); setEditId(null); }}>Cancel</Btn>
-            <Btn onClick={save}>{editId ? 'Save Changes' : 'Add Loan'}</Btn>
+            <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : editId ? 'Save Changes' : 'Add Loan'}</Btn>
           </div>
         </Modal>
       )}
