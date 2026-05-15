@@ -203,10 +203,10 @@ export default function PrintingPressSystem() {
   const [notifs,     setNotifs]     = useState([]);
 
   // Local-only state (not persisted to DB)
-  const [monthlyGoal, setMonthlyGoal] = useState(() => parseFloat(localStorage.getItem('printshop_goal') || '0'));
-  const [loans, setLoans] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('printshop_loans') || '[]'); } catch { return []; }
-  });
+  const [loans, setLoans] = useState([]);
+  const [payroll, setPayroll] = useState([]);
+  const [recurringExpenses, setRecurringExpenses] = useState([]);
+  const [jobMaterials, setJobMaterials] = useState([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
