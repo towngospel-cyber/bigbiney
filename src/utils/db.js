@@ -48,6 +48,27 @@ const db = {
   async addExpense(userId, expense) { const { data, error } = await supabase.from('expenses').insert([{ ...expense, user_id: userId }]).select(); return { data: data?.[0], error }; },
   async deleteExpense(id) { const { error } = await supabase.from('expenses').delete().eq('id', id); return { error }; },
 
+  // ─── PAYROLL ────────────────────────────────────────────────────────────────
+async getPayroll(userId) { const { data, error } = await supabase.from('payroll').select('*').eq('user_id', userId).order('date', { ascending: false }); return { data: data || [], error }; },
+async addPayroll(userId, item) { const { data, error } = await supabase.from('payroll').insert([{ ...item, user_id: userId }]).select(); return { data: data?.[0], error }; },
+async deletePayroll(id) { const { error } = await supabase.from('payroll').delete().eq('id', id); return { error }; },
+
+// ─── LOANS (Supabase) ────────────────────────────────────────────────────────
+async getLoans(userId) { const { data, error } = await supabase.from('loans').select('*').eq('user_id', userId).order('created_at', { ascending: false }); return { data: data || [], error }; },
+async addLoan(userId, loan) { const { data, error } = await supabase.from('loans').insert([{ ...loan, user_id: userId }]).select(); return { data: data?.[0], error }; },
+async updateLoan(id, updates) { const { data, error } = await supabase.from('loans').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
+async deleteLoan(id) { const { error } = await supabase.from('loans').delete().eq('id', id); return { error }; },
+
+// ─── RECURRING EXPENSES ──────────────────────────────────────────────────────
+async getRecurringExpenses(userId) { const { data, error } = await supabase.from('recurring_expenses').select('*').eq('user_id', userId); return { data: data || [], error }; },
+async addRecurringExpense(userId, item) { const { data, error } = await supabase.from('recurring_expenses').insert([{ ...item, user_id: userId }]).select(); return { data: data?.[0], error }; },
+async updateRecurringExpense(id, updates) { const { data, error } = await supabase.from('recurring_expenses').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
+async deleteRecurringExpense(id) { const { error } = await supabase.from('recurring_expenses').delete().eq('id', id); return { error }; },
+
+// ─── JOB MATERIALS ───────────────────────────────────────────────────────────
+async getJobMaterials(userId) { const { data, error } = await supabase.from('job_materials').select('*').eq('user_id', userId); return { data: data || [], error }; },
+async addJobMaterial(userId, item) { const { data, error } = await supabase.from('job_materials').insert([{ ...item, user_id: userId }]).select(); return { data: data?.[0], error }; },
+async deleteJobMaterial(id) { const { error } = await supabase.from('job_materials').delete().eq('id', id); return { error }; },
   subscribeToTable(table, userId, onInsert, onUpdate, onDelete) {
     const channel = supabase.channel(`${table}-${userId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => {
