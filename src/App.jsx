@@ -38,6 +38,161 @@ const openWhatsApp = (phone, message) => {
   const num = clean.startsWith('0') ? '233' + clean.slice(1) : clean;
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(message)}`, '_blank');
 };
+
+// ─── NEW: Receipt generator ───────────────────────────────────────────────────
+const printReceipt = (inv, jobDesc) => {
+  const balance = inv.amount - inv.paid;
+  const w = window.open('', '', 'width=420,height=600');
+  w.document.write(`<!DOCTYPE html><html><head><title>Receipt ${inv.invoice_no}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Courier New',monospace;padding:24px;max-width:380px;margin:auto;font-size:13px}
+    .center{text-align:center}
+    .logo{font-size:22px;font-weight:900;margin-bottom:2px}
+    .divider{border-top:1px dashed #000;margin:10px 0}
+    .row{display:flex;justify-content:space-between;margin-bottom:5px}
+    .bold{font-weight:700}
+    .big{font-size:18px;font-weight:900}
+    .green{color:#15803d}
+    .red{color:#dc2626}
+    .stamp{display:inline-block;border:3px solid ${balance===0?'#15803d':'#dc2626'};color:${balance===0?'#15803d':'#dc2626'};padding:6px 18px;border-radius:4px;font-size:20px;font-weight:900;transform:rotate(-8deg);margin:10px auto;letter-spacing:2px}
+    @media print{body{padding:10px}}
+  </style></head><body>
+  <div class="center">
+    <div class="logo">🖨️ PrintShop</div>
+    <div style="font-size:11px;color:#666">Professional Print Services</div>
+    <div style="font-size:11px;margin-top:4px">${new Date().toLocaleString()}</div>
+  </div>
+  <div class="divider"></div>
+  <div class="row"><span class="bold">Receipt #</span><span>${inv.invoice_no}</span></div>
+  <div class="row"><span class="bold">Customer</span><span>${inv.customer}</span></div>
+  ${jobDesc ? `<div class="row"><span class="bold">Job</span><span style="max-width:200px;text-align:right">${jobDesc}</span></div>` : ''}
+  <div class="row"><span class="bold">Date</span><span>${inv.date}</span></div>
+  <div class="divider"></div>
+  <div class="row"><span>Invoice Total</span><span>${fmt(inv.amount)}</span></div>
+  <div class="row green"><span>Amount Paid</span><span class="bold">${fmt(inv.paid)}</span></div>
+  ${balance > 0 ? `<div class="row red"><span>Balance Due</span><span class="bold">${fmt(balance)}</span></div>` : ''}
+  <div class="divider"></div>
+  <div class="center">
+    <div class="stamp">${balance === 0 ? 'PAID IN FULL' : 'PARTIAL PAYMENT'}</div>
+  </div>
+  <div class="divider"></div>
+  <div class="center" style="font-size:11px;color:#666;line-height:1.7">
+    Thank you for your business!<br>
+    Keep this receipt for your records.<br>
+    Queries? WhatsApp: ${ADMIN_WHATSAPP}
+  </div>
+  <script>window.onload=()=>window.print()</script>
+  </body></html>`);
+  w.document.close();
+};
+
+// ─── NEW: WhatsApp order status message ───────────────────────────────────────
+const generateOrderStatusMsg = (job) => {
+  const statusEmoji = {
+    quoting: '💬', queued: '📋', 'in-progress': '🛠️',
+    'on-hold': '⏸️', completed: '✅', cancelled: '❌',
+  };
+  const statusLine = {
+    quoting:       'We are preparing a quote for your job.',
+    queued:        'Your job is in our queue and will begin production soon.',
+    'in-progress': 'Your job is currently IN PRODUCTION. Our team is working on it!',
+    'on-hold':     'Your job is temporarily ON HOLD. Please contact us for details.',
+    completed:     'Your job is READY! Please come collect or await delivery.',
+    cancelled:     'This job has been cancelled. Please contact us if this is an error.',
+  };
+  const deliveryEmoji = { pending: '⏳', ready: '📦', 'out-for-delivery': '🚚', delivered: '🏠', collected: '✔️' };
+
+  return `${statusEmoji[job.status] || '📌'} *ORDER STATUS UPDATE*
+━━━━━━━━━━━━━━━━━━━━
+🗂️ Job: *${job.job_no}*
+👤 Customer: ${job.customer}
+📋 Description: ${job.description}
+━━━━━━━━━━━━━━━━━━━━
+📊 *Status:* ${(job.status || '').toUpperCase()}
+${statusLine[job.status] || ''}
+${job.delivery_status ? `🚚 *Delivery:* ${deliveryEmoji[job.delivery_status] || ''} ${(job.delivery_status || '').toUpperCase()}` : ''}
+${job.due_date ? `📅 *Due Date:* ${job.due_date}` : ''}
+💰 *Total:* ${fmt(job.price)}
+━━━━━━━━━━━━━━━━━━━━
+Questions? Reply to this message.
+_PrintShop Manager_ 🖨️`;
+};
+
+// ─── NEW: Payment chase templates (3 escalation tiers) ────────────────────────
+const generateChaseMsg = (inv, tier) => {
+  const balance = inv.amount - inv.paid;
+  const daysOverdue = inv.due_date
+    ? Math.max(0, Math.floor((new Date() - new Date(inv.due_date)) / 86400000))
+    : 0;
+
+  if (tier === 1) return (
+`Hi ${inv.customer}! 👋
+
+This is a friendly reminder that invoice *${inv.invoice_no}* has an outstanding balance.
+
+💰 *Amount Due:* ${fmt(balance)}
+📅 *Invoice Date:* ${inv.date}
+${inv.due_date ? `⏰ *Due Date:* ${inv.due_date}` : ''}
+
+Please arrange payment at your earliest convenience. You can pay via:
+• 📱 Mobile Money
+• 🏦 Bank Transfer
+• 💵 Cash at our shop
+
+Thank you for your continued business! 🙏
+_PrintShop Manager_`);
+
+  if (tier === 2) return (
+`Hi ${inv.customer},
+
+We wanted to follow up on invoice *${inv.invoice_no}* which is now *${daysOverdue} day(s) overdue*.
+
+⚠️ *Outstanding Balance:* ${fmt(balance)}
+📅 *Original Due Date:* ${inv.due_date || inv.date}
+
+We kindly ask that you settle this balance as soon as possible to avoid any disruption to future orders.
+
+If you are experiencing difficulties, please contact us to discuss a payment arrangement.
+
+📞 WhatsApp: ${ADMIN_WHATSAPP}
+
+Thank you,
+_PrintShop Manager_`);
+
+  return (
+`Dear ${inv.customer},
+
+*FINAL PAYMENT NOTICE*
+
+Despite previous reminders, invoice *${inv.invoice_no}* remains unpaid after *${daysOverdue} days*.
+
+🔴 *Amount Overdue:* ${fmt(balance)}
+
+Please be advised that continued non-payment may result in:
+• Suspension of your account
+• Referral to a collections process
+• Legal action if necessary
+
+We urge you to settle this balance *immediately* or contact us within 48 hours to make arrangements.
+
+📞 ${ADMIN_WHATSAPP}
+
+_PrintShop Manager_`);
+};
+
+// ─── NEW: Debt aging helper ───────────────────────────────────────────────────
+const getAgingBucket = (inv) => {
+  if (inv.status === 'paid') return null;
+  if (!inv.due_date) return '0-30';
+  const days = Math.floor((new Date() - new Date(inv.due_date)) / 86400000);
+  if (days <= 0)  return 'current';
+  if (days <= 30) return '0-30';
+  if (days <= 60) return '31-60';
+  if (days <= 90) return '61-90';
+  return '90+';
+};
+
 const generateJobReadyMsg = (job) =>
   `Hi ${job.customer}, your print job *${job.job_no}* is ready for pickup!\n\n📋 ${job.description}\n💰 Total: ${fmt(job.price)}\n\nPlease come collect at your earliest convenience.\n\nThank you for choosing us! 🖨️`;
 const generateAdminReminderMsg = (overdueJobs) => {
@@ -182,7 +337,7 @@ export default function PrintingPressSystem() {
       (r) => setRecurringExpenses(p => [...p.filter(x=>x.id!==r.id), r]),
       (r) => setRecurringExpenses(p => p.map(x=>x.id===r.id?r:x)),
       (r) => setRecurringExpenses(p => p.filter(x=>x.id!==r.id))),
-    db.subscribeToTable('job_materials', currentUser.id,
+      db.subscribeToTable('job_materials', currentUser.id,
       (r) => setJobMaterials(p => [...p.filter(x=>x.id!==r.id), r]),
       (r) => setJobMaterials(p => p.map(x=>x.id===r.id?r:x)),
       (r) => setJobMaterials(p => p.filter(x=>x.id!==r.id))),
@@ -329,6 +484,7 @@ export default function PrintingPressSystem() {
   );
 }
 
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, setActiveTab, overdueJobs, monthlyGoal, setMonthlyGoal }) {
   const [editGoal, setEditGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
@@ -356,6 +512,14 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
     return { day: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()], amt: sales.filter(s => s.date === ds).reduce((a, s) => a + s.amount, 0) };
   });
   const maxBar = Math.max(...last7.map(d => d.amt), 1);
+
+  // NEW: quick debt aging summary for dashboard
+  const aging = { current: 0, '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+  invoices.filter(i => i.status !== 'paid').forEach(i => {
+    const b = getAgingBucket(i);
+    if (b) aging[b] = (aging[b] || 0) + (i.amount - i.paid);
+  });
+  const hasAging = Object.values(aging).some(v => v > 0);
 
   return (
     <div>
@@ -386,6 +550,30 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
         <StatCard label="Outstanding"      value={fmt(unpaidTotal)} sub={`${invoices.filter(i=>i.status!=='paid').length} invoice(s)`} accent="#7c3aed" />
         <StatCard label="Low Stock Items"  value={lowStock.length} sub={lowStock.length > 0 ? 'Needs reorder' : 'All good'} accent={lowStock.length > 0 ? '#dc2626' : '#16a34a'} />
       </div>
+
+      {/* NEW: Debt aging mini-panel on dashboard */}
+      {hasAging && (
+        <div style={{ background: '#fff', border: '1px solid #fecaca', borderRadius: 8, padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>🕐 Outstanding Debt Aging</h3>
+            <button onClick={() => {}} style={{ background: 'none', border: 'none', fontSize: 12, color: '#2563eb', cursor: 'pointer', fontWeight: 700 }}>→ See Invoices Tab</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10 }}>
+            {[
+              { label: 'Current', key: 'current', color: '#16a34a' },
+              { label: '1–30 days', key: '0-30', color: '#f59e0b' },
+              { label: '31–60 days', key: '31-60', color: '#f97316' },
+              { label: '61–90 days', key: '61-90', color: '#dc2626' },
+              { label: '90+ days', key: '90+', color: '#7f1d1d' },
+            ].map(({ label, key, color }) => (
+              <div key={key} style={{ background: aging[key] > 0 ? '#fff5f5' : '#f8fafc', border: `1px solid ${aging[key] > 0 ? '#fecaca' : '#e5e7eb'}`, borderRadius: 8, padding: '12px 10px', textAlign: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: aging[key] > 0 ? color : '#9ca3af' }}>{fmt(aging[key] || 0)}</div>
+                <div style={{ fontSize: 10, color: '#6b7280', marginTop: 3, fontWeight: 600 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ background: '#fff', border: `2px solid ${healthColor}`, borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -506,6 +694,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
   );
 }
 
+// ─── JOBS ─────────────────────────────────────────────────────────────────────
 const EMPTY_JOB = { customer: '', customer_id: '', description: '', type: 'Digital', status: 'queued', priority: 'normal', due_date: '', start_date: '', price: '', cost: '', machine: '', notes: '', delivery_status: 'pending', assigned_to: '', payment_method: 'Cash', whatsapp: '' };
 
 function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInventory, jobMaterials, setJobMaterials }) {
@@ -516,6 +705,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
   const [editId,  setEditId]  = useState(null);
   const [saving,  setSaving]  = useState(false);
   const [msgModal,    setMsgModal]    = useState(null);
+  const [statusModal, setStatusModal] = useState(null); // NEW
   const [matModal,    setMatModal]    = useState(null);
   const [autoNotifQ,  setAutoNotifQ]  = useState([]);
 
@@ -627,12 +817,14 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
                   </TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                      <Btn variant="ghost" small onClick={() => openEdit(j)}>Edit</Btn>
-                      <Btn variant="ghost" small onClick={() => printTicket(j)}>🖨️</Btn>
-                      <Btn variant="teal"  small onClick={() => setMsgModal(j)}>📲</Btn>
-                      <Btn variant="ghost" small onClick={() => setMatModal(j)}>📦</Btn>
-                      <Btn variant="warning" small onClick={() => duplicate(j)}>Copy</Btn>
-                      <Btn variant="danger" small onClick={() => del(j.id)}>Del</Btn>
+                      <Btn variant="ghost"    small onClick={() => openEdit(j)}>Edit</Btn>
+                      <Btn variant="ghost"    small onClick={() => printTicket(j)}>🖨️</Btn>
+                      <Btn variant="teal"     small onClick={() => setMsgModal(j)}>📲</Btn>
+                      {/* NEW: order status button */}
+                      <Btn variant="purple"   small onClick={() => setStatusModal(j)}>📊</Btn>
+                      <Btn variant="ghost"    small onClick={() => setMatModal(j)}>📦</Btn>
+                      <Btn variant="warning"  small onClick={() => duplicate(j)}>Copy</Btn>
+                      <Btn variant="danger"   small onClick={() => del(j.id)}>Del</Btn>
                     </div>
                   </TD>
                 </tr>
@@ -699,6 +891,9 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
 
       {msgModal && <WhatsAppMsgModal job={msgModal} onClose={() => setMsgModal(null)} />}
 
+      {/* NEW: Order status WhatsApp modal */}
+      {statusModal && <OrderStatusModal job={statusModal} onClose={() => setStatusModal(null)} />}
+
       {matModal && (
         <JobMaterialsModal
           job={matModal}
@@ -730,6 +925,37 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
         </div>
       )}
     </div>
+  );
+}
+
+// ─── NEW: Order Status WhatsApp Modal ─────────────────────────────────────────
+function OrderStatusModal({ job, onClose }) {
+  const [phone, setPhone] = useState(job.whatsapp || '');
+  const msg = generateOrderStatusMsg(job);
+  return (
+    <Modal title="📊 Send Order Status to Customer" onClose={onClose}>
+      <div style={{ marginBottom: 14, background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#0369a1' }}>
+        This sends a full order status card via WhatsApp — customer sees job number, description, current status, delivery info, due date and total. No link needed.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Inp label="Customer WhatsApp Number" placeholder="+233..." value={phone} onChange={e => setPhone(e.target.value)} />
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message Preview</label>
+          <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 12, lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto', fontFamily: 'monospace' }}>
+            {msg}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between' }}>
+          <button onClick={() => navigator.clipboard.writeText(msg)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+            <button onClick={() => { if (phone) openWhatsApp(phone, msg); else alert('Enter a phone number first.'); }} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              📲 Send via WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
@@ -835,6 +1061,7 @@ function WhatsAppMsgModal({ job, onClose }) {
   );
 }
 
+// ─── CUSTOMERS ────────────────────────────────────────────────────────────────
 const EMPTY_CX = { name: '', email: '', phone: '', address: '', whatsapp: '' };
 
 function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userId }) {
@@ -978,6 +1205,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
   );
 }
 
+// ─── QUOTES ───────────────────────────────────────────────────────────────────
 function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
   const [form, setForm] = useState({ customer: '', customer_id: '', description: '', type: 'Digital', qty: '', unitPrice: '', rushFee: false, bulkDiscount: false, notes: '' });
   const [quotes, setQuotes] = useState([]);
@@ -1055,6 +1283,7 @@ function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
   );
 }
 
+// ─── SCHEDULE ─────────────────────────────────────────────────────────────────
 function ScheduleTab({ jobs, setJobs, userId }) {
   const [view, setView] = useState('kanban');
   const active = jobs.filter(j => !['cancelled','completed'].includes(j.status));
@@ -1176,6 +1405,7 @@ function ScheduleTab({ jobs, setJobs, userId }) {
   );
 }
 
+// ─── INVENTORY ────────────────────────────────────────────────────────────────
 const EMPTY_INV = { name: '', category: 'Paper', unit: 'Ream', quantity: '', reorder_point: '', unit_cost: '', supplier: '' };
 
 function InventoryTab({ inventory, setInventory, addNotif, userId }) {
@@ -1290,9 +1520,12 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
   );
 }
 
+// ─── INVOICES (updated with receipt, chase buttons, aging report) ─────────────
 function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNotif, userId }) {
-  const [modal, setModal] = useState(false);
-  const [form, setForm]   = useState({ job_id: '', customer: '', customer_id: '', due_date: '', items: [{ desc: '', qty: 1, rate: '', total: 0 }] });
+  const [modal,     setModal]     = useState(false);
+  const [view,      setView]      = useState('list');  // NEW: list | aging | chase
+  const [chaseModal, setChaseModal] = useState(null);  // NEW
+  const [form, setForm] = useState({ job_id: '', customer: '', customer_id: '', due_date: '', items: [{ desc: '', qty: 1, rate: '', total: 0 }] });
 
   const calcTotal = (items) => items.reduce((a, i) => a + ((parseFloat(i.qty)||0) * (parseFloat(i.rate)||0)), 0);
   const updateItem = (idx, field, val) => {
@@ -1316,6 +1549,8 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
       const { data: saleData } = await db.addSale(userId, { date: todayStr(), amount: inv.amount, job_id: inv.job_id });
       if (saleData) setSales(s => [...s, saleData]);
       addNotif(`Invoice ${inv.invoice_no} paid — ${fmt(inv.amount)} recorded`, 'success');
+      // NEW: auto-offer receipt
+      if (window.confirm(`Print receipt for ${inv.customer}?`)) printReceipt({ ...data }, inv.items?.[0]?.desc || '');
     }
   };
 
@@ -1331,6 +1566,8 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
       const { data: saleData } = await db.addSale(userId, { date: todayStr(), amount: amt, job_id: null });
       if (saleData) setSales(s => [...s, saleData]);
       addNotif(`Partial payment of ${fmt(amt)} recorded`, 'info');
+      // NEW: offer receipt on partial too
+      if (window.confirm(`Print receipt for partial payment of ${fmt(amt)}?`)) printReceipt({ ...inv, paid: newPaid }, '');
     }
   };
 
@@ -1347,45 +1584,201 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
 
   const outstanding = invoices.filter(i => i.status !== 'paid').reduce((a, i) => a + (i.amount - i.paid), 0);
 
+  // NEW: build aging buckets
+  const agingBuckets = { current: [], '0-30': [], '31-60': [], '61-90': [], '90+': [] };
+  invoices.filter(i => i.status !== 'paid').forEach(i => {
+    const b = getAgingBucket(i);
+    if (b) agingBuckets[b].push(i);
+  });
+
+  // NEW: unpaid invoices that have a customer phone for chasing
+  const chaseable = invoices.filter(i => i.status !== 'paid').map(inv => {
+    const cx = customers.find(c => c.id === inv.customer_id || c.name === inv.customer);
+    return { inv, phone: cx?.whatsapp || cx?.phone || '' };
+  });
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Invoices & Payments</h2>
-        <Btn onClick={() => setModal(true)}>+ Create Invoice</Btn>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {/* NEW view switcher */}
+          {[['list','📋 List'],['aging','🕐 Aging'],['chase','📲 Chase']].map(([v, lbl]) => (
+            <button key={v} onClick={() => setView(v)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: view === v ? '#2563eb' : '#fff', color: view === v ? '#fff' : '#6b7280', borderColor: view === v ? '#2563eb' : '#e5e7eb' }}>{lbl}</button>
+          ))}
+          <Btn onClick={() => setModal(true)}>+ Create Invoice</Btn>
+        </div>
       </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Total Invoiced" value={fmt(invoices.reduce((a,i)=>a+i.amount,0))} accent="#2563eb" />
         <StatCard label="Collected"      value={fmt(invoices.reduce((a,i)=>a+i.paid,0))}   accent="#16a34a" />
         <StatCard label="Outstanding"    value={fmt(outstanding)} accent="#dc2626" />
-        <StatCard label="Overdue"        value={invoices.filter(i=>i.status!=='paid'&&i.due_date<todayStr()).length} accent="#f59e0b" />
+        <StatCard label="Overdue"        value={invoices.filter(i=>i.status!=='paid'&&i.due_date&&i.due_date<todayStr()).length} accent="#f59e0b" />
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>{['Invoice #','Customer','Date','Due','Amount','Paid','Balance','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
-          <tbody>
-            {invoices.map(inv => (
-              <tr key={inv.id}>
-                <TD style={{ fontWeight: 700, color: '#2563eb' }}>{inv.invoice_no}</TD>
-                <TD>{inv.customer}</TD><TD>{inv.date}</TD>
-                <TD style={{ color: inv.due_date < todayStr() && inv.status !== 'paid' ? '#dc2626' : '#374151' }}>{inv.due_date}</TD>
-                <TD style={{ fontWeight: 600 }}>{fmt(inv.amount)}</TD>
-                <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(inv.paid)}</TD>
-                <TD style={{ color: inv.amount - inv.paid > 0 ? '#dc2626' : '#16a34a', fontWeight: 600 }}>{fmt(inv.amount - inv.paid)}</TD>
-                <TD><Badge text={inv.status === 'paid' ? 'completed' : inv.status === 'partial' ? 'in-progress' : 'queued'} /></TD>
-                <TD>
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {inv.status !== 'paid' && <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid ✓</Btn>}
-                    {inv.status !== 'paid' && <Btn variant="ghost" small onClick={() => recordPartial(inv.id)}>Partial</Btn>}
-                    <Btn variant="ghost" small onClick={() => printInvoice(inv)}>🖨️ Print</Btn>
-                    <Btn variant="danger" small onClick={() => del(inv.id)}>Del</Btn>
-                  </div>
-                </TD>
-              </tr>
-            ))}
-            {invoices.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No invoices yet</td></tr>}
-          </tbody>
-        </table>
-      </div>
+
+      {/* ── LIST VIEW ── */}
+      {view === 'list' && (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Invoice #','Customer','Date','Due','Amount','Paid','Balance','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>
+              {invoices.map(inv => (
+                <tr key={inv.id}>
+                  <TD style={{ fontWeight: 700, color: '#2563eb' }}>{inv.invoice_no}</TD>
+                  <TD>{inv.customer}</TD><TD>{inv.date}</TD>
+                  <TD style={{ color: inv.due_date < todayStr() && inv.status !== 'paid' ? '#dc2626' : '#374151' }}>{inv.due_date}</TD>
+                  <TD style={{ fontWeight: 600 }}>{fmt(inv.amount)}</TD>
+                  <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(inv.paid)}</TD>
+                  <TD style={{ color: inv.amount - inv.paid > 0 ? '#dc2626' : '#16a34a', fontWeight: 600 }}>{fmt(inv.amount - inv.paid)}</TD>
+                  <TD><Badge text={inv.status === 'paid' ? 'completed' : inv.status === 'partial' ? 'in-progress' : 'queued'} /></TD>
+                  <TD>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {inv.status !== 'paid' && <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid ✓</Btn>}
+                      {inv.status !== 'paid' && <Btn variant="ghost"   small onClick={() => recordPartial(inv.id)}>Partial</Btn>}
+                      {/* NEW: receipt button always available */}
+                      <Btn variant="ghost" small onClick={() => printReceipt(inv, inv.items?.[0]?.desc || '')}>🧾 Receipt</Btn>
+                      <Btn variant="ghost" small onClick={() => printInvoice(inv)}>🖨️ Invoice</Btn>
+                      {/* NEW: chase button */}
+                      {inv.status !== 'paid' && <Btn variant="warning" small onClick={() => setChaseModal(inv)}>💬 Chase</Btn>}
+                      <Btn variant="danger" small onClick={() => del(inv.id)}>Del</Btn>
+                    </div>
+                  </TD>
+                </tr>
+              ))}
+              {invoices.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No invoices yet</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ── NEW: AGING VIEW ── */}
+      {view === 'aging' && (
+        <div>
+          <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#856404' }}>
+            <strong>Debt Aging Report</strong> — shows how long each unpaid balance has been outstanding since the due date. Older debt = higher collection risk.
+          </div>
+          {[
+            { key: 'current', label: '✅ Current (not yet due)', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
+            { key: '0-30',    label: '🟡 1–30 Days Overdue',    color: '#f59e0b', bg: '#fefce8', border: '#fde68a' },
+            { key: '31-60',   label: '🟠 31–60 Days Overdue',   color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
+            { key: '61-90',   label: '🔴 61–90 Days Overdue',   color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+            { key: '90+',     label: '💀 90+ Days Overdue',     color: '#7f1d1d', bg: '#fef2f2', border: '#fca5a5' },
+          ].map(({ key, label, color, bg, border }) => {
+            const bucket = agingBuckets[key] || [];
+            const total  = bucket.reduce((a, i) => a + (i.amount - i.paid), 0);
+            if (bucket.length === 0) return null;
+            return (
+              <div key={key} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 8, padding: 16, marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color }}>{label}</h4>
+                  <span style={{ fontSize: 15, fontWeight: 800, color }}>{fmt(total)} across {bucket.length} invoice(s)</span>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead><tr>{['Invoice #','Customer','Due Date','Balance','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+                  <tbody>
+                    {bucket.map(inv => {
+                      const cx = customers.find(c => c.id === inv.customer_id || c.name === inv.customer);
+                      const phone = cx?.whatsapp || cx?.phone || '';
+                      return (
+                        <tr key={inv.id} style={{ background: '#fff' }}>
+                          <TD style={{ fontWeight: 700, color: '#2563eb' }}>{inv.invoice_no}</TD>
+                          <TD style={{ fontWeight: 600 }}>{inv.customer}</TD>
+                          <TD style={{ color }}>{inv.due_date || '—'}</TD>
+                          <TD style={{ fontWeight: 800, color }}>{fmt(inv.amount - inv.paid)}</TD>
+                          <TD>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid ✓</Btn>
+                              <Btn variant="warning" small onClick={() => setChaseModal(inv)}>💬 Chase</Btn>
+                              <Btn variant="ghost"   small onClick={() => printReceipt(inv, '')}>🧾</Btn>
+                            </div>
+                          </TD>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+          {Object.values(agingBuckets).every(b => b.length === 0) && (
+            <div style={{ textAlign: 'center', padding: 48, color: '#16a34a', fontWeight: 700, fontSize: 16 }}>
+              🎉 No outstanding invoices — you're all caught up!
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── NEW: CHASE VIEW ── */}
+      {view === 'chase' && (
+        <div>
+          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#0369a1' }}>
+            <strong>Payment Chase Centre</strong> — send escalating WhatsApp reminders. Use <em>Gentle</em> first, then <em>Firm</em>, then <em>Final Notice</em> if still unpaid.
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Invoice #','Customer','Phone','Balance','Days Overdue','Chase'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+              <tbody>
+                {chaseable.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No unpaid invoices</td></tr>}
+                {chaseable.map(({ inv, phone }) => {
+                  const daysOverdue = inv.due_date
+                    ? Math.max(0, Math.floor((new Date() - new Date(inv.due_date)) / 86400000))
+                    : null;
+                  const color = !daysOverdue ? '#16a34a' : daysOverdue <= 30 ? '#f59e0b' : daysOverdue <= 60 ? '#f97316' : '#dc2626';
+                  return (
+                    <tr key={inv.id}>
+                      <TD style={{ fontWeight: 700, color: '#2563eb' }}>{inv.invoice_no}</TD>
+                      <TD style={{ fontWeight: 600 }}>{inv.customer}</TD>
+                      <TD style={{ fontSize: 12, color: phone ? '#374151' : '#fca5a5' }}>{phone || '⚠️ No number'}</TD>
+                      <TD style={{ fontWeight: 800, color: '#dc2626' }}>{fmt(inv.amount - inv.paid)}</TD>
+                      <TD style={{ fontWeight: 700, color }}>{daysOverdue !== null ? `${daysOverdue}d` : '—'}</TD>
+                      <TD>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button
+                            disabled={!phone}
+                            onClick={() => openWhatsApp(phone, generateChaseMsg(inv, 1))}
+                            style={{ background: phone ? '#25D366' : '#e5e7eb', border: 'none', color: phone ? '#fff' : '#9ca3af', borderRadius: 4, padding: '4px 8px', cursor: phone ? 'pointer' : 'not-allowed', fontSize: 11, fontWeight: 700 }}
+                            title="Gentle reminder">
+                            😊 Gentle
+                          </button>
+                          <button
+                            disabled={!phone}
+                            onClick={() => openWhatsApp(phone, generateChaseMsg(inv, 2))}
+                            style={{ background: phone ? '#f59e0b' : '#e5e7eb', border: 'none', color: phone ? '#fff' : '#9ca3af', borderRadius: 4, padding: '4px 8px', cursor: phone ? 'pointer' : 'not-allowed', fontSize: 11, fontWeight: 700 }}
+                            title="Firm reminder">
+                            😐 Firm
+                          </button>
+                          <button
+                            disabled={!phone}
+                            onClick={() => {
+                              if (window.confirm(`Send FINAL NOTICE to ${inv.customer}? This is the strongest message.`))
+                                openWhatsApp(phone, generateChaseMsg(inv, 3));
+                            }}
+                            style={{ background: phone ? '#dc2626' : '#e5e7eb', border: 'none', color: phone ? '#fff' : '#9ca3af', borderRadius: 4, padding: '4px 8px', cursor: phone ? 'pointer' : 'not-allowed', fontSize: 11, fontWeight: 700 }}
+                            title="Final notice">
+                            🚨 Final
+                          </button>
+                          <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid ✓</Btn>
+                        </div>
+                      </TD>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Chase message modal (from list/aging views) */}
+      {chaseModal && (
+        <ChaseMessageModal
+          inv={chaseModal}
+          customers={customers}
+          onClose={() => setChaseModal(null)}
+        />
+      )}
+
       {modal && (
         <Modal title="Create Invoice" onClose={() => setModal(false)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -1420,6 +1813,66 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
   );
 }
 
+// ─── NEW: Chase Message Modal ──────────────────────────────────────────────────
+function ChaseMessageModal({ inv, customers, onClose }) {
+  const cx    = customers.find(c => c.id === inv.customer_id || c.name === inv.customer);
+  const [phone, setPhone] = useState(cx?.whatsapp || cx?.phone || '');
+  const [tier,  setTier]  = useState(1);
+  const msg = generateChaseMsg(inv, tier);
+
+  const tierLabels = [
+    { t: 1, label: '😊 Gentle Reminder', color: '#25D366', desc: 'Friendly first nudge' },
+    { t: 2, label: '😐 Firm Reminder',   color: '#f59e0b', desc: 'More direct, flags urgency' },
+    { t: 3, label: '🚨 Final Notice',    color: '#dc2626', desc: 'Serious — use last' },
+  ];
+
+  return (
+    <Modal title={`💬 Chase Payment — ${inv.invoice_no}`} onClose={onClose} wide>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div>
+          <p style={{ margin: '0 0 14px', fontSize: 13, color: '#374151' }}>
+            Outstanding: <strong style={{ color: '#dc2626' }}>{fmt(inv.amount - inv.paid)}</strong> from {inv.customer}
+          </p>
+          <Inp label="Send to (WhatsApp)" placeholder="+233..." value={phone} onChange={e => setPhone(e.target.value)} />
+          <div style={{ marginTop: 16, marginBottom: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Escalation Level</label>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {tierLabels.map(({ t, label, color, desc }) => (
+              <button key={t} onClick={() => setTier(t)} style={{ textAlign: 'left', padding: '10px 14px', borderRadius: 6, border: `2px solid ${tier === t ? color : '#e5e7eb'}`, background: tier === t ? color + '15' : '#fff', cursor: 'pointer' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: tier === t ? color : '#374151' }}>{label}</div>
+                <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Message Preview</label>
+          <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 14, fontSize: 12, lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: 320, overflowY: 'auto', fontFamily: 'monospace' }}>
+            {msg}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'space-between', alignItems: 'center' }}>
+        <button onClick={() => navigator.clipboard.writeText(msg)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+          <button
+            onClick={() => {
+              if (!phone) return alert('Enter a phone number first.');
+              if (tier === 3 && !window.confirm('Send FINAL NOTICE? This is your most serious message.')) return;
+              openWhatsApp(phone, msg);
+            }}
+            style={{ background: tierLabels.find(x => x.t === tier)?.color || '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+            📲 Send via WhatsApp
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ─── FINANCE ──────────────────────────────────────────────────────────────────
 function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, recurringExpenses, setRecurringExpenses }) {
   const [sf, setSf] = useState({ date: todayStr(), amount: '', payment_method: 'Cash' });
   const [ef, setEf] = useState({ date: todayStr(), category: 'Paper', description: '', amount: '' });
@@ -1473,7 +1926,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Btn variant="success" onClick={() => { setShowSF(v=>!v); setShowEF(false); setShowRE(false); }}>+ Record Sale</Btn>
           <Btn variant="warning" onClick={() => { setShowEF(v=>!v); setShowSF(false); setShowRE(false); }}>+ Add Expense</Btn>
-          <Btn variant="purple" onClick={() => { setShowRE(v=>!v); setShowSF(false); setShowEF(false); }}>🔁 Recurring</Btn>
+          <Btn variant="purple"  onClick={() => { setShowRE(v=>!v); setShowSF(false); setShowEF(false); }}>🔁 Recurring</Btn>
         </div>
       </div>
 
@@ -1617,6 +2070,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
   );
 }
 
+// ─── PAYROLL ──────────────────────────────────────────────────────────────────
 function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
   const [modal, setModal] = useState(false);
   const [form, setForm]   = useState({ staff_name: '', amount: '', period: '', date: todayStr(), payment_method: 'Cash', notes: '' });
@@ -1715,6 +2169,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
   );
 }
 
+// ─── LOANS ────────────────────────────────────────────────────────────────────
 function LoansTab({ loans, setLoans, addNotif, userId }) {
   const [modal, setModal]   = useState(false);
   const [form, setForm]     = useState({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' });
@@ -1822,6 +2277,7 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
   );
 }
 
+// ─── REPORTS ──────────────────────────────────────────────────────────────────
 function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
   const [period, setPeriod] = useState('month');
   const now   = new Date();
@@ -1973,6 +2429,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
   );
 }
 
+// ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
   const [activeSection, setActiveSection]   = useState('notifications');
   const [customMsg,     setCustomMsg]       = useState('');
