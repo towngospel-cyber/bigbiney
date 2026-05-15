@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import db, { supabase } from './utils/db';
 
-// â”€â”€â”€ STATIC DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 STATIC DATA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const MACHINES   = ['Heidelberg SM52', 'Screen Press 1', 'Screen Press 2', 'Xerox Versant', 'Large Format Printer', 'Guillotine'];
 const JOB_TYPES  = ['Offset', 'Digital', 'Screen Print', 'Large Format', 'Finishing', 'Other'];
 const JOB_STATUSES = ['quoting', 'queued', 'in-progress', 'on-hold', 'completed', 'cancelled'];
@@ -9,8 +9,8 @@ const DELIVERY_STATUSES = ['pending', 'ready', 'out-for-delivery', 'delivered', 
 const STAFF_LIST = ['Unassigned', 'Kwame', 'Ama', 'Kofi', 'Abena', 'Yaw', 'Akosua'];
 const ADMIN_WHATSAPP = '+233246307773';
 
-// â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const fmt = (n) => `GHâ‚µ${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// \u2500\u2500\u2500 HELPERS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+const fmt = (n) => `GH\u20b5${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const todayStr = () => new Date().toISOString().split('T')[0];
 const getCurrentMonth = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; };
 
@@ -37,7 +37,7 @@ const DELIVERY_COLORS = {
   collected:        { bg: '#f0fdf4', color: '#15803d' },
 };
 
-// â”€â”€â”€ MINI COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 MINI COMPONENTS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const Badge = ({ text, type = 'status' }) => {
   const c = type === 'status' ? (STATUS_COLORS[text] || {}) : type === 'priority' ? (PRIORITY_COLORS[text] || {}) : (DELIVERY_COLORS[text] || {});
   return (
@@ -52,7 +52,7 @@ const Modal = ({ title, onClose, children, wide }) => (
     <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: wide ? 800 : 600, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111' }}>{title}</h3>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280', lineHeight: 1 }}>Ã—</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280', lineHeight: 1 }}>\u00d7</button>
       </div>
       <div style={{ padding: 24 }}>{children}</div>
     </div>
@@ -109,7 +109,7 @@ const TD = ({ children, style: s }) => (
   <td style={{ padding: '10px 12px', fontSize: 13, borderBottom: '1px solid #f1f5f9', ...s }}>{children}</td>
 );
 
-// â”€â”€â”€ WHATSAPP HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 WHATSAPP HELPERS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const openWhatsApp = (phone, message) => {
   const clean = phone.replace(/\D/g, '');
   const num = clean.startsWith('0') ? '233' + clean.slice(1) : clean;
@@ -117,14 +117,75 @@ const openWhatsApp = (phone, message) => {
 };
 
 const generateJobReadyMsg = (job) =>
-  `Hi ${job.customer}, your print job *${job.job_no}* is ready for pickup!\n\nðŸ“‹ ${job.description}\nðŸ’° Total: ${fmt(job.price)}\n\nPlease come collect at your earliest convenience.\n\nThank you for choosing us! ðŸ–¨ï¸`;
+  `Hi ${job.customer}, your print job *${job.job_no}* is ready for pickup!\n\n\ud83d\udccb ${job.description}\n\ud83d\udcb0 Total: ${fmt(job.price)}\n\nPlease come collect at your earliest convenience.\n\nThank you for choosing us! \ud83d\udda8\ufe0f`;
 
 const generateAdminReminderMsg = (overdueJobs) => {
-  const lines = overdueJobs.map(j => `â€¢ ${j.job_no} â€” ${j.customer} (Due: ${j.due_date}) â€” ${j.status}`).join('\n');
-  return `âš ï¸ *OVERDUE JOBS REMINDER*\n\nThe following jobs are past their due date:\n\n${lines}\n\nPlease follow up immediately.\n\n_Sent from PrintShop Manager_`;
+  const lines = overdueJobs.map(j => `\u2022 ${j.job_no} \u2014 ${j.customer} (Due: ${j.due_date}) \u2014 ${j.status}`).join('\n');
+  return `\u26a0\ufe0f *OVERDUE JOBS REMINDER*\n\nThe following jobs are past their due date:\n\n${lines}\n\nPlease follow up immediately.\n\n_Sent from PrintShop Manager_`;
 };
 
-// â”€â”€â”€ MAIN APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500 NEW: Auto-notification messages per job status change
+const generateStatusChangeMsg = (job, newStatus) => {
+  const msgs = {
+    'queued':       `Hi ${job.customer}! \ud83d\udcdd Your print job *${job.job_no}* has been received and is in the queue.\n\n\ud83d\udccb ${job.description}\n\ud83d\udcb0 Amount: ${fmt(job.price)}\n\ud83d\udcc5 Due: ${job.due_date || 'TBD'}\n\nWe\u2019ll notify you as soon as it\u2019s in production. Thank you! \ud83d\udda8\ufe0f`,
+    'in-progress':  `Hi ${job.customer}! \ud83d\udee0\ufe0f Your job *${job.job_no}* is now *IN PRODUCTION*.\n\n\ud83d\udccb ${job.description}\n\ud83d\udcc5 Due: ${job.due_date || 'TBD'}\n\nOur team is working on it. We\u2019ll update you when it\u2019s ready!`,
+    'on-hold':      `Hi ${job.customer}! \u23f8\ufe0f Your job *${job.job_no}* has been placed *ON HOLD*.\n\n\ud83d\udccb ${job.description}\n\nPlease contact us for more information. Sorry for any inconvenience.`,
+    'completed':    `Hi ${job.customer}! \u2705 Your print job *${job.job_no}* is *READY FOR PICKUP/DELIVERY*!\n\n\ud83d\udccb ${job.description}\n\ud83d\udcb0 Total: ${fmt(job.price)}\n\nPlease come collect or expect delivery soon. Thank you for choosing us! \ud83d\udda8\ufe0f`,
+    'cancelled':    `Hi ${job.customer}. Your job *${job.job_no}* has been *CANCELLED*.\n\n\ud83d\udccb ${job.description}\n\nPlease contact us if you have any questions.`,
+  };
+  return msgs[newStatus] || `Hi ${job.customer}, your job *${job.job_no}* status has been updated to *${newStatus.toUpperCase()}*.`;
+};
+
+// \u2500 NEW: Daily summary message
+const generateDailySummaryMsg = (sales, expenses, jobs, invoices) => {
+  const today = todayStr();
+  const todaySales = sales.filter(s => s.date === today).reduce((a, s) => a + s.amount, 0);
+  const todayExp   = expenses.filter(e => e.date === today).reduce((a, e) => a + e.amount, 0);
+  const todayJobs  = jobs.filter(j => j.start_date === today).length;
+  const completedToday = jobs.filter(j => j.status === 'completed').length;
+  const activeNow  = jobs.filter(j => j.status === 'in-progress').length;
+  const outstanding = invoices.filter(i => i.status !== 'paid').reduce((a, i) => a + (i.amount - i.paid), 0);
+  const overdueCount = jobs.filter(j => !['completed','cancelled'].includes(j.status) && j.due_date && j.due_date < today).length;
+  return `\ud83d\udda8\ufe0f *PRINTSHOP DAILY SUMMARY*\n\ud83d\udcc5 ${today}\n\n` +
+    `\ud83d\udcb0 *FINANCIALS TODAY*\n` +
+    `\u2022 Revenue: ${fmt(todaySales)}\n` +
+    `\u2022 Expenses: ${fmt(todayExp)}\n` +
+    `\u2022 Net: ${fmt(todaySales - todayExp)}\n\n` +
+    `\ud83d\udcc8 *JOBS TODAY*\n` +
+    `\u2022 New jobs: ${todayJobs}\n` +
+    `\u2022 In production: ${activeNow}\n` +
+    `\u2022 Completed: ${completedToday}\n` +
+    `\u2022 Overdue: ${overdueCount}\n\n` +
+    `\ud83e\uddfe *OUTSTANDING BALANCE*\n` +
+    `\u2022 Unpaid invoices: ${fmt(outstanding)}\n\n` +
+    `_Sent automatically from PrintShop Manager_`;
+};
+
+// \u2500 NEW: Weekly summary message
+const generateWeeklySummaryMsg = (sales, expenses, jobs) => {
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+  const weekStr = weekAgo.toISOString().split('T')[0];
+  const weekSales = sales.filter(s => s.date >= weekStr).reduce((a, s) => a + s.amount, 0);
+  const weekExp   = expenses.filter(e => e.date >= weekStr).reduce((a, e) => a + e.amount, 0);
+  const weekJobs  = jobs.filter(j => j.start_date >= weekStr).length;
+  const weekDone  = jobs.filter(j => j.status === 'completed' && j.due_date >= weekStr).length;
+  const month = getCurrentMonth();
+  const monthSales = sales.filter(s => s.date?.startsWith(month)).reduce((a, s) => a + s.amount, 0);
+  return `\ud83d\udda8\ufe0f *PRINTSHOP WEEKLY SUMMARY*\n\ud83d\udcc5 Week ending ${todayStr()}\n\n` +
+    `\ud83d\udcb0 *THIS WEEK\u2019S FINANCIALS*\n` +
+    `\u2022 Revenue: ${fmt(weekSales)}\n` +
+    `\u2022 Expenses: ${fmt(weekExp)}\n` +
+    `\u2022 Profit: ${fmt(weekSales - weekExp)}\n\n` +
+    `\ud83d\udcc8 *JOBS THIS WEEK*\n` +
+    `\u2022 New: ${weekJobs}\n` +
+    `\u2022 Completed: ${weekDone}\n\n` +
+    `\ud83d\udcc5 *MONTH TO DATE*\n` +
+    `\u2022 Revenue: ${fmt(monthSales)}\n\n` +
+    `_Sent automatically from PrintShop Manager_`;
+};
+
+// \u2500\u2500\u2500 MAIN APP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export default function PrintingPressSystem() {
   const [currentUser, setCurrentUser]   = useState(null);
   const [loginData,   setLoginData]     = useState({ email: '', password: '' });
@@ -234,19 +295,19 @@ export default function PrintingPressSystem() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%)', fontFamily: '"Segoe UI", system-ui, sans-serif' }}>
         <div style={{ background: '#fff', padding: 40, borderRadius: 12, width: '100%', maxWidth: 400, boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 44, marginBottom: 8 }}>ðŸ–¨ï¸</div>
+            <div style={{ fontSize: 44, marginBottom: 8 }}>\ud83d\udda8\ufe0f</div>
             <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', margin: 0 }}>Print Shop Manager</h1>
-            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 6 }}>Powered by Supabase â€” syncs across all devices</p>
+            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 6 }}>Powered by Supabase \u2014 syncs across all devices</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Inp label="Email" type="email" placeholder="admin@printshop.com" value={loginData.email}
               onChange={e => setLoginData({ ...loginData, email: e.target.value })}
               onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            <Inp label="Password" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={loginData.password}
+            <Inp label="Password" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" value={loginData.password}
               onChange={e => setLoginData({ ...loginData, password: e.target.value })}
               onKeyDown={e => e.key === 'Enter' && handleLogin()} />
             {loginError && <p style={{ color: '#dc2626', fontSize: 12, margin: 0, padding: '6px 10px', background: '#fef2f2', borderRadius: 4, border: '1px solid #fecaca' }}>{loginError}</p>}
-            <Btn onClick={handleLogin}>Sign In â†’</Btn>
+            <Btn onClick={handleLogin}>Sign In \u2192</Btn>
           </div>
         </div>
       </div>
@@ -257,8 +318,8 @@ export default function PrintingPressSystem() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Segoe UI", system-ui, sans-serif', color: '#6b7280' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>ðŸ–¨ï¸</div>
-          <p>Loading your dataâ€¦</p>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>\ud83d\udda8\ufe0f</div>
+          <p>Loading your data\u2026</p>
         </div>
       </div>
     );
@@ -269,23 +330,24 @@ export default function PrintingPressSystem() {
   const overdueJobs = jobs.filter(j => !['completed','cancelled'].includes(j.status) && j.due_date && j.due_date < todayStr());
 
   const TABS = [
-    { id: 'dashboard', label: 'ðŸ“Š Dashboard' },
-    { id: 'jobs',      label: 'ðŸ—‚ï¸ Jobs' },
-    { id: 'customers', label: 'ðŸ‘¥ Customers' },
-    { id: 'quotes',    label: 'ðŸ’¬ Quotes' },
-    { id: 'schedule',  label: 'ðŸ“… Schedule' },
-    { id: 'inventory', label: 'ðŸ“¦ Inventory' },
-    { id: 'invoices',  label: 'ðŸ§¾ Invoices' },
-    { id: 'finance',   label: 'ðŸ’° Finance' },
-    { id: 'loans',     label: 'ðŸ¦ Loans' },
-    { id: 'reports',   label: 'ðŸ“ˆ Reports' },
+    { id: 'dashboard', label: '\ud83d\udcca Dashboard' },
+    { id: 'jobs',      label: '\ud83d\uddc2\ufe0f Jobs' },
+    { id: 'customers', label: '\ud83d\udc65 Customers' },
+    { id: 'quotes',    label: '\ud83d\udcac Quotes' },
+    { id: 'schedule',  label: '\ud83d\udcc5 Schedule' },
+    { id: 'inventory', label: '\ud83d\udce6 Inventory' },
+    { id: 'invoices',  label: '\ud83e\uddfe Invoices' },
+    { id: 'finance',   label: '\ud83d\udcb0 Finance' },
+    { id: 'loans',     label: '\ud83c\udfe6 Loans' },
+    { id: 'reports',   label: '\ud83d\udcc8 Reports' },
+    { id: 'whatsapp',  label: '\ud83d\udcf2 WhatsApp' },
   ];
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: '"Segoe UI", system-ui, sans-serif', color: '#111' }}>
       <header style={{ background: '#0f172a', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 200 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>ðŸ–¨ï¸</span>
+          <span style={{ fontSize: 22 }}>\ud83d\udda8\ufe0f</span>
           <span style={{ color: '#fff', fontWeight: 800, fontSize: 16 }}>PrintShop Manager</span>
           {lowStock.length > 0 && <span style={{ background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{lowStock.length} LOW STOCK</span>}
           {overdueJobs.length > 0 && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{overdueJobs.length} OVERDUE</span>}
@@ -294,13 +356,13 @@ export default function PrintingPressSystem() {
           {overdueJobs.length > 0 && (
             <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))}
               style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-              ðŸ“² Alert Admin
+              \ud83d\udcf2 Alert Admin
             </button>
           )}
           <div style={{ position: 'relative' }}>
             <button onClick={() => setShowNotif(v => !v)}
               style={{ background: showNotif ? '#1e3a5f' : 'transparent', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 16, position: 'relative' }}>
-              ðŸ””
+              \ud83d\udd14
               {unread > 0 && <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread}</span>}
             </button>
             {showNotif && (
@@ -311,16 +373,16 @@ export default function PrintingPressSystem() {
                 </div>
                 {notifs.slice(0, 8).map(n => (
                   <div key={n.id} style={{ padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'flex-start', borderBottom: '1px solid #f9fafb', background: n.read ? '#fff' : '#f0f9ff' }}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>{n.type === 'warning' ? 'âš ï¸' : n.type === 'success' ? 'âœ…' : 'â„¹ï¸'}</span>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{n.type === 'warning' ? '\u26a0\ufe0f' : n.type === 'success' ? '\u2705' : '\u2139\ufe0f'}</span>
                     <span style={{ fontSize: 12, color: '#374151', flex: 1 }}>{n.message}</span>
-                    <button onClick={() => setNotifs(prev => prev.filter(x => x.id !== n.id))} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>Ã—</button>
+                    <button onClick={() => setNotifs(prev => prev.filter(x => x.id !== n.id))} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>\u00d7</button>
                   </div>
                 ))}
                 {notifs.length === 0 && <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 12, padding: 20 }}>All clear!</p>}
               </div>
             )}
           </div>
-          <span style={{ color: '#94a3b8', fontSize: 12 }}>ðŸ‘¤ {currentUser.email}</span>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>\ud83d\udc64 {currentUser.email}</span>
           <button onClick={handleLogout} style={{ background: '#1e3a5f', border: '1px solid #334155', color: '#94a3b8', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12 }}>Logout</button>
         </div>
       </header>
@@ -336,7 +398,7 @@ export default function PrintingPressSystem() {
 
       <main style={{ padding: '28px 24px', maxWidth: 1400, margin: '0 auto' }}>
         {activeTab === 'dashboard' && <DashboardTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} setActiveTab={setActiveTab} overdueJobs={overdueJobs} monthlyGoal={monthlyGoal} setMonthlyGoal={saveGoal} />}
-        {activeTab === 'jobs'      && <JobsTab jobs={jobs} setJobs={setJobs} customers={customers} addNotif={addNotif} userId={currentUser.id} />}
+        {activeTab === 'jobs'      && <JobsTab jobs={jobs} setJobs={setJobs} customers={customers} addNotif={addNotif} userId={currentUser.id} autoNotify={true} />}
         {activeTab === 'customers' && <CustomersTab customers={customers} setCustomers={setCustomers} jobs={jobs} invoices={invoices} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'quotes'    && <QuotesTab customers={customers} jobs={jobs} setJobs={setJobs} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'schedule'  && <ScheduleTab jobs={jobs} setJobs={setJobs} userId={currentUser.id} />}
@@ -345,12 +407,13 @@ export default function PrintingPressSystem() {
         {activeTab === 'finance'   && <FinanceTab sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'loans'     && <LoansTab loans={loans} saveLoans={saveLoans} addNotif={addNotif} />}
         {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} />}
+        {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
       </main>
     </div>
   );
 }
 
-// â”€â”€â”€ DASHBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 DASHBOARD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, setActiveTab, overdueJobs, monthlyGoal, setMonthlyGoal }) {
   const [editGoal, setEditGoal] = useState(false);
   const [goalInput, setGoalInput] = useState('');
@@ -374,22 +437,22 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
       {/* Overdue Alert Banner */}
       {overdueJobs.length > 0 && (
         <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <span style={{ fontSize: 20 }}>âš ï¸</span>
+          <span style={{ fontSize: 20 }}>\u26a0\ufe0f</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#856404', marginBottom: 6 }}>
-              {overdueJobs.length} Overdue Job{overdueJobs.length > 1 ? 's' : ''} â€” Action Required
+              {overdueJobs.length} Overdue Job{overdueJobs.length > 1 ? 's' : ''} \u2014 Action Required
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {overdueJobs.map(j => (
                 <span key={j.id} style={{ background: '#fff', border: '1px solid #ffc107', borderRadius: 4, padding: '3px 8px', fontSize: 12 }}>
-                  <strong>{j.job_no}</strong> â€” {j.customer} (due {j.due_date})
+                  <strong>{j.job_no}</strong> \u2014 {j.customer} (due {j.due_date})
                 </span>
               ))}
             </div>
           </div>
           <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))}
             style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
-            ðŸ“² Send WhatsApp Alert
+            \ud83d\udcf2 Send WhatsApp Alert
           </button>
         </div>
       )}
@@ -398,7 +461,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
         <StatCard label="Monthly Income"   value={fmt(monthlySales)} accent="#16a34a" />
         <StatCard label="Monthly Expenses" value={fmt(monthlyExp)}   accent="#dc2626" />
         <StatCard label="Monthly Profit"   value={fmt(monthlySales - monthlyExp)} accent={monthlySales >= monthlyExp ? '#2563eb' : '#dc2626'} />
-        <StatCard label="Active Jobs"      value={activeJobs} sub={overdueJobs.length > 0 ? `âš ï¸ ${overdueJobs.length} overdue` : 'On track'} accent="#f59e0b" />
+        <StatCard label="Active Jobs"      value={activeJobs} sub={overdueJobs.length > 0 ? `\u26a0\ufe0f ${overdueJobs.length} overdue` : 'On track'} accent="#f59e0b" />
         <StatCard label="Outstanding"      value={fmt(unpaidTotal)} sub={`${invoices.filter(i=>i.status!=='paid').length} invoice(s)`} accent="#7c3aed" />
         <StatCard label="Low Stock Items"  value={lowStock.length} sub={lowStock.length > 0 ? 'Needs reorder' : 'All good'} accent={lowStock.length > 0 ? '#dc2626' : '#16a34a'} />
       </div>
@@ -406,7 +469,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
       {/* Monthly Goal Tracker */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>ðŸŽ¯ Monthly Revenue Goal</h3>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>\ud83c\udfaf Monthly Revenue Goal</h3>
           <button onClick={() => { setGoalInput(String(monthlyGoal)); setEditGoal(true); }}
             style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: 4, padding: '3px 10px', cursor: 'pointer', fontSize: 12, color: '#6b7280' }}>
             {monthlyGoal > 0 ? 'Edit Goal' : 'Set Goal'}
@@ -414,7 +477,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
         </div>
         {editGoal && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-            <Inp placeholder="Monthly target (GHâ‚µ)" type="number" value={goalInput} onChange={e => setGoalInput(e.target.value)} />
+            <Inp placeholder="Monthly target (GH\u20b5)" type="number" value={goalInput} onChange={e => setGoalInput(e.target.value)} />
             <Btn small onClick={() => { setMonthlyGoal(parseFloat(goalInput)||0); setEditGoal(false); }}>Save</Btn>
             <Btn small variant="ghost" onClick={() => setEditGoal(false)}>Cancel</Btn>
           </div>
@@ -423,12 +486,12 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
               <span style={{ fontWeight: 700, color: goalPct >= 100 ? '#16a34a' : '#374151' }}>{fmt(monthlySales)} earned</span>
-              <span style={{ color: '#6b7280' }}>Goal: {fmt(monthlyGoal)} â€” <strong style={{ color: goalPct >= 100 ? '#16a34a' : '#2563eb' }}>{goalPct}%</strong></span>
+              <span style={{ color: '#6b7280' }}>Goal: {fmt(monthlyGoal)} \u2014 <strong style={{ color: goalPct >= 100 ? '#16a34a' : '#2563eb' }}>{goalPct}%</strong></span>
             </div>
             <div style={{ background: '#f1f5f9', borderRadius: 6, height: 14, overflow: 'hidden' }}>
               <div style={{ width: `${goalPct}%`, height: 14, borderRadius: 6, background: goalPct >= 100 ? '#16a34a' : goalPct >= 75 ? '#2563eb' : goalPct >= 50 ? '#f59e0b' : '#dc2626', transition: 'width 0.4s ease' }} />
             </div>
-            {goalPct >= 100 && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 700 }}>ðŸŽ‰ Goal achieved! Keep going!</p>}
+            {goalPct >= 100 && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 700 }}>\ud83c\udf89 Goal achieved! Keep going!</p>}
           </>
         ) : (
           <p style={{ margin: 0, color: '#9ca3af', fontSize: 13 }}>Set a monthly revenue target to track your progress.</p>
@@ -437,7 +500,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue â€” Last 7 Days</h3>
+          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue \u2014 Last 7 Days</h3>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
             {last7.map((d, i) => (
               <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -470,7 +533,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Recent Jobs</h3>
-          <Btn variant="ghost" small onClick={() => setActiveTab('jobs')}>View All â†’</Btn>
+          <Btn variant="ghost" small onClick={() => setActiveTab('jobs')}>View All \u2192</Btn>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -494,11 +557,11 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
 
       {lowStock.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #fca5a5', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#dc2626' }}>âš ï¸ Low Stock Alerts</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#dc2626' }}>\u26a0\ufe0f Low Stock Alerts</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {lowStock.map(i => (
               <div key={i.id} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '6px 12px', fontSize: 12 }}>
-                <strong>{i.name}</strong> â€” {i.quantity} {i.unit} left (reorder at {i.reorder_point})
+                <strong>{i.name}</strong> \u2014 {i.quantity} {i.unit} left (reorder at {i.reorder_point})
               </div>
             ))}
           </div>
@@ -508,10 +571,10 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
   );
 }
 
-// â”€â”€â”€ JOBS TAB (enhanced) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 JOBS TAB (enhanced) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const EMPTY_JOB = { customer: '', customer_id: '', description: '', type: 'Digital', status: 'queued', priority: 'normal', due_date: '', start_date: '', price: '', cost: '', machine: '', notes: '', delivery_status: 'pending', assigned_to: '', payment_method: 'Cash', whatsapp: '' };
 
-function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
+function JobsTab({ jobs, setJobs, customers, addNotif, userId, autoNotify }) {
   const [filter,  setFilter]  = useState('all');
   const [search,  setSearch]  = useState('');
   const [modal,   setModal]   = useState(false);
@@ -558,9 +621,18 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
     if (!error) { setJobs(jobs.filter(j => j.id !== id)); addNotif('Job deleted'); }
   };
 
+  const [autoNotifQueue, setAutoNotifQueue] = useState([]);
+
   const updateField = async (id, field, value) => {
+    const job = jobs.find(j => j.id === id);
     const { data, error } = await db.updateJob(id, { [field]: value });
-    if (!error) setJobs(jobs.map(j => j.id === id ? data : j));
+    if (!error) {
+      setJobs(jobs.map(j => j.id === id ? data : j));
+      if (field === 'status' && autoNotify && job && (job.whatsapp || '').trim()) {
+        const msg = generateStatusChangeMsg(job, value);
+        setAutoNotifQueue(q => [...q, { job: { ...job, status: value }, msg, phone: job.whatsapp }]);
+      }
+    }
   };
 
   const duplicate = async (j) => {
@@ -575,7 +647,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
   const printTicket = (j) => {
     const w = window.open('', '', 'width=600,height=500');
     w.document.write(`<html><body style="font-family:Arial;padding:30px;max-width:500px">
-      <h2>ðŸ–¨ï¸ JOB TICKET â€” ${j.job_no}</h2>
+      <h2>\ud83d\udda8\ufe0f JOB TICKET \u2014 ${j.job_no}</h2>
       <p><b>Customer:</b> ${j.customer}</p>
       <p><b>Description:</b> ${j.description}</p>
       <p><b>Type:</b> ${j.type} &nbsp; <b>Machine:</b> ${j.machine||'TBD'}</p>
@@ -583,7 +655,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
       <p><b>Priority:</b> ${(j.priority||'').toUpperCase()} &nbsp; <b>Status:</b> ${j.status}</p>
       <p><b>Delivery Status:</b> ${j.delivery_status||'pending'}</p>
       <p><b>Start:</b> ${j.start_date||'TBD'} &nbsp; <b>Due:</b> ${j.due_date||'TBD'}</p>
-      <p><b>Price:</b> GHâ‚µ${j.price} &nbsp; <b>Est. Cost:</b> GHâ‚µ${j.cost}</p>
+      <p><b>Price:</b> GH\u20b5${j.price} &nbsp; <b>Est. Cost:</b> GH\u20b5${j.cost}</p>
       ${j.notes ? `<p><b>Notes:</b> ${j.notes}</p>` : ''}
       <div style="margin-top:20px;padding:10px;border:2px solid #000;display:inline-block;font-size:20px;font-weight:bold;letter-spacing:4px">${j.qr_code}</div>
       <p style="font-size:10px;color:#999">Printed ${new Date().toLocaleString()}</p>
@@ -596,7 +668,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Job Management</h2>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ðŸ” Searchâ€¦" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="\ud83d\udd0d Search\u2026" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
           <Btn onClick={openNew}>+ New Job</Btn>
         </div>
       </div>
@@ -623,8 +695,8 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
                   <TD>{j.customer}</TD>
                   <TD style={{ maxWidth: 160 }}>{j.description}</TD>
                   <TD>{j.type}</TD>
-                  <TD style={{ color: '#6b7280', fontSize: 12 }}>{j.assigned_to || 'â€”'}</TD>
-                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151' }}>{j.due_date || 'â€”'}</TD>
+                  <TD style={{ color: '#6b7280', fontSize: 12 }}>{j.assigned_to || '\u2014'}</TD>
+                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151' }}>{j.due_date || '\u2014'}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
                   <TD>
                     <span style={{ fontWeight: 700, color: profit >= 0 ? '#16a34a' : '#dc2626', fontSize: 12 }}>
@@ -647,8 +719,8 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
                   <TD>
                     <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                       <Btn variant="ghost" small onClick={() => openEdit(j)}>Edit</Btn>
-                      <Btn variant="ghost" small onClick={() => printTicket(j)}>ðŸ–¨ï¸</Btn>
-                      <Btn variant="teal" small onClick={() => setMsgModal(j)}>ðŸ“²</Btn>
+                      <Btn variant="ghost" small onClick={() => printTicket(j)}>\ud83d\udda8\ufe0f</Btn>
+                      <Btn variant="teal" small onClick={() => setMsgModal(j)}>\ud83d\udcf2</Btn>
                       <Btn variant="warning" small onClick={() => duplicate(j)}>Copy</Btn>
                       <Btn variant="danger" small onClick={() => del(j.id)}>Del</Btn>
                     </div>
@@ -665,7 +737,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
         <Modal title={editId ? `Edit Job` : 'New Job Ticket'} onClose={closeModal} wide>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customer_id: c?.id||'' }); }}>
-              <option value="">â€” Select Customer â€”</option>
+              <option value="">\u2014 Select Customer \u2014</option>
               {customers.map(c => <option key={c.id}>{c.name}</option>)}
             </Sel>
             <Sel label="Job Type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
@@ -675,7 +747,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
               <Inp label="Description *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
             </div>
             <Sel label="Machine" value={form.machine} onChange={e => setForm({ ...form, machine: e.target.value })}>
-              <option value="">â€” Unassigned â€”</option>
+              <option value="">\u2014 Unassigned \u2014</option>
               {MACHINES.map(m => <option key={m}>{m}</option>)}
             </Sel>
             <Sel label="Assigned To" value={form.assigned_to||''} onChange={e => setForm({ ...form, assigned_to: e.target.value })}>
@@ -698,8 +770,8 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
             <Inp label="Customer WhatsApp" placeholder="+233..." value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} />
             <Inp label="Start Date" type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} />
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
-            <Inp label="Price (GHâ‚µ)" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
-            <Inp label="Est. Cost (GHâ‚µ)" type="number" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} />
+            <Inp label="Price (GH\u20b5)" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+            <Inp label="Est. Cost (GH\u20b5)" type="number" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} />
             {form.price && form.cost && (
               <div style={{ gridColumn: '1/-1', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 14px' }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
@@ -716,7 +788,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={closeModal}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : editId ? 'Save Changes' : 'Create Job'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving\u2026' : editId ? 'Save Changes' : 'Create Job'}</Btn>
           </div>
         </Modal>
       )}
@@ -724,17 +796,40 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId }) {
       {msgModal && (
         <WhatsAppMsgModal job={msgModal} onClose={() => setMsgModal(null)} />
       )}
+
+      {/* Auto-notify popup when status changes and customer has WhatsApp */}
+      {autoNotifQueue.length > 0 && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 9998, width: 340 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>\ud83d\udcf2 Send Status Update?</span>
+            <button onClick={() => setAutoNotifQueue([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#9ca3af' }}>\u00d7</button>
+          </div>
+          <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>
+            Job <strong>{autoNotifQueue[0].job.job_no}</strong> status changed to <strong>{autoNotifQueue[0].job.status}</strong>. Notify {autoNotifQueue[0].job.customer}?
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { openWhatsApp(autoNotifQueue[0].phone, autoNotifQueue[0].msg); setAutoNotifQueue(q => q.slice(1)); addNotif(`WhatsApp sent to ${autoNotifQueue[0].job.customer}`, 'success'); }}
+              style={{ flex: 1, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              Send WhatsApp
+            </button>
+            <button onClick={() => setAutoNotifQueue(q => q.slice(1))}
+              style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: '#6b7280' }}>
+              Skip
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// â”€â”€â”€ WHATSAPP MESSAGE MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 WHATSAPP MESSAGE MODAL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function WhatsAppMsgModal({ job, onClose }) {
   const [phone, setPhone] = useState(job.whatsapp || '');
   const [msg, setMsg] = useState(generateJobReadyMsg(job));
 
   return (
-    <Modal title="ðŸ“² WhatsApp Message" onClose={onClose}>
+    <Modal title="\ud83d\udcf2 WhatsApp Message" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Inp label="Customer WhatsApp Number" placeholder="+233..." value={phone} onChange={e => setPhone(e.target.value)} />
         <div>
@@ -745,7 +840,7 @@ function WhatsAppMsgModal({ job, onClose }) {
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
           <button onClick={() => { navigator.clipboard.writeText(msg); }}
             style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-            ðŸ“‹ Copy Text
+            \ud83d\udccb Copy Text
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
             <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
@@ -760,7 +855,7 @@ function WhatsAppMsgModal({ job, onClose }) {
   );
 }
 
-// â”€â”€â”€ CUSTOMERS (enhanced with outstanding balance + WhatsApp) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 CUSTOMERS (enhanced with outstanding balance + WhatsApp) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const EMPTY_CX = { name: '', email: '', phone: '', address: '', whatsapp: '' };
 
 function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userId }) {
@@ -796,7 +891,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Customer CRM</h2>
         <div style={{ display: 'flex', gap: 8 }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ðŸ” Searchâ€¦" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="\ud83d\udd0d Search\u2026" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
           <Btn onClick={() => { setForm(EMPTY_CX); setEditId(null); setModal(true); }}>+ Add Customer</Btn>
         </div>
       </div>
@@ -820,14 +915,14 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
                       {(c.whatsapp || c.phone) ? (
                         <button onClick={e => { e.stopPropagation(); openWhatsApp(c.whatsapp || c.phone, `Hi ${c.name}!`); }}
                           style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
-                          ðŸ’¬ Chat
+                          \ud83d\udcac Chat
                         </button>
-                      ) : 'â€”'}
+                      ) : '\u2014'}
                     </TD>
                     <TD>{cJobs.length}</TD>
                     <TD style={{ fontWeight: 600, color: '#16a34a' }}>{fmt(cRev)}</TD>
                     <TD style={{ fontWeight: 700, color: cOutstanding > 0 ? '#dc2626' : '#16a34a' }}>
-                      {cOutstanding > 0 ? fmt(cOutstanding) : 'âœ“ Paid'}
+                      {cOutstanding > 0 ? fmt(cOutstanding) : '\u2713 Paid'}
                     </TD>
                     <TD>
                       <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
@@ -846,17 +941,17 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{selected.name}</h3>
-              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20 }}>Ã—</button>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20 }}>\u00d7</button>
             </div>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>ðŸ“§ {selected.email}</p>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>ðŸ“ž {selected.phone}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>\ud83d\udce7 {selected.email}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>\ud83d\udcde {selected.phone}</p>
             {selected.whatsapp && (
               <button onClick={() => openWhatsApp(selected.whatsapp, `Hi ${selected.name}!`)}
                 style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>
-                ðŸ’¬ Open WhatsApp
+                \ud83d\udcac Open WhatsApp
               </button>
             )}
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>ðŸ“ {selected.address}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>\ud83d\udccd {selected.address}</p>
             <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: 8 }}>Job History</h4>
             {jobs.filter(j => j.customer_id === selected.id).map(j => (
               <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', borderRadius: 6, marginBottom: 6 }}>
@@ -885,7 +980,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_CX); setEditId(null); }}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : editId ? 'Save Changes' : 'Add Customer'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving\u2026' : editId ? 'Save Changes' : 'Add Customer'}</Btn>
           </div>
         </Modal>
       )}
@@ -893,7 +988,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
   );
 }
 
-// â”€â”€â”€ QUOTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 QUOTES \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
   const [form, setForm] = useState({ customer: '', customer_id: '', description: '', type: 'Digital', qty: '', unitPrice: '', rushFee: false, bulkDiscount: false, notes: '' });
   const [quotes, setQuotes] = useState([]);
@@ -929,10 +1024,10 @@ function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 24 }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 800 }}>âš¡ Quick Quote Builder</h3>
+        <h3 style={{ margin: '0 0 20px', fontSize: 15, fontWeight: 800 }}>\u26a1 Quick Quote Builder</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customer_id: c?.id||'' }); }}>
-            <option value="">â€” Select Customer â€”</option>
+            <option value="">\u2014 Select Customer \u2014</option>
             {customers.map(c => <option key={c.id}>{c.name}</option>)}
           </Sel>
           <Inp label="Description *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
@@ -941,14 +1036,14 @@ function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
           </Sel>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Inp label="Quantity *" type="number" value={form.qty} onChange={e => setForm({ ...form, qty: e.target.value })} />
-            <Inp label="Unit Price (GHâ‚µ) *" type="number" value={form.unitPrice} onChange={e => setForm({ ...form, unitPrice: e.target.value })} />
+            <Inp label="Unit Price (GH\u20b5) *" type="number" value={form.unitPrice} onChange={e => setForm({ ...form, unitPrice: e.target.value })} />
           </div>
           <div style={{ display: 'flex', gap: 20 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
               <input type="checkbox" checked={form.rushFee} onChange={e => setForm({ ...form, rushFee: e.target.checked })} /> Rush +25%
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-              <input type="checkbox" checked={form.bulkDiscount} onChange={e => setForm({ ...form, bulkDiscount: e.target.checked })} /> Bulk âˆ’10% (qtyâ‰¥100)
+              <input type="checkbox" checked={form.bulkDiscount} onChange={e => setForm({ ...form, bulkDiscount: e.target.checked })} /> Bulk \u221210% (qty\u2265100)
             </label>
           </div>
           <Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
@@ -958,13 +1053,13 @@ function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}><span>Subtotal</span><span>{fmt(sub)}</span></div>
             {rush > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#f59e0b' }}><span>Rush Fee</span><span>+{fmt(rush)}</span></div>}
-            {bulk > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#16a34a' }}><span>Bulk Discount</span><span>âˆ’{fmt(bulk)}</span></div>}
+            {bulk > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#16a34a' }}><span>Bulk Discount</span><span>\u2212{fmt(bulk)}</span></div>}
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 17, fontWeight: 800, borderTop: '1px solid #e5e7eb', paddingTop: 8, marginTop: 4 }}>
               <span>Total</span><span style={{ color: '#2563eb' }}>{fmt(total)}</span>
             </div>
           </div>
         </div>
-        <div style={{ marginTop: 14 }}><Btn onClick={save}>ðŸ’¾ Save Quote</Btn></div>
+        <div style={{ marginTop: 14 }}><Btn onClick={save}>\ud83d\udcbe Save Quote</Btn></div>
       </div>
 
       <div>
@@ -976,9 +1071,9 @@ function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
               <span style={{ fontWeight: 700, fontSize: 14 }}>{q.customer}</span>
               <Badge text={q.status === 'converted' ? 'completed' : 'quoting'} />
             </div>
-            <p style={{ margin: '0 0 2px', fontSize: 12, color: '#6b7280' }}>{q.description} â€” qty {q.qty}</p>
+            <p style={{ margin: '0 0 2px', fontSize: 12, color: '#6b7280' }}>{q.description} \u2014 qty {q.qty}</p>
             <p style={{ margin: '0 0 10px', fontSize: 14, fontWeight: 800, color: '#2563eb' }}>{fmt(q.total)}</p>
-            {q.status !== 'converted' && <Btn variant="success" small onClick={() => convert(q)}>â†’ Convert to Job</Btn>}
+            {q.status !== 'converted' && <Btn variant="success" small onClick={() => convert(q)}>\u2192 Convert to Job</Btn>}
           </div>
         ))}
       </div>
@@ -986,7 +1081,7 @@ function QuotesTab({ customers, jobs, setJobs, addNotif, userId }) {
   );
 }
 
-// â”€â”€â”€ SCHEDULE (with Calendar view) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 SCHEDULE (with Calendar view) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function ScheduleTab({ jobs, setJobs, userId }) {
   const [view, setView] = useState('kanban');
   const active = jobs.filter(j => !['cancelled','completed'].includes(j.status));
@@ -1023,7 +1118,7 @@ function ScheduleTab({ jobs, setJobs, userId }) {
           {['kanban','calendar','machines'].map(v => (
             <button key={v} onClick={() => setView(v)}
               style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', textTransform: 'capitalize', background: view === v ? '#2563eb' : '#fff', color: view === v ? '#fff' : '#6b7280', borderColor: view === v ? '#2563eb' : '#e5e7eb' }}>
-              {v === 'kanban' ? 'ðŸ“‹ Kanban' : v === 'calendar' ? 'ðŸ“… Calendar' : 'âš™ï¸ Machines'}
+              {v === 'kanban' ? '\ud83d\udccb Kanban' : v === 'calendar' ? '\ud83d\udcc5 Calendar' : '\u2699\ufe0f Machines'}
             </button>
           ))}
         </div>
@@ -1045,7 +1140,7 @@ function ScheduleTab({ jobs, setJobs, userId }) {
                     </div>
                     <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 600 }}>{j.customer}</p>
                     <p style={{ margin: '0 0 2px', fontSize: 11, color: '#6b7280' }}>{(j.description||'').substring(0,40)}</p>
-                    {j.assigned_to && <p style={{ margin: '0 0 6px', fontSize: 11, color: '#7c3aed' }}>ðŸ‘¤ {j.assigned_to}</p>}
+                    {j.assigned_to && <p style={{ margin: '0 0 6px', fontSize: 11, color: '#7c3aed' }}>\ud83d\udc64 {j.assigned_to}</p>}
                     <select value={j.status} onChange={e => updateField(j.id, 'status', e.target.value)}
                       style={{ fontSize: 10, border: '1px solid #e5e7eb', borderRadius: 4, padding: '2px 4px', cursor: 'pointer' }}>
                       {JOB_STATUSES.map(s => <option key={s}>{s}</option>)}
@@ -1063,10 +1158,10 @@ function ScheduleTab({ jobs, setJobs, userId }) {
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', background: '#0f172a', color: '#fff' }}>
             <button onClick={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y=>y-1); } else setCalMonth(m=>m-1); }}
-              style={{ background: 'none', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>â†</button>
+              style={{ background: 'none', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>\u2190</button>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{MONTH_NAMES[calMonth]} {calYear}</h3>
             <button onClick={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(y=>y+1); } else setCalMonth(m=>m+1); }}
-              style={{ background: 'none', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>â†’</button>
+              style={{ background: 'none', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '4px 12px', cursor: 'pointer' }}>\u2192</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
@@ -1082,7 +1177,7 @@ function ScheduleTab({ jobs, setJobs, userId }) {
                 <div key={d} style={{ minHeight: 80, padding: 6, borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', background: isToday ? '#eff6ff' : '#fff' }}>
                   <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#2563eb' : '#374151', marginBottom: 4 }}>{d}</div>
                   {dayJobs.slice(0,3).map(j => (
-                    <div key={j.id} title={`${j.job_no} â€” ${j.customer}: ${j.description}`}
+                    <div key={j.id} title={`${j.job_no} \u2014 ${j.customer}: ${j.description}`}
                       style={{ fontSize: 10, fontWeight: 700, background: STATUS_COLORS[j.status]?.bg, color: STATUS_COLORS[j.status]?.color, borderRadius: 3, padding: '1px 4px', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {j.job_no} {j.customer}
                     </div>
@@ -1124,7 +1219,7 @@ function ScheduleTab({ jobs, setJobs, userId }) {
   );
 }
 
-// â”€â”€â”€ INVENTORY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 INVENTORY \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const EMPTY_INV = { name: '', category: 'Paper', unit: 'Ream', quantity: '', reorder_point: '', unit_cost: '', supplier: '' };
 
 function InventoryTab({ inventory, setInventory, addNotif, userId }) {
@@ -1157,7 +1252,7 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
     const { data, error } = await db.updateInventoryItem(id, { quantity: q });
     if (!error) {
       setInventory(inventory.map(i => i.id === id ? data : i));
-      if (q <= item.reorder_point) addNotif(`âš ï¸ Low stock: ${item.name} (${q} ${item.unit})`, 'warning');
+      if (q <= item.reorder_point) addNotif(`\u26a0\ufe0f Low stock: ${item.name} (${q} ${item.unit})`, 'warning');
     }
   };
 
@@ -1209,12 +1304,12 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
                   <TD style={{ color: '#6b7280' }}>{item.supplier}</TD>
                   <TD>
                     {low
-                      ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>âš ï¸ LOW</span>
+                      ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>\u26a0\ufe0f LOW</span>
                       : <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>OK</span>}
                   </TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                      <button onClick={() => adjust(item.id, -1)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#dc2626' }}>âˆ’</button>
+                      <button onClick={() => adjust(item.id, -1)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#dc2626' }}>\u2212</button>
                       <button onClick={() => adjust(item.id,  1)} style={{ background: '#dcfce7', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#16a34a' }}>+</button>
                       <Btn variant="ghost" small onClick={() => { setForm({ ...item, quantity: String(item.quantity), reorder_point: String(item.reorder_point), unit_cost: String(item.unit_cost) }); setEditId(item.id); setModal(true); }}>Edit</Btn>
                       <Btn variant="danger" small onClick={() => del(item.id)}>Del</Btn>
@@ -1237,12 +1332,12 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
             <Inp label="Unit" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} />
             <Inp label="Quantity" type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} />
             <Inp label="Reorder Point" type="number" value={form.reorder_point} onChange={e => setForm({ ...form, reorder_point: e.target.value })} />
-            <Inp label="Unit Cost (GHâ‚µ)" type="number" value={form.unit_cost} onChange={e => setForm({ ...form, unit_cost: e.target.value })} />
+            <Inp label="Unit Cost (GH\u20b5)" type="number" value={form.unit_cost} onChange={e => setForm({ ...form, unit_cost: e.target.value })} />
             <Inp label="Supplier" value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} />
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_INV); setEditId(null); }}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : editId ? 'Save Changes' : 'Add Item'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving\u2026' : editId ? 'Save Changes' : 'Add Item'}</Btn>
           </div>
         </Modal>
       )}
@@ -1250,7 +1345,7 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
   );
 }
 
-// â”€â”€â”€ INVOICES (enhanced with print button) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 INVOICES (enhanced with print button) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNotif, userId }) {
   const [modal, setModal] = useState(false);
   const [form, setForm]   = useState({ job_id: '', customer: '', customer_id: '', due_date: '', items: [{ desc: '', qty: 1, rate: '', total: 0 }] });
@@ -1287,12 +1382,12 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
       setInvoices(invoices.map(i => i.id === id ? data : i));
       const { data: saleData } = await db.addSale(userId, { date: todayStr(), amount: inv.amount, job_id: inv.job_id });
       if (saleData) setSales(s => [...s, saleData]);
-      addNotif(`Invoice ${inv.invoice_no} paid â€” ${fmt(inv.amount)} recorded`, 'success');
+      addNotif(`Invoice ${inv.invoice_no} paid \u2014 ${fmt(inv.amount)} recorded`, 'success');
     }
   };
 
   const recordPartial = async (id) => {
-    const raw = prompt('Enter amount received (GHâ‚µ):');
+    const raw = prompt('Enter amount received (GH\u20b5):');
     const amt = parseFloat(raw);
     if (!amt || isNaN(amt)) return;
     const inv = invoices.find(i => i.id === id);
@@ -1325,7 +1420,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
     .footer{margin-top:32px;font-size:11px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px}
     @media print{body{padding:20px}}</style></head><body>
     <div class="header">
-      <div><div class="logo">ðŸ–¨ï¸ PrintShop</div><p style="font-size:12px;color:#555;margin:4px 0">Professional Printing Services</p></div>
+      <div><div class="logo">\ud83d\udda8\ufe0f PrintShop</div><p style="font-size:12px;color:#555;margin:4px 0">Professional Printing Services</p></div>
       <div class="meta">
         <h2>${inv.invoice_no}</h2>
         <p>Date: <strong>${inv.date}</strong></p>
@@ -1387,9 +1482,9 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
                 <TD><Badge text={inv.status === 'paid' ? 'completed' : inv.status === 'partial' ? 'in-progress' : 'queued'} /></TD>
                 <TD>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {inv.status !== 'paid' && <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid âœ“</Btn>}
+                    {inv.status !== 'paid' && <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid \u2713</Btn>}
                     {inv.status !== 'paid' && <Btn variant="ghost" small onClick={() => recordPartial(inv.id)}>Partial</Btn>}
-                    <Btn variant="ghost" small onClick={() => printInvoice(inv)}>ðŸ–¨ï¸ Print</Btn>
+                    <Btn variant="ghost" small onClick={() => printInvoice(inv)}>\ud83d\udda8\ufe0f Print</Btn>
                     <Btn variant="danger" small onClick={() => del(inv.id)}>Del</Btn>
                   </div>
                 </TD>
@@ -1404,7 +1499,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
         <Modal title="Create Invoice" onClose={() => setModal(false)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customer_id: c?.id||'' }); }}>
-              <option value="">â€” Select Customer â€”</option>
+              <option value="">\u2014 Select Customer \u2014</option>
               {customers.map(c => <option key={c.id}>{c.name}</option>)}
             </Sel>
             <Sel label="Link to Job (optional)" value={form.job_id} onChange={e => {
@@ -1412,8 +1507,8 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
               if (j) setForm({ ...form, job_id: e.target.value, customer: j.customer, customer_id: j.customer_id, items: [{ desc: j.description, qty: 1, rate: String(j.price), total: j.price }] });
               else   setForm({ ...form, job_id: e.target.value });
             }}>
-              <option value="">â€” None â€”</option>
-              {jobs.filter(j => j.status === 'completed').map(j => <option key={j.id} value={j.id}>{j.job_no} â€” {j.description}</option>)}
+              <option value="">\u2014 None \u2014</option>
+              {jobs.filter(j => j.status === 'completed').map(j => <option key={j.id} value={j.id}>{j.job_no} \u2014 {j.description}</option>)}
             </Sel>
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             <h4 style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 700 }}>Line Items</h4>
@@ -1423,7 +1518,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
                 <Inp placeholder="Qty" type="number" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
                 <Inp placeholder="Rate" type="number" value={item.rate} onChange={e => updateItem(idx, 'rate', e.target.value)} />
                 <button onClick={() => setForm({ ...form, items: form.items.filter((_,i) => i !== idx) })}
-                  style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '8px 10px', cursor: 'pointer', color: '#dc2626', fontWeight: 700 }}>Ã—</button>
+                  style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '8px 10px', cursor: 'pointer', color: '#dc2626', fontWeight: 700 }}>\u00d7</button>
               </div>
             ))}
             <Btn variant="ghost" onClick={() => setForm({ ...form, items: [...form.items, { desc: '', qty: 1, rate: '', total: 0 }] })}>+ Add Line</Btn>
@@ -1439,7 +1534,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
   );
 }
 
-// â”€â”€â”€ FINANCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 FINANCE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }) {
   const [sf, setSf] = useState({ date: todayStr(), amount: '', payment_method: 'Cash' });
   const [ef, setEf] = useState({ date: todayStr(), category: 'Paper', description: '', amount: '' });
@@ -1506,7 +1601,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
           <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#15803d' }}>Record Sale</h4>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <Inp label="Date" type="date" value={sf.date} onChange={e => setSf({ ...sf, date: e.target.value })} />
-            <Inp label="Amount (GHâ‚µ)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} />
+            <Inp label="Amount (GH\u20b5)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} />
             <Sel label="Payment Method" value={sf.payment_method} onChange={e => setSf({ ...sf, payment_method: e.target.value })}>
               {['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(m => <option key={m}>{m}</option>)}
             </Sel>
@@ -1525,7 +1620,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
               {['Paper','Ink & Toner','Maintenance','Salaries','Utilities','Other'].map(c => <option key={c}>{c}</option>)}
             </Sel>
             <Inp label="Description" value={ef.description} onChange={e => setEf({ ...ef, description: e.target.value })} />
-            <Inp label="Amount (GHâ‚µ)" type="number" value={ef.amount} onChange={e => setEf({ ...ef, amount: e.target.value })} />
+            <Inp label="Amount (GH\u20b5)" type="number" value={ef.amount} onChange={e => setEf({ ...ef, amount: e.target.value })} />
             <Btn variant="warning" onClick={addExp}>Record</Btn>
             <Btn variant="ghost" onClick={() => setShowEF(false)}>Cancel</Btn>
           </div>
@@ -1535,7 +1630,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#15803d' }}>ðŸ’š Income ({sales.length})</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#15803d' }}>\ud83d\udc9a Income ({sales.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {[...sales].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(s => (
@@ -1543,7 +1638,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
                 <span style={{ fontSize: 12, color: '#6b7280' }}>{s.date}</span>
                 {s.payment_method && <span style={{ fontSize: 10, background: '#f1f5f9', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{s.payment_method}</span>}
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{fmt(s.amount)}</span>
-                <button onClick={() => delSale(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>Ã—</button>
+                <button onClick={() => delSale(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>\u00d7</button>
               </div>
             ))}
           </div>
@@ -1551,7 +1646,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
 
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>â¤ï¸ Expenses ({expenses.length})</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>\u2764\ufe0f Expenses ({expenses.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {[...expenses].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(e => (
@@ -1560,7 +1655,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
                 <span style={{ fontSize: 11, background: '#f1f5f9', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{e.category}</span>
                 <span style={{ fontSize: 12, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', whiteSpace: 'nowrap' }}>{fmt(e.amount)}</span>
-                <button onClick={() => delExp(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>Ã—</button>
+                <button onClick={() => delExp(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>\u00d7</button>
               </div>
             ))}
           </div>
@@ -1570,7 +1665,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId }
   );
 }
 
-// â”€â”€â”€ LOANS TAB (local storage only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 LOANS TAB (local storage only) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const EMPTY_LOAN = { name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' };
 
 function LoansTab({ loans, saveLoans, addNotif }) {
@@ -1600,7 +1695,7 @@ function LoansTab({ loans, saveLoans, addNotif }) {
   };
 
   const recordPayment = (id) => {
-    const raw = prompt('Enter payment amount (GHâ‚µ):');
+    const raw = prompt('Enter payment amount (GH\u20b5):');
     const amt = parseFloat(raw);
     if (!amt || isNaN(amt)) return;
     saveLoans(loans.map(l => {
@@ -1614,7 +1709,7 @@ function LoansTab({ loans, saveLoans, addNotif }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>ðŸ¦ Loans & Credit</h2>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>\ud83c\udfe6 Loans & Credit</h2>
         <Btn onClick={() => { setForm(EMPTY_LOAN); setEditId(null); setModal(true); }}>+ Add Loan</Btn>
       </div>
 
@@ -1642,14 +1737,14 @@ function LoansTab({ loans, saveLoans, addNotif }) {
                     </span>
                   </TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(l.amount)}</TD>
-                  <TD>{l.rate ? `${l.rate}%` : 'â€”'}</TD>
+                  <TD>{l.rate ? `${l.rate}%` : '\u2014'}</TD>
                   <TD>{l.date}</TD>
                   <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>
-                    {l.due_date || 'â€”'}{overdue ? ' âš ï¸' : ''}
+                    {l.due_date || '\u2014'}{overdue ? ' \u26a0\ufe0f' : ''}
                   </TD>
                   <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(l.paid)}</TD>
                   <TD style={{ fontWeight: 700, color: balance > 0 ? '#dc2626' : '#16a34a' }}>
-                    {balance > 0 ? fmt(balance) : 'âœ“ Settled'}
+                    {balance > 0 ? fmt(balance) : '\u2713 Settled'}
                   </TD>
                   <TD style={{ color: '#6b7280', fontSize: 12 }}>{l.notes}</TD>
                   <TD>
@@ -1682,7 +1777,7 @@ function LoansTab({ loans, saveLoans, addNotif }) {
               <option value="borrowed">Borrowed (we owe)</option>
               <option value="lent">Lent (they owe us)</option>
             </Sel>
-            <Inp label="Amount (GHâ‚µ) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            <Inp label="Amount (GH\u20b5) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
             <Inp label="Interest Rate (%)" type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} />
             <Inp label="Amount Already Paid" type="number" value={form.paid} onChange={e => setForm({ ...form, paid: e.target.value })} />
             <Inp label="Start Date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
@@ -1701,7 +1796,7 @@ function LoansTab({ loans, saveLoans, addNotif }) {
   );
 }
 
-// â”€â”€â”€ REPORTS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// \u2500\u2500\u2500 REPORTS TAB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
   const [period, setPeriod] = useState('month');
 
@@ -1758,7 +1853,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>ðŸ“ˆ Reports & Analytics</h2>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>\ud83d\udcc8 Reports & Analytics</h2>
         <div style={{ display: 'flex', gap: 6 }}>
           {[['month','This Month'],['year','This Year'],['all','All Time']].map(([val, lbl]) => (
             <button key={val} onClick={() => setPeriod(val)}
@@ -1782,11 +1877,11 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
 
       {/* Revenue vs Expenses Trend */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue vs Expenses â€” Last 6 Months</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue vs Expenses \u2014 Last 6 Months</h3>
         <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
-          <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>â–  Revenue</span>
-          <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>â–  Expenses</span>
-          <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 700 }}>â–  Profit</span>
+          <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>\u25a0 Revenue</span>
+          <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>\u25a0 Expenses</span>
+          <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 700 }}>\u25a0 Profit</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 140 }}>
           {trend.map((t, i) => (
@@ -1814,7 +1909,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
               <div key={type} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                   <span style={{ fontWeight: 600 }}>{type} <span style={{ color: '#9ca3af' }}>({count} jobs)</span></span>
-                  <span style={{ fontWeight: 700, color: '#2563eb' }}>{fmt(revenue)} â€” {pct}%</span>
+                  <span style={{ fontWeight: 700, color: '#2563eb' }}>{fmt(revenue)} \u2014 {pct}%</span>
                 </div>
                 <div style={{ background: '#f1f5f9', borderRadius: 4, height: 8 }}>
                   <div style={{ width: `${pct}%`, background: '#2563eb', height: 8, borderRadius: 4 }} />
@@ -1835,7 +1930,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
               <div key={cat} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                   <span style={{ fontWeight: 600 }}>{cat}</span>
-                  <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(total)} â€” {pct}%</span>
+                  <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(total)} \u2014 {pct}%</span>
                 </div>
                 <div style={{ background: '#f1f5f9', borderRadius: 4, height: 8 }}>
                   <div style={{ width: `${pct}%`, background: '#dc2626', height: 8, borderRadius: 4 }} />
@@ -1848,7 +1943,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
 
       {/* Top Customers */}
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>ðŸ† Top Customers by Revenue</h3>
+        <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>\ud83c\udfc6 Top Customers by Revenue</h3>
         {topCustomers.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>No customer data yet</p>}
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -1857,7 +1952,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
               {topCustomers.map((c, i) => (
                 <tr key={c.name}>
                   <TD style={{ fontWeight: 800, color: i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : i === 2 ? '#b45309' : '#374151' }}>
-                    {i === 0 ? 'ðŸ¥‡' : i === 1 ? 'ðŸ¥ˆ' : i === 2 ? 'ðŸ¥‰' : `#${i+1}`}
+                    {i === 0 ? '\ud83e\udd47' : i === 1 ? '\ud83e\udd48' : i === 2 ? '\ud83e\udd49' : `#${i+1}`}
                   </TD>
                   <TD style={{ fontWeight: 600 }}>{c.name}</TD>
                   <TD>{c.jobs}</TD>
@@ -1887,4 +1982,266 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
       </div>
     </div>
   );
-                                          }
+}
+
+// \u2500\u2500\u2500 WHATSAPP TAB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
+  const [activeSection, setActiveSection] = useState('notifications');
+  const [customMsg, setCustomMsg]   = useState('');
+  const [customPhone, setCustomPhone] = useState('');
+  const [selectedJobs, setSelectedJobs] = useState([]);
+  const [notifTemplate, setNotifTemplate] = useState('completed');
+  const [previewMsg, setPreviewMsg] = useState('');
+  const [summaryPhone, setSummaryPhone] = useState(ADMIN_WHATSAPP);
+
+  const jobsWithPhone = jobs.filter(j => (j.whatsapp || '').trim());
+  const jobsWithoutPhone = jobs.filter(j => !(j.whatsapp || '').trim() && !['cancelled'].includes(j.status));
+
+  const handlePreview = (jobId) => {
+    const job = jobs.find(j => j.id === jobId);
+    if (job) setPreviewMsg(generateStatusChangeMsg(job, notifTemplate));
+  };
+
+  const sendBulk = () => {
+    if (!selectedJobs.length) return alert('Select at least one job.');
+    let sent = 0;
+    selectedJobs.forEach(id => {
+      const job = jobs.find(j => j.id === id);
+      if (job && job.whatsapp) {
+        setTimeout(() => openWhatsApp(job.whatsapp, generateStatusChangeMsg(job, notifTemplate)), sent * 800);
+        sent++;
+      }
+    });
+    addNotif(`Opened WhatsApp for ${sent} customer(s)`, 'success');
+  };
+
+  const toggleJob = (id) => setSelectedJobs(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
+
+  const sections = [
+    { id: 'notifications', label: '\ud83d\udce2 Bulk Notifications' },
+    { id: 'summary',       label: '\ud83d\udcca Daily / Weekly Summary' },
+    { id: 'custom',        label: '\u270f\ufe0f Custom Message' },
+    { id: 'missing',       label: '\u26a0\ufe0f Missing Numbers' },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>\ud83d\udcf2 WhatsApp Notifications</h2>
+        <div style={{ background: '#25D366', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>
+          {jobsWithPhone.length} customers with WhatsApp
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+        {sections.map(s => (
+          <button key={s.id} onClick={() => setActiveSection(s.id)}
+            style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              background: activeSection === s.id ? '#25D366' : '#fff',
+              color: activeSection === s.id ? '#fff' : '#6b7280',
+              borderColor: activeSection === s.id ? '#25D366' : '#e5e7eb' }}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* BULK NOTIFICATIONS */}
+      {activeSection === 'notifications' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Select Template & Jobs</h3>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Message Template</label>
+              <select value={notifTemplate} onChange={e => { setNotifTemplate(e.target.value); setPreviewMsg(''); }}
+                style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%' }}>
+                {JOB_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)} notification</option>)}
+                <option value="ready">Job Ready for Pickup</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Select Jobs to Notify</label>
+                <button onClick={() => setSelectedJobs(jobsWithPhone.map(j => j.id))}
+                  style={{ fontSize: 11, background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: 700 }}>
+                  Select All
+                </button>
+              </div>
+              <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
+                {jobsWithPhone.map(j => (
+                  <div key={j.id} onClick={() => { toggleJob(j.id); handlePreview(j.id); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer',
+                      background: selectedJobs.includes(j.id) ? '#f0fdf4' : '#fff' }}>
+                    <input type="checkbox" checked={selectedJobs.includes(j.id)} onChange={() => {}} style={{ accentColor: '#25D366' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{j.job_no} \u2014 {j.customer}</div>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>{j.whatsapp} \u00b7 {j.status}</div>
+                    </div>
+                    <Badge text={j.status} />
+                  </div>
+                ))}
+                {jobsWithPhone.length === 0 && (
+                  <p style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 13 }}>No jobs with WhatsApp numbers</p>
+                )}
+              </div>
+            </div>
+
+            <button onClick={sendBulk}
+              style={{ width: '100%', background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '11px', cursor: 'pointer', fontSize: 14, fontWeight: 700, marginTop: 8 }}>
+              \ud83d\udcf2 Send to {selectedJobs.length} Customer{selectedJobs.length !== 1 ? 's' : ''}
+            </button>
+          </div>
+
+          {/* Message Preview */}
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Message Preview</h3>
+            {previewMsg ? (
+              <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', fontFamily: 'sans-serif', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                {previewMsg}
+              </div>
+            ) : (
+              <div style={{ background: '#f8fafc', border: '2px dashed #e5e7eb', borderRadius: 8, padding: 30, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
+                Click a job to preview the message
+              </div>
+            )}
+            {previewMsg && (
+              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <button onClick={() => navigator.clipboard.writeText(previewMsg)}
+                  style={{ flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                  \ud83d\udccb Copy
+                </button>
+              </div>
+            )}
+
+            {/* Template info */}
+            <div style={{ marginTop: 20, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14 }}>
+              <p style={{ margin: 0, fontSize: 12, color: '#15803d', fontWeight: 600 }}>
+                \u2139\ufe0f Auto-notifications: When you change a job status in the Jobs tab and the customer has a WhatsApp number saved, a popup will appear asking if you want to notify them instantly.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DAILY / WEEKLY SUMMARY */}
+      {activeSection === 'summary' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Send Business Summary</h3>
+            <div style={{ marginBottom: 14 }}>
+              <Inp label="Send to (WhatsApp number)" value={summaryPhone} onChange={e => setSummaryPhone(e.target.value)} placeholder="+233..." />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button onClick={() => openWhatsApp(summaryPhone, generateDailySummaryMsg(sales, expenses, jobs, invoices))}
+                style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 8, padding: '14px', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                \ud83d\udcca Send Daily Summary
+              </button>
+              <button onClick={() => openWhatsApp(summaryPhone, generateWeeklySummaryMsg(sales, expenses, jobs))}
+                style={{ background: '#1a9e50', border: 'none', color: '#fff', borderRadius: 8, padding: '14px', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                \ud83d\udcc5 Send Weekly Summary
+              </button>
+            </div>
+
+            <div style={{ marginTop: 16, background: '#f8fafc', borderRadius: 8, padding: 14 }}>
+              <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
+                Summaries include today\u2019s revenue, expenses, profit, job counts, and outstanding balances. Send these every morning or end of week to stay on top of your business.
+              </p>
+            </div>
+          </div>
+
+          {/* Live preview of daily summary */}
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Daily Summary Preview</h3>
+            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 12, lineHeight: 1.7, whiteSpace: 'pre-wrap', fontFamily: 'sans-serif', maxHeight: 400, overflowY: 'auto' }}>
+              {generateDailySummaryMsg(sales, expenses, jobs, invoices)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM MESSAGE */}
+      {activeSection === 'custom' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Send Custom Message</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Inp label="Phone Number" placeholder="+233..." value={customPhone} onChange={e => setCustomPhone(e.target.value)} />
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message</label>
+                <textarea value={customMsg} onChange={e => setCustomMsg(e.target.value)} rows={8} placeholder="Type your message here..."
+                  style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5 }} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => navigator.clipboard.writeText(customMsg)}
+                  style={{ flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  \ud83d\udccb Copy
+                </button>
+                <button onClick={() => { if (customPhone && customMsg) openWhatsApp(customPhone, customMsg); else alert('Enter a phone number and message.'); }}
+                  style={{ flex: 2, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+                  \ud83d\udcf2 Open in WhatsApp
+                </button>
+              </div>
+            </div>
+
+            {/* Quick templates */}
+            <div style={{ marginTop: 16 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Quick Templates</p>
+              {[
+                { label: 'Payment Reminder', msg: 'Hi, this is a friendly reminder that your invoice is due. Please make payment at your earliest convenience. Thank you!' },
+                { label: 'Thank You', msg: 'Thank you for your business! We appreciate your continued support. Looking forward to serving you again.' },
+                { label: 'Promotion', msg: '\ud83c\udf89 Special offer! Bring this message for 10% off your next print job. Valid this week only. Contact us to book!' },
+              ].map(t => (
+                <button key={t.label} onClick={() => setCustomMsg(t.msg)}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 12, marginBottom: 6, color: '#374151' }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Message preview */}
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Preview</h3>
+            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 100, color: '#111' }}>
+              {customMsg || <span style={{ color: '#9ca3af' }}>Your message will appear here\u2026</span>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MISSING NUMBERS */}
+      {activeSection === 'missing' && (
+        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700 }}>\u26a0\ufe0f Jobs Missing WhatsApp Numbers</h3>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6b7280' }}>
+            {jobsWithoutPhone.length} active job(s) don\u2019t have a customer WhatsApp number. Add numbers in the Jobs tab to enable auto-notifications.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Job #','Customer','Status','Due Date','Price'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+              <tbody>
+                {jobsWithoutPhone.map(j => (
+                  <tr key={j.id}>
+                    <TD style={{ fontWeight: 700, color: '#2563eb' }}>{j.job_no}</TD>
+                    <TD>{j.customer}</TD>
+                    <TD><Badge text={j.status} /></TD>
+                    <TD style={{ color: j.due_date < todayStr() ? '#dc2626' : '#374151' }}>{j.due_date || '\u2014'}</TD>
+                    <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
+                  </tr>
+                ))}
+                {jobsWithoutPhone.length === 0 && (
+                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: '#16a34a', fontWeight: 700 }}>
+                    \u2705 All active jobs have WhatsApp numbers!
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+    }
