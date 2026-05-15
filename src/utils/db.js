@@ -69,6 +69,7 @@ async deleteRecurringExpense(id) { const { error } = await supabase.from('recurr
 async getJobMaterials(userId) { const { data, error } = await supabase.from('job_materials').select('*').eq('user_id', userId); return { data: data || [], error }; },
 async addJobMaterial(userId, item) { const { data, error } = await supabase.from('job_materials').insert([{ ...item, user_id: userId }]).select(); return { data: data?.[0], error }; },
 async deleteJobMaterial(id) { const { error } = await supabase.from('job_materials').delete().eq('id', id); return { error }; },
+  
   subscribeToTable(table, userId, onInsert, onUpdate, onDelete) {
     const channel = supabase.channel(`${table}-${userId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter: `user_id=eq.${userId}` }, p => {
