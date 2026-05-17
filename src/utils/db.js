@@ -17,6 +17,26 @@ const db = {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     return { data, error: error?.message };
   },
+  async getSetting(userId, key) {
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('key', key)
+      .single();
+    return { data, error };
+  } catch (e) {
+    return { data: null, error: e };
+  }
+},
+async setSetting(userId, key, value) {
+  const { data, error } = await supabase
+    .from('settings')
+    .upsert({ user_id: userId, key, value }, { onConflict: 'user_id,key' })
+    .select();
+  return { data: data?.[0], error };
+},
   async signout() { return await supabase.auth.signOut(); },
   async getCurrentUser() { const { data: { user } } = await supabase.auth.getUser(); return user; },
 
