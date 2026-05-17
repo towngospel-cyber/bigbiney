@@ -309,7 +309,7 @@ export default function PrintingPressSystem() {
         {activeTab === 'inventory' && <InventoryTab inventory={inventory} setInventory={setInventory} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'invoices'  && <InvoicesTab invoices={invoices} setInvoices={setInvoices} jobs={jobs} customers={customers} setSales={setSales} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'finance'   && <FinanceTab sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
-        {activeTab === 'payroll'   && <PayrollTab payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} />}
+        {activeTab === 'payroll'   && <PayrollTab payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} expenses={expenses} setExpenses={setExpenses} />}
         {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} />}
         {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
@@ -1472,15 +1472,18 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
   );
 }
 
-function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
-  const [modal,  setModal]  = useState(false);
-  const [form,   setForm]   = useState({ staff_name: '', amount: '', period: '', date: todayStr(), payment_method: 'Cash', notes: '' });
-  const [saving, setSaving] = useState(false);
+function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpenses }) {
+  const [modal,       setModal]       = useState(false);
+  const [form,        setForm]        = useState({ staff_name: '', amount: '', period: '', date: todayStr(), payment_method: 'Cash', notes: '' });
+  const [saving,      setSaving]      = useState(false);
+  const [staffList,   setStaffList]   = useState(STAFF_LIST);
+  const [addingStaff, setAddingStaff] = useState(false);
+  const [newStaff,    setNewStaff]    = useState('');
 
-  const totalPaid  = payroll.reduce((a, p) => a + (p.amount||0), 0);
-  const thisMonth  = getCurrentMonth();
-  const monthPaid  = payroll.filter(p => (p.date||'').startsWith(thisMonth)).reduce((a, p) => a + (p.amount||0), 0);
-  const byStaff    = STAFF_LIST.map(name => ({
+  const totalPaid = payroll.reduce((a, p) => a + (p.amount||0), 0);
+  const thisMonth = getCurrentMonth();
+  const monthPaid = payroll.filter(p => (p.date||'').startsWith(thisMonth)).reduce((a, p) => a + (p.amount||0), 0);
+  const byStaff   = staffList.map(name => ({
     name,
     total:         payroll.filter(p => p.staff_name === name).reduce((a, p) => a + (p.amount||0), 0),
     lastPaid:      payroll.filter(p => p.staff_name === name).sort((a,b) => (b.date||'').localeCompare(a.date||''))[0]?.date || null,
@@ -1490,10 +1493,18 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
   const save = async () => {
     if (!form.staff_name || !form.amount) return;
     setSaving(true);
-    const { data, error } = await db.addPayroll(userId, { ...form, amount: parseFloat(form.amount)||0 });
+    const amt = parseFloat(form.amount)||0;
+    const { data, error } = await db.addPayroll(userId, { ...form, amount: amt });
     if (!error) {
       setPayroll([data, ...payroll]);
-      addNotif(`${form.staff_name} paid ${fmt(parseFloat(form.amount))}`, 'success');
+      // Auto-record as Salaries expense so it deducts from monthly income
+      const { data: expData } = await db.addExpense(userId, {
+        date: form.date, category: 'Salaries',
+        description: `Salary — ${form.staff_name}${form.period ? ' ('+form.period+')' : ''}`,
+        amount: amt,
+      });
+      if (expData && setExpenses) setExpenses(prev => [expData, ...prev]);
+      addNotif(`${form.staff_name} paid ${fmt(amt)} — recorded as expense`, 'success');
       setModal(false);
       setForm({ staff_name: '', amount: '', period: '', date: todayStr(), payment_method: 'Cash', notes: '' });
     } else addNotif('Error saving payroll record', 'warning');
@@ -1509,20 +1520,48 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
     } else addNotif('Error deleting record', 'warning');
   };
 
+  const removeStaff = (name) => {
+    if (!window.confirm(`Remove ${name} from staff list? Their payroll history stays.`)) return;
+    setStaffList(prev => prev.filter(s => s !== name));
+  };
+
+  const addStaffMember = () => {
+    const n = newStaff.trim();
+    if (!n) return;
+    if (staffList.includes(n)) { alert('Staff member already exists'); return; }
+    setStaffList(prev => [...prev, n]);
+    setNewStaff(''); setAddingStaff(false);
+    addNotif(`${n} added to staff`, 'success');
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>👷 Staff Payroll</h2>
-        <Btn onClick={() => setModal(true)}>+ Record Payment</Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn variant="ghost" onClick={() => setAddingStaff(v => !v)}>+ Add Staff</Btn>
+          <Btn onClick={() => setModal(true)}>+ Record Payment</Btn>
+        </div>
+      </div>
+      {addingStaff && (
+        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: 14, marginBottom: 16, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          <Inp label="New Staff Name" value={newStaff} onChange={e => setNewStaff(e.target.value)} placeholder="e.g. Kojo" />
+          <Btn onClick={addStaffMember}>Add</Btn>
+          <Btn variant="ghost" onClick={() => { setAddingStaff(false); setNewStaff(''); }}>Cancel</Btn>
+        </div>
+      )}
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 14px', marginBottom: 16, fontSize: 12, color: '#15803d' }}>
+        💡 Salary payments are <strong>automatically recorded as expenses</strong> and deducted from monthly income.
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Total Paid (All Time)" value={fmt(totalPaid)} accent="#2563eb" />
         <StatCard label="Paid This Month"       value={fmt(monthPaid)} accent="#16a34a" />
-        <StatCard label="Staff Members"         value={STAFF_LIST.length} accent="#7c3aed" />
+        <StatCard label="Staff Members"         value={staffList.length} accent="#7c3aed" />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 24 }}>
         {byStaff.map(s => (
-          <div key={s.name} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
+          <div key={s.name} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, position: 'relative' }}>
+            <button onClick={() => removeStaff(s.name)} title="Remove from staff list" style={{ position: 'absolute', top: 8, right: 8, background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', color: '#dc2626', fontWeight: 800, fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
             <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>👤 {s.name}</div>
             <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>All time: {fmt(s.total)}</div>
             <div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>This month: {fmt(s.paidThisMonth)}</div>
@@ -1555,7 +1594,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Sel label="Staff Member *" value={form.staff_name} onChange={e => setForm({ ...form, staff_name: e.target.value })}>
               <option value="">— Select Staff —</option>
-              {STAFF_LIST.map(s => <option key={s}>{s}</option>)}
+              {staffList.map(s => <option key={s}>{s}</option>)}
             </Sel>
             <Inp label="Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
             <Inp label="Period (e.g. May 2026)" value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} />
@@ -1824,14 +1863,20 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
 }
 
 function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
-  const [activeSection, setActiveSection] = useState('notifications');
-  const [customMsg,     setCustomMsg]     = useState('');
-  const [customPhone,   setCustomPhone]   = useState('');
-  const [selectedJobs,  setSelectedJobs]  = useState([]);
-  const [notifTemplate, setNotifTemplate] = useState('completed');
-  const [previewMsg,    setPreviewMsg]    = useState('');
-  const [summaryPhone,  setSummaryPhone]  = useState(ADMIN_WHATSAPP);
+  const [activeSection,  setActiveSection]  = useState('broadcast');
+  const [customMsg,      setCustomMsg]      = useState('');
+  const [customPhone,    setCustomPhone]    = useState('');
+  const [selectedJobs,   setSelectedJobs]   = useState([]);
+  const [selectedCusts,  setSelectedCusts]  = useState([]);
+  const [notifTemplate,  setNotifTemplate]  = useState('completed');
+  const [previewMsg,     setPreviewMsg]     = useState('');
+  const [summaryPhone,   setSummaryPhone]   = useState(ADMIN_WHATSAPP);
+  const [broadcastMsg,   setBroadcastMsg]   = useState('');
+  const [sending,        setSending]        = useState(false);
+  const [sentCount,      setSentCount]      = useState(0);
 
+  // Count customers with any phone number
+  const custsWithPhone   = customers.filter(c => (c.whatsapp || c.phone || '').trim());
   const jobsWithPhone    = jobs.filter(j => (j.whatsapp || '').trim());
   const jobsWithoutPhone = jobs.filter(j => !(j.whatsapp || '').trim() && !['cancelled'].includes(j.status));
 
@@ -1842,24 +1887,109 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
     selectedJobs.forEach(id => { const job = jobs.find(j => j.id === id); if (job && job.whatsapp) { setTimeout(() => openWhatsApp(job.whatsapp, generateStatusChangeMsg(job, notifTemplate)), sent * 800); sent++; } });
     addNotif(`Opened WhatsApp for ${sent} customer(s)`, 'success');
   };
-  const toggleJob = (id) => setSelectedJobs(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
+  const toggleJob  = (id) => setSelectedJobs(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
+  const toggleCust = (id) => setSelectedCusts(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
+
+  const sendBroadcast = async () => {
+    if (!broadcastMsg.trim()) return alert('Please type a message first.');
+    const targets = selectedCusts.length > 0
+      ? custsWithPhone.filter(c => selectedCusts.includes(c.id))
+      : custsWithPhone;
+    if (targets.length === 0) return alert('No customers with phone numbers.');
+    if (!window.confirm(`Send to ${targets.length} customer(s)? This will open WhatsApp ${targets.length} time(s).`)) return;
+    setSending(true); setSentCount(0);
+    for (let i = 0; i < targets.length; i++) {
+      const c = targets[i];
+      const phone = c.whatsapp || c.phone;
+      const msg = broadcastMsg.replace(/{name}/gi, c.name);
+      setTimeout(() => { openWhatsApp(phone, msg); setSentCount(i + 1); }, i * 900);
+    }
+    setTimeout(() => { setSending(false); addNotif(`Broadcast sent to ${targets.length} customer(s)`, 'success'); }, targets.length * 900 + 500);
+  };
 
   const sections = [
-    { id: 'notifications', label: '📢 Bulk Notifications' },
+    { id: 'broadcast',     label: '📣 Broadcast to Customers' },
+    { id: 'notifications', label: '📢 Job Notifications' },
     { id: 'summary',       label: '📊 Daily / Weekly Summary' },
     { id: 'custom',        label: '✏️ Custom Message' },
     { id: 'missing',       label: '⚠️ Missing Numbers' },
+  ];
+
+  const FESTIVE_TEMPLATES = [
+    { label: '🎄 Christmas', msg: '🎄 Merry Christmas from Bigbiney Printing Press!\n\nWishing you and your family a joyful and blessed Christmas. Thank you for your support this year!\n\n— Bigbiney Printing Press 🖨️' },
+    { label: '🎆 New Year', msg: '🎆 Happy New Year from Bigbiney Printing Press!\n\nWishing you a prosperous and successful {year}. We look forward to serving you!\n\n— Bigbiney Printing Press 🖨️'.replace('{year}', new Date().getFullYear()) },
+    { label: '🕌 Eid Mubarak', msg: '🕌 Eid Mubarak from Bigbiney Printing Press!\n\nWishing you and your family a blessed Eid. May this celebration bring you joy and peace.\n\n— Bigbiney Printing Press 🖨️' },
+    { label: '🙏 Easter', msg: '🙏 Happy Easter from Bigbiney Printing Press!\n\nWishing you a blessed and joyful Easter celebration with your loved ones.\n\n— Bigbiney Printing Press 🖨️' },
+    { label: '💰 Promo', msg: '🎉 Special Offer from Bigbiney Printing Press!\n\nGet 10% OFF your next print order this week only!\n\nCall or WhatsApp us to book. Don\'t miss out! 🖨️' },
+    { label: '🙏 Thank You', msg: 'Dear {name},\n\nThank you for choosing Bigbiney Printing Press! Your support means everything to us.\n\nWe look forward to serving you again soon. 🖨️\n\n— Bigbiney Printing Press' },
+    { label: '📞 Follow Up', msg: 'Hi {name}, this is Bigbiney Printing Press. We wanted to check in and see how everything is going. Feel free to reach out anytime for your printing needs! 🖨️' },
+    { label: '💳 Payment Reminder', msg: 'Hi {name}, this is a friendly reminder from Bigbiney Printing Press that your invoice payment is due. Please make payment at your earliest convenience. Thank you!' },
   ];
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>📲 WhatsApp Notifications</h2>
-        <div style={{ background: '#25D366', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>{jobsWithPhone.length} customers with WhatsApp</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ background: '#25D366', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>{custsWithPhone.length} customers with phone</div>
+          <div style={{ background: '#2563eb', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>{jobsWithPhone.length} jobs with WhatsApp</div>
+        </div>
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
         {sections.map(s => <button key={s.id} onClick={() => setActiveSection(s.id)} style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: activeSection === s.id ? '#25D366' : '#fff', color: activeSection === s.id ? '#fff' : '#6b7280', borderColor: activeSection === s.id ? '#25D366' : '#e5e7eb' }}>{s.label}</button>)}
       </div>
+
+      {activeSection === 'broadcast' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700 }}>📣 Broadcast Message</h3>
+            <p style={{ margin: '0 0 14px', fontSize: 12, color: '#6b7280' }}>Send to all customers or select specific ones. Use <code style={{ background: '#f1f5f9', padding: '1px 4px', borderRadius: 3 }}>{'{name}'}</code> to personalise.</p>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message *</label>
+              <textarea value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} rows={6} placeholder="Type your message... Use {name} for customer name" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>🎉 Festive & Quick Templates</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {FESTIVE_TEMPLATES.map(t => <button key={t.label} onClick={() => setBroadcastMsg(t.msg)} style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 6, padding: '7px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#374151', textAlign: 'left' }}>{t.label}</button>)}
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Recipients ({selectedCusts.length > 0 ? selectedCusts.length : custsWithPhone.length} selected)</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setSelectedCusts(custsWithPhone.map(c=>c.id))} style={{ fontSize: 11, background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: 700 }}>All</button>
+                  <button onClick={() => setSelectedCusts([])} style={{ fontSize: 11, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontWeight: 700 }}>Clear</button>
+                </div>
+              </div>
+              <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
+                {custsWithPhone.map(c => (
+                  <div key={c.id} onClick={() => toggleCust(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selectedCusts.includes(c.id) ? '#f0fdf4' : '#fff' }}>
+                    <input type="checkbox" checked={selectedCusts.includes(c.id)} onChange={() => {}} style={{ accentColor: '#25D366' }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{c.name}</span>
+                    <span style={{ fontSize: 11, color: '#6b7280' }}>{c.whatsapp || c.phone}</span>
+                  </div>
+                ))}
+                {custsWithPhone.length === 0 && <p style={{ textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No customers with phone numbers</p>}
+              </div>
+            </div>
+            {sending && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#15803d', fontWeight: 700 }}>📲 Sending… {sentCount} / {selectedCusts.length || custsWithPhone.length}</div>}
+            <button onClick={sendBroadcast} disabled={sending || !broadcastMsg.trim()} style={{ width: '100%', background: sending ? '#9ca3af' : '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '12px', cursor: sending ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>
+              📲 Send to {selectedCusts.length > 0 ? selectedCusts.length : custsWithPhone.length} Customer{(selectedCusts.length || custsWithPhone.length) !== 1 ? 's' : ''}
+            </button>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+            <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Message Preview</h3>
+            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 120 }}>
+              {broadcastMsg
+                ? broadcastMsg.replace(/{name}/gi, custsWithPhone[0]?.name || 'Customer Name')
+                : <span style={{ color: '#9ca3af' }}>Type a message to preview it here…</span>}
+            </div>
+            {broadcastMsg && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Preview shows first customer's name. Each recipient gets their own name.</p>}
+            {broadcastMsg && <button onClick={() => navigator.clipboard.writeText(broadcastMsg)} style={{ marginTop: 8, width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>📋 Copy Message</button>}
+          </div>
+        </div>
+      )}
 
       {activeSection === 'notifications' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -1884,7 +2014,7 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
                     <Badge text={j.status} />
                   </div>
                 ))}
-                {jobsWithPhone.length === 0 && <p style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 13 }}>No jobs with WhatsApp numbers</p>}
+                {jobsWithPhone.length === 0 && <p style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 13 }}>No jobs with WhatsApp numbers yet. Add WhatsApp number when creating a job.</p>}
               </div>
             </div>
             <button onClick={sendBulk} style={{ width: '100%', background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '11px', cursor: 'pointer', fontSize: 14, fontWeight: 700, marginTop: 8 }}>
@@ -1919,7 +2049,7 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
       {activeSection === 'custom' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Send Custom Message</h3>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Send to Single Number</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Inp label="Phone Number" placeholder="+233..." value={customPhone} onChange={e => setCustomPhone(e.target.value)} />
               <div>
@@ -1930,14 +2060,6 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
                 <button onClick={() => navigator.clipboard.writeText(customMsg)} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
                 <button onClick={() => { if (customPhone && customMsg) openWhatsApp(customPhone, customMsg); else alert('Enter a phone number and message.'); }} style={{ flex: 2, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>📲 Open in WhatsApp</button>
               </div>
-            </div>
-            <div style={{ marginTop: 16 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Quick Templates</p>
-              {[
-                { label: 'Payment Reminder', msg: 'Hi, this is a friendly reminder that your invoice is due. Please make payment at your earliest convenience. Thank you! — Bigbiney Printing Press' },
-                { label: 'Thank You', msg: 'Thank you for your business! We appreciate your continued support. — Bigbiney Printing Press' },
-                { label: 'Promotion', msg: '🎉 Special offer! Bring this message for 10% off your next print job. Valid this week only! — Bigbiney Printing Press' },
-              ].map(t => <button key={t.label} onClick={() => setCustomMsg(t.msg)} style={{ display: 'block', width: '100%', textAlign: 'left', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 12, marginBottom: 6, color: '#374151' }}>{t.label}</button>)}
             </div>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
@@ -1950,7 +2072,7 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
       {activeSection === 'missing' && (
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
           <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700 }}>⚠️ Jobs Missing WhatsApp Numbers</h3>
-          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6b7280' }}>{jobsWithoutPhone.length} active job(s) don't have a customer WhatsApp number.</p>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6b7280' }}>{jobsWithoutPhone.length} active job(s) don't have a WhatsApp number. Edit the job and add the customer's WhatsApp to enable notifications.</p>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Job #','Customer','Status','Due Date','Price'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
             <tbody>
