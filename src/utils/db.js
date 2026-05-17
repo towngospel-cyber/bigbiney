@@ -39,7 +39,13 @@ async setSetting(userId, key, value) {
   async getCustomers(userId) { const { data, error } = await supabase.from('customers').select('*').eq('user_id', userId).order('name'); return { data: data || [], error }; },
   async addCustomer(userId, customer) { const { data, error } = await supabase.from('customers').insert([{ ...customer, user_id: userId }]).select(); return { data: data?.[0], error }; },
   async updateCustomer(id, updates) { const { data, error } = await supabase.from('customers').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
-  async deleteCustomer(id) { const { error } = await supabase.from('customers').delete().eq('id', id); return { error }; },
+  async deleteCustomer(id) {
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('id', id);
+  return { error };
+},
 
   async getJobs(userId) { const { data, error } = await supabase.from('jobs').select('*').eq('user_id', userId).order('job_no', { ascending: false }); return { data: data || [], error }; },
   async addJob(userId, job) {
