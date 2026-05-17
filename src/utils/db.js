@@ -17,18 +17,14 @@ const db = {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     return { data, error: error?.message };
   },
-  async getSetting(userId, key) {
-  try {
-    const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('key', key)
-      .single();
-    return { data, error };
-  } catch (e) {
-    return { data: null, error: e };
-  }
+async getSetting(userId, key) {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('key', key)
+    .maybeSingle();
+  return { data, error };
 },
 async setSetting(userId, key, value) {
   const { data, error } = await supabase
@@ -46,7 +42,13 @@ async setSetting(userId, key, value) {
   async deleteCustomer(id) { const { error } = await supabase.from('customers').delete().eq('id', id); return { error }; },
 
   async getJobs(userId) { const { data, error } = await supabase.from('jobs').select('*').eq('user_id', userId).order('job_no', { ascending: false }); return { data: data || [], error }; },
-  async addJob(userId, job) { const { data, error } = await supabase.from('jobs').insert([{ ...job, user_id: userId }]).select(); return { data: data?.[0], error }; },
+  async addJob(userId, job) {
+  const { data, error } = await supabase
+    .from('jobs')
+    .insert([{ ...job, user_id: userId }])
+    .select();
+  return { data: data?.[0], error };
+},
   async updateJob(id, updates) { const { data, error } = await supabase.from('jobs').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
   async deleteJob(id) { const { error } = await supabase.from('jobs').delete().eq('id', id); return { error }; },
 
