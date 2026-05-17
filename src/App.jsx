@@ -8,7 +8,7 @@ const DELIVERY_STATUSES = ['pending', 'ready', 'out-for-delivery', 'delivered', 
 const STAFF_LIST = ['Kwame', 'Ama', 'Kofi', 'Abena', 'Yaw', 'Akosua'];
 const ADMIN_WHATSAPP = '+233246307773';
 
-const fmt = (n) => `GHâ‚µ${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n) => `GH₵${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const todayStr = () => new Date().toISOString().split('T')[0];
 const getCurrentMonth = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; };
 
@@ -39,17 +39,17 @@ const openWhatsApp = (phone, message) => {
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(message)}`, '_blank');
 };
 const generateJobReadyMsg = (job) =>
-  `Hi ${job.customer}, your print job *${job.job_no}* is ready for pickup!\n\nðŸ“‹ ${job.description}\nðŸ’° Total: ${fmt(job.price)}\n\nPlease come collect at your earliest convenience.\n\nThank you for choosing Bigbiney Printing Press! ðŸ–¨ï¸`;
+  `Hi ${job.customer}, your print job *${job.job_no}* is ready for pickup!\n\n📋 ${job.description}\n💰 Total: ${fmt(job.price)}\n\nPlease come collect at your earliest convenience.\n\nThank you for choosing Bigbiney Printing Press! 🖨️`;
 const generateAdminReminderMsg = (overdueJobs) => {
-  const lines = overdueJobs.map(j => `â€¢ ${j.job_no} â€” ${j.customer} (Due: ${j.due_date}) â€” ${j.status}`).join('\n');
-  return `âš ï¸ *OVERDUE JOBS REMINDER*\n\nThe following jobs are past their due date:\n\n${lines}\n\nPlease follow up immediately.\n\n_Bigbiney Printing Press_`;
+  const lines = overdueJobs.map(j => `• ${j.job_no} — ${j.customer} (Due: ${j.due_date}) — ${j.status}`).join('\n');
+  return `⚠️ *OVERDUE JOBS REMINDER*\n\nThe following jobs are past their due date:\n\n${lines}\n\nPlease follow up immediately.\n\n_Bigbiney Printing Press_`;
 };
 const generateStatusChangeMsg = (job, newStatus) => {
   const msgs = {
-    'queued':      `Hi ${job.customer}! ðŸ“ Your print job *${job.job_no}* has been received and is in the queue.\n\nðŸ“‹ ${job.description}\nðŸ’° Amount: ${fmt(job.price)}\nðŸ“… Due: ${job.due_date || 'TBD'}\n\nThank you for choosing Bigbiney Printing Press! ðŸ–¨ï¸`,
-    'in-progress': `Hi ${job.customer}! ðŸ› ï¸ Your job *${job.job_no}* is now *IN PRODUCTION*.\n\nðŸ“‹ ${job.description}\nðŸ“… Due: ${job.due_date || 'TBD'}\n\nWe'll update you when it's ready!`,
-    'on-hold':     `Hi ${job.customer}! â¸ï¸ Your job *${job.job_no}* has been placed *ON HOLD*.\n\nPlease contact us for more information.`,
-    'completed':   `Hi ${job.customer}! âœ… Your print job *${job.job_no}* is *READY FOR PICKUP*!\n\nðŸ“‹ ${job.description}\nðŸ’° Total: ${fmt(job.price)}\n\nThank you for choosing Bigbiney Printing Press! ðŸ–¨ï¸`,
+    'queued':      `Hi ${job.customer}! 📝 Your print job *${job.job_no}* has been received and is in the queue.\n\n📋 ${job.description}\n💰 Amount: ${fmt(job.price)}\n📅 Due: ${job.due_date || 'TBD'}\n\nThank you for choosing Bigbiney Printing Press! 🖨️`,
+    'in-progress': `Hi ${job.customer}! 🛠️ Your job *${job.job_no}* is now *IN PRODUCTION*.\n\n📋 ${job.description}\n📅 Due: ${job.due_date || 'TBD'}\n\nWe'll update you when it's ready!`,
+    'on-hold':     `Hi ${job.customer}! ⏸️ Your job *${job.job_no}* has been placed *ON HOLD*.\n\nPlease contact us for more information.`,
+    'completed':   `Hi ${job.customer}! ✅ Your print job *${job.job_no}* is *READY FOR PICKUP*!\n\n📋 ${job.description}\n💰 Total: ${fmt(job.price)}\n\nThank you for choosing Bigbiney Printing Press! 🖨️`,
     'cancelled':   `Hi ${job.customer}. Your job *${job.job_no}* has been *CANCELLED*.\n\nPlease contact us if you have any questions.`,
   };
   return msgs[newStatus] || `Hi ${job.customer}, your job *${job.job_no}* status updated to *${newStatus.toUpperCase()}*.`;
@@ -61,7 +61,7 @@ const generateDailySummaryMsg = (sales, expenses, jobs, invoices) => {
   const activeNow    = jobs.filter(j => j.status === 'in-progress').length;
   const outstanding  = invoices.filter(i => i.status !== 'paid').reduce((a, i) => a + (i.amount - i.paid), 0);
   const overdueCount = jobs.filter(j => !['completed','cancelled'].includes(j.status) && j.due_date && j.due_date < today).length;
-  return `ðŸ–¨ï¸ *BIGBINEY PRINTING PRESS*\n*DAILY SUMMARY* â€” ${today}\n\nðŸ’° *FINANCIALS TODAY*\nâ€¢ Revenue: ${fmt(todaySales)}\nâ€¢ Expenses: ${fmt(todayExp)}\nâ€¢ Net: ${fmt(todaySales - todayExp)}\n\nðŸ“ˆ *JOBS*\nâ€¢ In production: ${activeNow}\nâ€¢ Overdue: ${overdueCount}\n\nðŸ§¾ *OUTSTANDING*\nâ€¢ Unpaid invoices: ${fmt(outstanding)}\n\n_Bigbiney Printing Press Manager_`;
+  return `🖨️ *BIGBINEY PRINTING PRESS*\n*DAILY SUMMARY* — ${today}\n\n💰 *FINANCIALS TODAY*\n• Revenue: ${fmt(todaySales)}\n• Expenses: ${fmt(todayExp)}\n• Net: ${fmt(todaySales - todayExp)}\n\n📈 *JOBS*\n• In production: ${activeNow}\n• Overdue: ${overdueCount}\n\n🧾 *OUTSTANDING*\n• Unpaid invoices: ${fmt(outstanding)}\n\n_Bigbiney Printing Press Manager_`;
 };
 const generateWeeklySummaryMsg = (sales, expenses, jobs) => {
   const now = new Date(); const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
@@ -69,7 +69,7 @@ const generateWeeklySummaryMsg = (sales, expenses, jobs) => {
   const weekSales  = sales.filter(s => s.date >= weekStr).reduce((a, s) => a + s.amount, 0);
   const weekExp    = expenses.filter(e => e.date >= weekStr).reduce((a, e) => a + e.amount, 0);
   const monthSales = sales.filter(s => s.date?.startsWith(getCurrentMonth())).reduce((a, s) => a + s.amount, 0);
-  return `ðŸ–¨ï¸ *BIGBINEY PRINTING PRESS*\n*WEEKLY SUMMARY* â€” ${todayStr()}\n\nðŸ’° *THIS WEEK*\nâ€¢ Revenue: ${fmt(weekSales)}\nâ€¢ Expenses: ${fmt(weekExp)}\nâ€¢ Profit: ${fmt(weekSales - weekExp)}\n\nðŸ“… *MONTH TO DATE*\nâ€¢ Revenue: ${fmt(monthSales)}\n\n_Bigbiney Printing Press Manager_`;
+  return `🖨️ *BIGBINEY PRINTING PRESS*\n*WEEKLY SUMMARY* — ${todayStr()}\n\n💰 *THIS WEEK*\n• Revenue: ${fmt(weekSales)}\n• Expenses: ${fmt(weekExp)}\n• Profit: ${fmt(weekSales - weekExp)}\n\n📅 *MONTH TO DATE*\n• Revenue: ${fmt(monthSales)}\n\n_Bigbiney Printing Press Manager_`;
 };
 
 const Badge = ({ text, type = 'status' }) => {
@@ -81,7 +81,7 @@ const Modal = ({ title, onClose, children, wide }) => (
     <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: wide ? 800 : 600, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111' }}>{title}</h3>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280', lineHeight: 1 }}>Ã—</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280', lineHeight: 1 }}>×</button>
       </div>
       <div style={{ padding: 24 }}>{children}</div>
     </div>
@@ -214,15 +214,15 @@ export default function PrintingPressSystem() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%)', fontFamily: '"Segoe UI", system-ui, sans-serif' }}>
         <div style={{ background: '#fff', padding: 40, borderRadius: 12, width: '100%', maxWidth: 420, boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 44, marginBottom: 8 }}>ðŸ–¨ï¸</div>
+            <div style={{ fontSize: 44, marginBottom: 8 }}>🖨️</div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>Bigbiney Printing Press</h1>
-            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 6 }}>Management System â€” syncs across all devices</p>
+            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 6 }}>Management System — syncs across all devices</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Inp label="Email" type="email" placeholder="admin@bigbiney.com" value={loginData.email} onChange={e => setLoginData({ ...loginData, email: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            <Inp label="Password" type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={loginData.password} onChange={e => setLoginData({ ...loginData, password: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+            <Inp label="Password" type="password" placeholder="••••••••" value={loginData.password} onChange={e => setLoginData({ ...loginData, password: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
             {loginError && <p style={{ color: '#dc2626', fontSize: 12, margin: 0, padding: '6px 10px', background: '#fef2f2', borderRadius: 4, border: '1px solid #fecaca' }}>{loginError}</p>}
-            <Btn onClick={handleLogin}>Sign In â†’</Btn>
+            <Btn onClick={handleLogin}>Sign In →</Btn>
           </div>
         </div>
       </div>
@@ -232,7 +232,7 @@ export default function PrintingPressSystem() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Segoe UI", system-ui, sans-serif', color: '#6b7280' }}>
-        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 40, marginBottom: 16 }}>ðŸ–¨ï¸</div><p>Loading Bigbiney Printing Pressâ€¦</p></div>
+        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 40, marginBottom: 16 }}>🖨️</div><p>Loading Bigbiney Printing Press…</p></div>
       </div>
     );
   }
@@ -242,34 +242,34 @@ export default function PrintingPressSystem() {
   const overdueJobs = jobs.filter(j => !['completed','cancelled'].includes(j.status) && j.due_date && j.due_date < todayStr());
 
   const TABS = [
-    { id: 'dashboard', label: 'ðŸ“Š Dashboard' },
-    { id: 'jobs',      label: 'ðŸ—‚ï¸ Jobs' },
-    { id: 'customers', label: 'ðŸ‘¥ Customers' },
-    { id: 'inventory', label: 'ðŸ“¦ Inventory' },
-    { id: 'invoices',  label: 'ðŸ§¾ Invoices' },
-    { id: 'finance',   label: 'ðŸ’° Finance' },
-    { id: 'payroll',   label: 'ðŸ‘· Payroll' },
-    { id: 'loans',     label: 'ðŸ¦ Loans' },
-    { id: 'reports',   label: 'ðŸ“ˆ Reports' },
-    { id: 'whatsapp',  label: 'ðŸ“² WhatsApp' },
+    { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'jobs',      label: '🗂️ Jobs' },
+    { id: 'customers', label: '👥 Customers' },
+    { id: 'inventory', label: '📦 Inventory' },
+    { id: 'invoices',  label: '🧾 Invoices' },
+    { id: 'finance',   label: '💰 Finance' },
+    { id: 'payroll',   label: '👷 Payroll' },
+    { id: 'loans',     label: '🏦 Loans' },
+    { id: 'reports',   label: '📈 Reports' },
+    { id: 'whatsapp',  label: '📲 WhatsApp' },
   ];
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: '"Segoe UI", system-ui, sans-serif', color: '#111' }}>
       <header style={{ background: '#0f172a', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 200 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>ðŸ–¨ï¸</span>
+          <span style={{ fontSize: 22 }}>🖨️</span>
           <span style={{ color: '#fff', fontWeight: 800, fontSize: 15 }}>Bigbiney Printing Press</span>
           {lowStock.length > 0 && <span style={{ background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{lowStock.length} LOW STOCK</span>}
           {overdueJobs.length > 0 && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{overdueJobs.length} OVERDUE</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {overdueJobs.length > 0 && (
-            <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>ðŸ“² Alert Admin</button>
+            <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>📲 Alert Admin</button>
           )}
           <div style={{ position: 'relative' }}>
             <button onClick={() => setShowNotif(v => !v)} style={{ background: showNotif ? '#1e3a5f' : 'transparent', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 16, position: 'relative' }}>
-              ðŸ””
+              🔔
               {unread > 0 && <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread}</span>}
             </button>
             {showNotif && (
@@ -280,16 +280,16 @@ export default function PrintingPressSystem() {
                 </div>
                 {notifs.slice(0, 8).map(n => (
                   <div key={n.id} style={{ padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'flex-start', borderBottom: '1px solid #f9fafb', background: n.read ? '#fff' : '#f0f9ff' }}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>{n.type === 'warning' ? 'âš ï¸' : n.type === 'success' ? 'âœ…' : 'â„¹ï¸'}</span>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{n.type === 'warning' ? '⚠️' : n.type === 'success' ? '✅' : 'ℹ️'}</span>
                     <span style={{ fontSize: 12, color: '#374151', flex: 1 }}>{n.message}</span>
-                    <button onClick={() => setNotifs(prev => prev.filter(x => x.id !== n.id))} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>Ã—</button>
+                    <button onClick={() => setNotifs(prev => prev.filter(x => x.id !== n.id))} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>×</button>
                   </div>
                 ))}
                 {notifs.length === 0 && <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 12, padding: 20 }}>All clear!</p>}
               </div>
             )}
           </div>
-          <span style={{ color: '#94a3b8', fontSize: 12 }}>ðŸ‘¤ {currentUser.email}</span>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>👤 {currentUser.email}</span>
           <button onClick={handleLogout} style={{ background: '#1e3a5f', border: '1px solid #334155', color: '#94a3b8', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12 }}>Logout</button>
         </div>
       </header>
@@ -337,7 +337,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
   if (monthlySales === 0) healthScore -= 20;
   healthScore = Math.max(0, Math.min(100, healthScore));
   const healthColor = healthScore >= 75 ? '#16a34a' : healthScore >= 50 ? '#f59e0b' : '#dc2626';
-  const healthLabel = healthScore >= 75 ? 'ðŸŸ¢ Healthy' : healthScore >= 50 ? 'ðŸŸ¡ Needs Attention' : 'ðŸ”´ Critical';
+  const healthLabel = healthScore >= 75 ? '🟢 Healthy' : healthScore >= 50 ? '🟡 Needs Attention' : '🔴 Critical';
 
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i));
@@ -350,18 +350,18 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
     <div>
       {overdueJobs.length > 0 && (
         <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <span style={{ fontSize: 20 }}>âš ï¸</span>
+          <span style={{ fontSize: 20 }}>⚠️</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#856404', marginBottom: 6 }}>{overdueJobs.length} Overdue Job{overdueJobs.length > 1 ? 's' : ''} â€” Action Required</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#856404', marginBottom: 6 }}>{overdueJobs.length} Overdue Job{overdueJobs.length > 1 ? 's' : ''} — Action Required</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {overdueJobs.map(j => (
                 <span key={j.id} style={{ background: '#fff', border: '1px solid #ffc107', borderRadius: 4, padding: '3px 8px', fontSize: 12 }}>
-                  <strong>{j.job_no}</strong> â€” {j.customer} (due {j.due_date})
+                  <strong>{j.job_no}</strong> — {j.customer} (due {j.due_date})
                 </span>
               ))}
             </div>
           </div>
-          <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>ðŸ“² WhatsApp Alert</button>
+          <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>📲 WhatsApp Alert</button>
         </div>
       )}
 
@@ -369,34 +369,34 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
         <StatCard label="Monthly Income"   value={fmt(monthlySales)} accent="#16a34a" />
         <StatCard label="Monthly Expenses" value={fmt(monthlyExp)}   accent="#dc2626" />
         <StatCard label="Monthly Profit"   value={fmt(monthlySales - monthlyExp)} accent={monthlySales >= monthlyExp ? '#2563eb' : '#dc2626'} />
-        <StatCard label="Active Jobs"      value={activeJobs} sub={overdueJobs.length > 0 ? `âš ï¸ ${overdueJobs.length} overdue` : 'On track'} accent="#f59e0b" />
+        <StatCard label="Active Jobs"      value={activeJobs} sub={overdueJobs.length > 0 ? `⚠️ ${overdueJobs.length} overdue` : 'On track'} accent="#f59e0b" />
         <StatCard label="Outstanding"      value={fmt(unpaidTotal)} sub={`${invoices.filter(i=>i.status!=='paid').length} invoice(s)`} accent="#7c3aed" />
         <StatCard label="Low Stock Items"  value={lowStock.length} sub={lowStock.length > 0 ? 'Needs reorder' : 'All good'} accent={lowStock.length > 0 ? '#dc2626' : '#16a34a'} />
       </div>
 
       <div style={{ background: '#fff', border: `2px solid ${healthColor}`, borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>ðŸ’Š Business Health Score</h3>
-          <span style={{ fontSize: 17, fontWeight: 900, color: healthColor }}>{healthScore}/100 â€” {healthLabel}</span>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>💊 Business Health Score</h3>
+          <span style={{ fontSize: 17, fontWeight: 900, color: healthColor }}>{healthScore}/100 — {healthLabel}</span>
         </div>
         <div style={{ background: '#f1f5f9', borderRadius: 6, height: 14, overflow: 'hidden', marginBottom: 12 }}>
           <div style={{ width: `${healthScore}%`, height: 14, borderRadius: 6, background: healthColor, transition: 'width 0.5s ease' }} />
         </div>
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, color: margin >= 25 ? '#16a34a' : margin >= 10 ? '#f59e0b' : '#dc2626', fontWeight: 600 }}>{margin >= 25 ? 'âœ…' : margin >= 10 ? 'âš ï¸' : 'âŒ'} Profit Margin: {Math.round(margin)}%</span>
-          <span style={{ fontSize: 12, color: overdueJobs.length === 0 ? '#16a34a' : overdueJobs.length <= 2 ? '#f59e0b' : '#dc2626', fontWeight: 600 }}>{overdueJobs.length === 0 ? 'âœ…' : 'âš ï¸'} Overdue Jobs: {overdueJobs.length}</span>
-          <span style={{ fontSize: 12, color: lowStock.length === 0 ? '#16a34a' : '#f59e0b', fontWeight: 600 }}>{lowStock.length === 0 ? 'âœ…' : 'âš ï¸'} Low Stock: {lowStock.length}</span>
+          <span style={{ fontSize: 12, color: margin >= 25 ? '#16a34a' : margin >= 10 ? '#f59e0b' : '#dc2626', fontWeight: 600 }}>{margin >= 25 ? '✅' : margin >= 10 ? '⚠️' : '❌'} Profit Margin: {Math.round(margin)}%</span>
+          <span style={{ fontSize: 12, color: overdueJobs.length === 0 ? '#16a34a' : overdueJobs.length <= 2 ? '#f59e0b' : '#dc2626', fontWeight: 600 }}>{overdueJobs.length === 0 ? '✅' : '⚠️'} Overdue Jobs: {overdueJobs.length}</span>
+          <span style={{ fontSize: 12, color: lowStock.length === 0 ? '#16a34a' : '#f59e0b', fontWeight: 600 }}>{lowStock.length === 0 ? '✅' : '⚠️'} Low Stock: {lowStock.length}</span>
         </div>
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>ðŸŽ¯ Monthly Revenue Goal</h3>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>🎯 Monthly Revenue Goal</h3>
           <button onClick={() => { setGoalInput(String(monthlyGoal)); setEditGoal(true); }} style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: 4, padding: '3px 10px', cursor: 'pointer', fontSize: 12, color: '#6b7280' }}>{monthlyGoal > 0 ? 'Edit Goal' : 'Set Goal'}</button>
         </div>
         {editGoal && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-            <Inp placeholder="Monthly target (GHâ‚µ)" type="number" value={goalInput} onChange={e => setGoalInput(e.target.value)} />
+            <Inp placeholder="Monthly target (GH₵)" type="number" value={goalInput} onChange={e => setGoalInput(e.target.value)} />
             <Btn small onClick={() => { setMonthlyGoal(parseFloat(goalInput)||0); setEditGoal(false); }}>Save</Btn>
             <Btn small variant="ghost" onClick={() => setEditGoal(false)}>Cancel</Btn>
           </div>
@@ -405,19 +405,19 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
               <span style={{ fontWeight: 700, color: goalPct >= 100 ? '#16a34a' : '#374151' }}>{fmt(monthlySales)} earned</span>
-              <span style={{ color: '#6b7280' }}>Goal: {fmt(monthlyGoal)} â€” <strong style={{ color: goalPct >= 100 ? '#16a34a' : '#2563eb' }}>{goalPct}%</strong></span>
+              <span style={{ color: '#6b7280' }}>Goal: {fmt(monthlyGoal)} — <strong style={{ color: goalPct >= 100 ? '#16a34a' : '#2563eb' }}>{goalPct}%</strong></span>
             </div>
             <div style={{ background: '#f1f5f9', borderRadius: 6, height: 14, overflow: 'hidden' }}>
               <div style={{ width: `${goalPct}%`, height: 14, borderRadius: 6, background: goalPct >= 100 ? '#16a34a' : goalPct >= 75 ? '#2563eb' : goalPct >= 50 ? '#f59e0b' : '#dc2626', transition: 'width 0.4s ease' }} />
             </div>
-            {goalPct >= 100 && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 700 }}>ðŸŽ‰ Goal achieved! Keep going!</p>}
+            {goalPct >= 100 && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 700 }}>🎉 Goal achieved! Keep going!</p>}
           </>
         ) : <p style={{ margin: 0, color: '#9ca3af', fontSize: 13 }}>Set a monthly revenue target to track your progress.</p>}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue â€” Last 7 Days</h3>
+          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue — Last 7 Days</h3>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
             {last7.map((d, i) => (
               <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -449,7 +449,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Recent Jobs</h3>
-          <Btn variant="ghost" small onClick={() => setActiveTab('jobs')}>View All â†’</Btn>
+          <Btn variant="ghost" small onClick={() => setActiveTab('jobs')}>View All →</Btn>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -471,11 +471,11 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
 
       {lowStock.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #fca5a5', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#dc2626' }}>âš ï¸ Low Stock Alerts</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#dc2626' }}>⚠️ Low Stock Alerts</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {lowStock.map(i => (
               <div key={i.id} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '6px 12px', fontSize: 12 }}>
-                <strong>{i.name}</strong> â€” {i.quantity} {i.unit} left (reorder at {i.reorder_point})
+                <strong>{i.name}</strong> — {i.quantity} {i.unit} left (reorder at {i.reorder_point})
               </div>
             ))}
           </div>
@@ -555,7 +555,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
 
   const printTicket = (j) => {
     const w = window.open('', '', 'width=600,height=500');
-    w.document.write(`<html><body style="font-family:Arial;padding:30px;max-width:500px"><h2>ðŸ–¨ï¸ JOB TICKET â€” ${j.job_no}</h2><p><b>Customer:</b> ${j.customer}</p><p><b>Description:</b> ${j.description}</p><p><b>Type:</b> ${j.type} &nbsp; <b>Machine:</b> ${j.machine||'TBD'}</p><p><b>Assigned To:</b> ${j.assigned_to||'Unassigned'}</p><p><b>Priority:</b> ${(j.priority||'').toUpperCase()} &nbsp; <b>Status:</b> ${j.status}</p><p><b>Delivery:</b> ${j.delivery_status||'pending'}</p><p><b>Start:</b> ${j.start_date||'TBD'} &nbsp; <b>Due:</b> ${j.due_date||'TBD'}</p><p><b>Price:</b> GHâ‚µ${j.price} &nbsp; <b>Est. Cost:</b> GHâ‚µ${j.cost}</p>${j.notes ? `<p><b>Notes:</b> ${j.notes}</p>` : ''}<div style="margin-top:20px;padding:10px;border:2px solid #000;display:inline-block;font-size:20px;font-weight:bold;letter-spacing:4px">${j.qr_code}</div><p style="font-size:10px;color:#999">Printed ${new Date().toLocaleString()} â€” Bigbiney Printing Press</p></body></html>`);
+    w.document.write(`<html><body style="font-family:Arial;padding:30px;max-width:500px"><h2>🖨️ JOB TICKET — ${j.job_no}</h2><p><b>Customer:</b> ${j.customer}</p><p><b>Description:</b> ${j.description}</p><p><b>Type:</b> ${j.type} &nbsp; <b>Machine:</b> ${j.machine||'TBD'}</p><p><b>Assigned To:</b> ${j.assigned_to||'Unassigned'}</p><p><b>Priority:</b> ${(j.priority||'').toUpperCase()} &nbsp; <b>Status:</b> ${j.status}</p><p><b>Delivery:</b> ${j.delivery_status||'pending'}</p><p><b>Start:</b> ${j.start_date||'TBD'} &nbsp; <b>Due:</b> ${j.due_date||'TBD'}</p><p><b>Price:</b> GH₵${j.price} &nbsp; <b>Est. Cost:</b> GH₵${j.cost}</p>${j.notes ? `<p><b>Notes:</b> ${j.notes}</p>` : ''}<div style="margin-top:20px;padding:10px;border:2px solid #000;display:inline-block;font-size:20px;font-weight:bold;letter-spacing:4px">${j.qr_code}</div><p style="font-size:10px;color:#999">Printed ${new Date().toLocaleString()} — Bigbiney Printing Press</p></body></html>`);
     w.document.close(); w.print();
   };
 
@@ -564,7 +564,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Job Management</h2>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ðŸ” Searchâ€¦" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search…" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
           <Btn onClick={openNew}>+ New Job</Btn>
         </div>
       </div>
@@ -588,8 +588,8 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
                   <TD>{j.customer}</TD>
                   <TD style={{ maxWidth: 160 }}>{j.description}</TD>
                   <TD>{j.type}</TD>
-                  <TD style={{ color: '#6b7280', fontSize: 12 }}>{j.assigned_to || 'â€”'}</TD>
-                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151' }}>{j.due_date || 'â€”'}</TD>
+                  <TD style={{ color: '#6b7280', fontSize: 12 }}>{j.assigned_to || '—'}</TD>
+                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151' }}>{j.due_date || '—'}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
                   <TD><span style={{ fontWeight: 700, color: profit >= 0 ? '#16a34a' : '#dc2626', fontSize: 12 }}>{fmt(profit)}<br/><span style={{ fontSize: 10 }}>{margin}%</span></span></TD>
                   <TD>
@@ -605,9 +605,9 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
                   <TD>
                     <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                       <Btn variant="ghost"   small onClick={() => openEdit(j)}>Edit</Btn>
-                      <Btn variant="ghost"   small onClick={() => printTicket(j)}>ðŸ–¨ï¸</Btn>
-                      <Btn variant="teal"    small onClick={() => setMsgModal(j)}>ðŸ“²</Btn>
-                      <Btn variant="ghost"   small onClick={() => setMatModal(j)}>ðŸ“¦</Btn>
+                      <Btn variant="ghost"   small onClick={() => printTicket(j)}>🖨️</Btn>
+                      <Btn variant="teal"    small onClick={() => setMsgModal(j)}>📲</Btn>
+                      <Btn variant="ghost"   small onClick={() => setMatModal(j)}>📦</Btn>
                       <Btn variant="warning" small onClick={() => duplicate(j)}>Copy</Btn>
                       <Btn variant="danger"  small onClick={() => del(j.id)}>Del</Btn>
                     </div>
@@ -624,7 +624,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
         <Modal title={editId ? 'Edit Job' : 'New Job Ticket'} onClose={closeModal} wide>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customer_id: c?.id||'' }); }}>
-              <option value="">â€” Select Customer â€”</option>
+              <option value="">— Select Customer —</option>
               {customers.map(c => <option key={c.id}>{c.name}</option>)}
             </Sel>
             <Sel label="Job Type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
@@ -632,11 +632,11 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
             </Sel>
             <div style={{ gridColumn: '1/-1' }}><Inp label="Description *" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} /></div>
             <Sel label="Machine" value={form.machine} onChange={e => setForm({ ...form, machine: e.target.value })}>
-              <option value="">â€” Unassigned â€”</option>
+              <option value="">— Unassigned —</option>
               {MACHINES.map(m => <option key={m}>{m}</option>)}
             </Sel>
             <Sel label="Assigned To" value={form.assigned_to||''} onChange={e => setForm({ ...form, assigned_to: e.target.value })}>
-              <option value="">â€” Unassigned â€”</option>
+              <option value="">— Unassigned —</option>
               {STAFF_LIST.map(s => <option key={s}>{s}</option>)}
             </Sel>
             <Sel label="Priority" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
@@ -654,8 +654,8 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
             <Inp label="Customer WhatsApp" placeholder="+233..." value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} />
             <Inp label="Start Date" type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} />
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
-            <Inp label="Price (GHâ‚µ)" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
-            <Inp label="Est. Cost (GHâ‚µ)" type="number" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} />
+            <Inp label="Price (GH₵)" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+            <Inp label="Est. Cost (GH₵)" type="number" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} />
             {form.price && form.cost && (
               <div style={{ gridColumn: '1/-1', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 14px' }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
@@ -670,7 +670,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={closeModal}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : editId ? 'Save Changes' : 'Create Job'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : editId ? 'Save Changes' : 'Create Job'}</Btn>
           </div>
         </Modal>
       )}
@@ -681,10 +681,10 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
       {autoNotifQ.length > 0 && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 9998, width: 340 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>ðŸ“² Send Status Update?</span>
-            <button onClick={() => setAutoNotifQ([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#9ca3af' }}>Ã—</button>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>📲 Send Status Update?</span>
+            <button onClick={() => setAutoNotifQ([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#9ca3af' }}>×</button>
           </div>
-          <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>Job <strong>{autoNotifQ[0].job.job_no}</strong> â†’ <strong>{autoNotifQ[0].job.status}</strong>. Notify {autoNotifQ[0].job.customer}?</p>
+          <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>Job <strong>{autoNotifQ[0].job.job_no}</strong> → <strong>{autoNotifQ[0].job.status}</strong>. Notify {autoNotifQ[0].job.customer}?</p>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => { openWhatsApp(autoNotifQ[0].phone, autoNotifQ[0].msg); setAutoNotifQ(q => q.slice(1)); addNotif(`WhatsApp sent to ${autoNotifQ[0].job.customer}`, 'success'); }} style={{ flex: 1, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Send WhatsApp</button>
             <button onClick={() => setAutoNotifQ(q => q.slice(1))} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: '#6b7280' }}>Skip</button>
@@ -731,12 +731,12 @@ function JobMaterialsModal({ job, inventory, setInventory, jobMaterials, setJobM
   const totalCost = jobMaterials.reduce((a, m) => a + m.quantity * (m.unit_cost||0), 0);
 
   return (
-    <Modal title={`ðŸ“¦ Materials â€” ${job.job_no}`} onClose={onClose}>
+    <Modal title={`📦 Materials — ${job.job_no}`} onClose={onClose}>
       <div style={{ marginBottom: 16 }}>
         <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700 }}>Add Stock Item Used</h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'end' }}>
           <Sel label="Inventory Item" value={selItem} onChange={e => setSelItem(e.target.value)}>
-            <option value="">â€” Select Item â€”</option>
+            <option value="">— Select Item —</option>
             {inventory.filter(i => i.quantity > 0).map(i => <option key={i.id} value={i.id}>{i.name} (Stock: {i.quantity} {i.unit})</option>)}
           </Sel>
           <Inp label="Qty" type="number" value={qty} onChange={e => setQty(e.target.value)} />
@@ -753,7 +753,7 @@ function JobMaterialsModal({ job, inventory, setInventory, jobMaterials, setJobM
                 <tr key={m.id}>
                   <TD>{m.item_name}</TD><TD>{m.quantity}</TD><TD>{fmt(m.unit_cost||0)}</TD>
                   <TD style={{ fontWeight: 700 }}>{fmt(m.quantity*(m.unit_cost||0))}</TD>
-                  <TD><Btn variant="danger" small onClick={() => removeMaterial(m)}>Ã—</Btn></TD>
+                  <TD><Btn variant="danger" small onClick={() => removeMaterial(m)}>×</Btn></TD>
                 </tr>
               ))}
             </tbody>
@@ -770,7 +770,7 @@ function WhatsAppMsgModal({ job, onClose }) {
   const [phone, setPhone] = useState(job.whatsapp || '');
   const [msg, setMsg]     = useState(generateJobReadyMsg(job));
   return (
-    <Modal title="ðŸ“² WhatsApp Message" onClose={onClose}>
+    <Modal title="📲 WhatsApp Message" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Inp label="Customer WhatsApp Number" placeholder="+233..." value={phone} onChange={e => setPhone(e.target.value)} />
         <div>
@@ -778,7 +778,7 @@ function WhatsAppMsgModal({ job, onClose }) {
           <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={8} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={() => navigator.clipboard.writeText(msg)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>ðŸ“‹ Copy</button>
+          <button onClick={() => navigator.clipboard.writeText(msg)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
           <div style={{ display: 'flex', gap: 8 }}>
             <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
             <button onClick={() => { if (phone) openWhatsApp(phone, msg); else alert('Enter a phone number first.'); }} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Open in WhatsApp</button>
@@ -792,12 +792,13 @@ function WhatsAppMsgModal({ job, onClose }) {
 const EMPTY_CX = { name: '', email: '', phone: '', address: '', whatsapp: '' };
 
 function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userId }) {
-  const [modal,    setModal]    = useState(false);
-  const [form,     setForm]     = useState(EMPTY_CX);
-  const [editId,   setEditId]   = useState(null);
-  const [search,   setSearch]   = useState('');
-  const [selected, setSelected] = useState(null);
-  const [saving,   setSaving]   = useState(false);
+  const [modal,      setModal]      = useState(false);
+  const [form,       setForm]       = useState(EMPTY_CX);
+  const [editId,     setEditId]     = useState(null);
+  const [search,     setSearch]     = useState('');
+  const [selected,   setSelected]   = useState(null);
+  const [saving,     setSaving]     = useState(false);
+  const [importing,  setImporting]  = useState(false);
 
   const filtered = customers.filter(c =>
     !search ||
@@ -812,9 +813,11 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
     if (editId) {
       const { data, error } = await db.updateCustomer(editId, form);
       if (!error) setCustomers(customers.map(c => c.id === editId ? data : c));
+      else addNotif('Error updating customer', 'warning');
     } else {
       const { data, error } = await db.addCustomer(userId, form);
       if (!error) { setCustomers([...customers, data]); addNotif(`${form.name} added`, 'success'); }
+      else addNotif('Error adding customer', 'warning');
     }
     setSaving(false); setModal(false); setForm(EMPTY_CX); setEditId(null);
   };
@@ -822,7 +825,78 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
   const del = async (id) => {
     if (!window.confirm('Delete this customer?')) return;
     const { error } = await db.deleteCustomer(id);
-    if (!error) { setCustomers(customers.filter(x => x.id !== id)); if (selected?.id === id) setSelected(null); }
+    if (!error) {
+      setCustomers(prev => prev.filter(x => x.id !== id));
+      if (selected?.id === id) setSelected(null);
+      addNotif('Customer deleted', 'success');
+    } else {
+      addNotif('Error deleting customer — check Supabase RLS', 'warning');
+    }
+  };
+
+  const delAll = async () => {
+    if (!window.confirm(`Delete ALL ${customers.length} customers? This cannot be undone.`)) return;
+    if (!window.confirm('Are you absolutely sure? ALL customers will be permanently deleted.')) return;
+    let count = 0;
+    for (const c of customers) {
+      const { error } = await db.deleteCustomer(c.id);
+      if (!error) count++;
+    }
+    setCustomers([]);
+    setSelected(null);
+    addNotif(`${count} customers deleted`, 'success');
+  };
+
+  const handleCSVImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const text = ev.target.result;
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { addNotif('CSV must have a header row + data rows', 'warning'); setImporting(false); return; }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z]/g, ''));
+      const nameIdx    = headers.findIndex(h => h.includes('name'));
+      const emailIdx   = headers.findIndex(h => h.includes('email'));
+      const phoneIdx   = headers.findIndex(h => h.includes('phone'));
+      const waIdx      = headers.findIndex(h => h.includes('whatsapp') || h.includes('wa'));
+      const addressIdx = headers.findIndex(h => h.includes('address'));
+
+      if (nameIdx === -1) { addNotif('CSV must have a "name" column', 'warning'); setImporting(false); return; }
+
+      let imported = 0;
+      const newCustomers = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+        const name = cols[nameIdx];
+        if (!name) continue;
+        const record = {
+          name,
+          email:    emailIdx   >= 0 ? cols[emailIdx]   || '' : '',
+          phone:    phoneIdx   >= 0 ? cols[phoneIdx]   || '' : '',
+          whatsapp: waIdx      >= 0 ? cols[waIdx]      || '' : '',
+          address:  addressIdx >= 0 ? cols[addressIdx] || '' : '',
+        };
+        const { data, error } = await db.addCustomer(userId, record);
+        if (!error && data) { newCustomers.push(data); imported++; }
+      }
+      setCustomers(prev => [...prev, ...newCustomers]);
+      addNotif(`${imported} customers imported from CSV`, 'success');
+      setImporting(false);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const downloadTemplate = () => {
+    const csv = 'name,email,phone,whatsapp,address\nJohn Doe,john@example.com,0244123456,0244123456,Accra Ghana\nJane Smith,jane@example.com,0277654321,0277654321,Kumasi Ghana';
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'customers_template.csv'; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const printStatement = (c) => {
@@ -830,7 +904,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
     const totalAmt  = cInvoices.reduce((a,i)=>a+i.amount,0);
     const totalPaid = cInvoices.reduce((a,i)=>a+i.paid,0);
     const w = window.open('','','width=700,height=600');
-    w.document.write(`<!DOCTYPE html><html><head><title>Statement - ${c.name}</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:650px;margin:auto}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#0f172a;color:#fff;padding:8px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px}.tr td{font-weight:800;background:#f8fafc}.green{color:#16a34a}.red{color:#dc2626}@media print{body{padding:20px}}</style></head><body><h1>ðŸ–¨ï¸ Bigbiney Printing Press</h1><h2>Customer Statement</h2><p><strong>${c.name}</strong> | ${c.phone||''} | ${c.email||''}</p><p>Generated: ${new Date().toLocaleDateString()}</p><table><thead><tr><th>Invoice #</th><th>Date</th><th>Due</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>${cInvoices.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.date}</td><td>${i.due_date||'â€”'}</td><td>GHâ‚µ${i.amount.toFixed(2)}</td><td class="green">GHâ‚µ${i.paid.toFixed(2)}</td><td class="${i.amount-i.paid>0?'red':'green'}">GHâ‚µ${(i.amount-i.paid).toFixed(2)}</td><td>${i.status}</td></tr>`).join('')}<tr class="tr"><td colspan="3"><strong>TOTALS</strong></td><td>GHâ‚µ${totalAmt.toFixed(2)}</td><td class="green">GHâ‚µ${totalPaid.toFixed(2)}</td><td class="${totalAmt-totalPaid>0?'red':'green'}">GHâ‚µ${(totalAmt-totalPaid).toFixed(2)}</td><td></td></tr></tbody></table><script>window.onload=()=>window.print()</script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Statement - ${c.name}</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:650px;margin:auto}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#0f172a;color:#fff;padding:8px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px}.tr td{font-weight:800;background:#f8fafc}.green{color:#16a34a}.red{color:#dc2626}@media print{body{padding:20px}}</style></head><body><h1>🖨️ Bigbiney Printing Press</h1><h2>Customer Statement</h2><p><strong>${c.name}</strong> | ${c.phone||''} | ${c.email||''}</p><p>Generated: ${new Date().toLocaleDateString()}</p><table><thead><tr><th>Invoice #</th><th>Date</th><th>Due</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>${cInvoices.map(i=>`<tr><td>${i.invoice_no}</td><td>${i.date}</td><td>${i.due_date||'—'}</td><td>GH₵${i.amount.toFixed(2)}</td><td class="green">GH₵${i.paid.toFixed(2)}</td><td class="${i.amount-i.paid>0?'red':'green'}">GH₵${(i.amount-i.paid).toFixed(2)}</td><td>${i.status}</td></tr>`).join('')}<tr class="tr"><td colspan="3"><strong>TOTALS</strong></td><td>GH₵${totalAmt.toFixed(2)}</td><td class="green">GH₵${totalPaid.toFixed(2)}</td><td class="${totalAmt-totalPaid>0?'red':'green'}">GH₵${(totalAmt-totalPaid).toFixed(2)}</td><td></td></tr></tbody></table><script>window.onload=()=>window.print()</script></body></html>`);
     w.document.close();
   };
 
@@ -838,10 +912,19 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Customer CRM</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ðŸ” Search name, phone, emailâ€¦" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13, minWidth: 200 }} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search name, phone, email…" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13, minWidth: 180 }} />
           <Btn onClick={() => { setForm(EMPTY_CX); setEditId(null); setModal(true); }}>+ Add Customer</Btn>
+          <label style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: 6, cursor: importing ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', opacity: importing ? 0.6 : 1 }}>
+            {importing ? 'Importing…' : '📥 Import CSV'}
+            <input type="file" accept=".csv" onChange={handleCSVImport} style={{ display: 'none' }} disabled={importing} />
+          </label>
+          <Btn variant="ghost" onClick={downloadTemplate}>📄 Template</Btn>
+          {customers.length > 0 && <Btn variant="danger" onClick={delAll}>🗑️ Delete All</Btn>}
         </div>
+      </div>
+      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 14px', marginBottom: 16, fontSize: 12, color: '#15803d' }}>
+        📥 <strong>CSV Import:</strong> Your file needs a <strong>name</strong> column. Optional: email, phone, whatsapp, address. <button onClick={downloadTemplate} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 12, fontWeight: 700, padding: 0 }}>Download template →</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12, marginBottom: 20 }}>
@@ -863,16 +946,16 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
                 return (
                   <tr key={c.id} onClick={() => setSelected(selected?.id === c.id ? null : c)} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selected?.id === c.id ? '#eff6ff' : 'transparent' }}>
                     <TD style={{ fontWeight: 600 }}>{c.name}</TD>
-                    <TD style={{ color: '#6b7280', fontSize: 12 }}>{c.email || 'â€”'}</TD>
-                    <TD style={{ fontSize: 12 }}>{c.phone || 'â€”'}</TD>
+                    <TD style={{ color: '#6b7280', fontSize: 12 }}>{c.email || '—'}</TD>
+                    <TD style={{ fontSize: 12 }}>{c.phone || '—'}</TD>
                     <TD>
                       {wa ? (
-                        <button onClick={e => { e.stopPropagation(); openWhatsApp(wa, `Hi ${c.name}! This is Bigbiney Printing Press.`); }} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>ðŸ’¬ Chat</button>
+                        <button onClick={e => { e.stopPropagation(); openWhatsApp(wa, `Hi ${c.name}! This is Bigbiney Printing Press.`); }} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '3px 8px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>💬 Chat</button>
                       ) : <span style={{ color: '#fca5a5', fontSize: 11 }}>No number</span>}
                     </TD>
                     <TD>{cJobs.length}</TD>
                     <TD style={{ fontWeight: 600, color: '#16a34a' }}>{fmt(cRev)}</TD>
-                    <TD style={{ fontWeight: 700, color: cOwed > 0 ? '#dc2626' : '#16a34a' }}>{cOwed > 0 ? fmt(cOwed) : 'âœ“ Paid'}</TD>
+                    <TD style={{ fontWeight: 700, color: cOwed > 0 ? '#dc2626' : '#16a34a' }}>{cOwed > 0 ? fmt(cOwed) : '✓ Paid'}</TD>
                     <TD>
                       <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
                         <Btn variant="ghost"  small onClick={() => { setForm({ name: c.name, email: c.email||'', phone: c.phone||'', address: c.address||'', whatsapp: c.whatsapp||'' }); setEditId(c.id); setModal(true); }}>Edit</Btn>
@@ -891,20 +974,20 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{selected.name}</h3>
-              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20 }}>Ã—</button>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20 }}>×</button>
             </div>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>ðŸ“§ {selected.email || 'No email'}</p>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>ðŸ“ž {selected.phone || 'No phone'}</p>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 6px' }}>ðŸ’¬ WhatsApp: {selected.whatsapp || selected.phone || 'Not set'}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>📧 {selected.email || 'No email'}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>📞 {selected.phone || 'No phone'}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 6px' }}>💬 WhatsApp: {selected.whatsapp || selected.phone || 'Not set'}</p>
             {(selected.whatsapp || selected.phone) && (
               <button onClick={() => openWhatsApp(selected.whatsapp || selected.phone, `Hi ${selected.name}! This is Bigbiney Printing Press.`)} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'block', width: '100%' }}>
-                ðŸ’¬ Open WhatsApp
+                💬 Open WhatsApp
               </button>
             )}
             <button onClick={() => printStatement(selected)} style={{ background: '#2563eb', border: 'none', color: '#fff', borderRadius: 4, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 10, display: 'block', width: '100%' }}>
-              ðŸ–¨ï¸ Print Statement
+              🖨️ Print Statement
             </button>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>ðŸ“ {selected.address || 'No address'}</p>
+            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>📍 {selected.address || 'No address'}</p>
             <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: 8 }}>Job History</h4>
             {jobs.filter(j => j.customer_id === selected.id).map(j => (
               <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', borderRadius: 6, marginBottom: 6 }}>
@@ -934,7 +1017,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_CX); setEditId(null); }}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : editId ? 'Save Changes' : 'Add Customer'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : editId ? 'Save Changes' : 'Add Customer'}</Btn>
           </div>
         </Modal>
       )}
@@ -972,7 +1055,7 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
     const { data, error } = await db.updateInventoryItem(id, { quantity: q });
     if (!error) {
       setInventory(inventory.map(i => i.id === id ? data : i));
-      if (q <= item.reorder_point) addNotif(`âš ï¸ Low stock: ${item.name} (${q} ${item.unit})`, 'warning');
+      if (q <= item.reorder_point) addNotif(`⚠️ Low stock: ${item.name} (${q} ${item.unit})`, 'warning');
     }
   };
   const del = async (id) => {
@@ -1012,10 +1095,10 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
                   <TD>{fmt(item.unit_cost||0)}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(item.quantity*(item.unit_cost||0))}</TD>
                   <TD style={{ color: '#6b7280' }}>{item.supplier}</TD>
-                  <TD>{low ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>âš ï¸ LOW</span> : <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>OK</span>}</TD>
+                  <TD>{low ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>⚠️ LOW</span> : <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>OK</span>}</TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                      <button onClick={() => adjust(item.id, -1)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#dc2626' }}>âˆ’</button>
+                      <button onClick={() => adjust(item.id, -1)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#dc2626' }}>−</button>
                       <button onClick={() => adjust(item.id,  1)} style={{ background: '#dcfce7', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#16a34a' }}>+</button>
                       <Btn variant="ghost"  small onClick={() => { setForm({ ...item, quantity: String(item.quantity), reorder_point: String(item.reorder_point), unit_cost: String(item.unit_cost) }); setEditId(item.id); setModal(true); }}>Edit</Btn>
                       <Btn variant="danger" small onClick={() => del(item.id)}>Del</Btn>
@@ -1037,12 +1120,12 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
             <Inp label="Unit" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} />
             <Inp label="Quantity" type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} />
             <Inp label="Reorder Point" type="number" value={form.reorder_point} onChange={e => setForm({ ...form, reorder_point: e.target.value })} />
-            <Inp label="Unit Cost (GHâ‚µ)" type="number" value={form.unit_cost} onChange={e => setForm({ ...form, unit_cost: e.target.value })} />
+            <Inp label="Unit Cost (GH₵)" type="number" value={form.unit_cost} onChange={e => setForm({ ...form, unit_cost: e.target.value })} />
             <Inp label="Supplier" value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} />
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => { setModal(false); setForm(EMPTY_INV); setEditId(null); }}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : editId ? 'Save Changes' : 'Add Item'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : editId ? 'Save Changes' : 'Add Item'}</Btn>
           </div>
         </Modal>
       )}
@@ -1080,7 +1163,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
       addNotif(`Invoice ${payload.invoice_no} created`, 'success');
       setModal(false);
       setForm({ job_id: '', customer: '', customer_id: '', due_date: '', items: [{ desc: '', qty: 1, rate: '', total: 0 }] });
-    } else addNotif('Error creating invoice â€” check if items column exists in DB', 'warning');
+    } else addNotif('Error creating invoice — check if items column exists in DB', 'warning');
   };
 
   const markPaid = async (id) => {
@@ -1090,12 +1173,12 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
       setInvoices(invoices.map(i => i.id === id ? { ...data, items: inv.items } : i));
       const { data: saleData } = await db.addSale(userId, { date: todayStr(), amount: inv.amount, job_id: inv.job_id || null });
       if (saleData) setSales(s => [...s, saleData]);
-      addNotif(`Invoice ${inv.invoice_no} paid â€” ${fmt(inv.amount)} recorded`, 'success');
+      addNotif(`Invoice ${inv.invoice_no} paid — ${fmt(inv.amount)} recorded`, 'success');
     }
   };
 
   const recordPartial = async (id) => {
-    const raw = prompt('Enter amount received (GHâ‚µ):');
+    const raw = prompt('Enter amount received (GH₵):');
     const amt = parseFloat(raw);
     if (!amt || isNaN(amt)) return;
     const inv = invoices.find(i => i.id === id);
@@ -1117,7 +1200,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
   const printInvoice = (inv) => {
     const items = inv.items && typeof inv.items === 'object' ? (Array.isArray(inv.items) ? inv.items : JSON.parse(inv.items)) : [{ desc: 'Services', qty: 1, rate: inv.amount, total: inv.amount }];
     const w = window.open('', '', 'width=700,height=600');
-    w.document.write(`<!DOCTYPE html><html><head><title>Invoice ${inv.invoice_no}</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#0f172a;color:#fff;padding:8px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px}.tot td{font-weight:800}@media print{body{padding:20px}}</style></head><body><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px"><div><div style="font-size:22px;font-weight:900">ðŸ–¨ï¸ Bigbiney Printing Press</div></div><div style="text-align:right"><h2 style="color:#2563eb;margin:0 0 4px">${inv.invoice_no}</h2><p style="margin:0;font-size:13px">Date: <strong>${inv.date}</strong></p><p style="margin:0;font-size:13px">Due: <strong>${inv.due_date||'On receipt'}</strong></p><span style="background:${inv.status==='paid'?'#dcfce7':'#fee2e2'};color:${inv.status==='paid'?'#15803d':'#dc2626'};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${inv.status.toUpperCase()}</span></div></div><p><strong>Bill To:</strong> ${inv.customer}</p><table><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${items.map(it=>`<tr><td>${it.desc||'Services'}</td><td>${it.qty}</td><td>GHâ‚µ${(parseFloat(it.rate)||0).toFixed(2)}</td><td>GHâ‚µ${((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)).toFixed(2)}</td></tr>`).join('')}<tr class="tot"><td colspan="3" style="text-align:right">Total</td><td>GHâ‚µ${inv.amount.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;color:#16a34a">Paid</td><td style="color:#16a34a">GHâ‚µ${inv.paid.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;color:#dc2626">Balance</td><td style="color:#dc2626">GHâ‚µ${(inv.amount-inv.paid).toFixed(2)}</td></tr></tbody></table><p style="color:#9ca3af;font-size:11px">Printed ${new Date().toLocaleString()} â€” Bigbiney Printing Press</p><script>window.onload=()=>window.print()</script></body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Invoice ${inv.invoice_no}</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#0f172a;color:#fff;padding:8px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px}.tot td{font-weight:800}@media print{body{padding:20px}}</style></head><body><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px"><div><div style="font-size:22px;font-weight:900">🖨️ Bigbiney Printing Press</div></div><div style="text-align:right"><h2 style="color:#2563eb;margin:0 0 4px">${inv.invoice_no}</h2><p style="margin:0;font-size:13px">Date: <strong>${inv.date}</strong></p><p style="margin:0;font-size:13px">Due: <strong>${inv.due_date||'On receipt'}</strong></p><span style="background:${inv.status==='paid'?'#dcfce7':'#fee2e2'};color:${inv.status==='paid'?'#15803d':'#dc2626'};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${inv.status.toUpperCase()}</span></div></div><p><strong>Bill To:</strong> ${inv.customer}</p><table><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${items.map(it=>`<tr><td>${it.desc||'Services'}</td><td>${it.qty}</td><td>GH₵${(parseFloat(it.rate)||0).toFixed(2)}</td><td>GH₵${((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)).toFixed(2)}</td></tr>`).join('')}<tr class="tot"><td colspan="3" style="text-align:right">Total</td><td>GH₵${inv.amount.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;color:#16a34a">Paid</td><td style="color:#16a34a">GH₵${inv.paid.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;color:#dc2626">Balance</td><td style="color:#dc2626">GH₵${(inv.amount-inv.paid).toFixed(2)}</td></tr></tbody></table><p style="color:#9ca3af;font-size:11px">Printed ${new Date().toLocaleString()} — Bigbiney Printing Press</p><script>window.onload=()=>window.print()</script></body></html>`);
     w.document.close();
   };
 
@@ -1150,9 +1233,9 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
                 <TD><Badge text={inv.status === 'paid' ? 'completed' : inv.status === 'partial' ? 'in-progress' : 'queued'} /></TD>
                 <TD>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {inv.status !== 'paid' && <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid âœ“</Btn>}
+                    {inv.status !== 'paid' && <Btn variant="success" small onClick={() => markPaid(inv.id)}>Paid ✓</Btn>}
                     {inv.status !== 'paid' && <Btn variant="ghost"   small onClick={() => recordPartial(inv.id)}>Partial</Btn>}
-                    <Btn variant="ghost"  small onClick={() => printInvoice(inv)}>ðŸ–¨ï¸ Print</Btn>
+                    <Btn variant="ghost"  small onClick={() => printInvoice(inv)}>🖨️ Print</Btn>
                     <Btn variant="danger" small onClick={() => del(inv.id)}>Del</Btn>
                   </div>
                 </TD>
@@ -1166,12 +1249,12 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
         <Modal title="Create Invoice" onClose={() => setModal(false)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customer_id: c?.id||'' }); }}>
-              <option value="">â€” Select Customer â€”</option>
+              <option value="">— Select Customer —</option>
               {customers.map(c => <option key={c.id}>{c.name}</option>)}
             </Sel>
             <Sel label="Link to Job (optional)" value={form.job_id} onChange={e => { const j = jobs.find(x => x.id === e.target.value); if (j) setForm({ ...form, job_id: e.target.value, customer: j.customer, customer_id: j.customer_id, items: [{ desc: j.description, qty: 1, rate: String(j.price), total: j.price }] }); else setForm({ ...form, job_id: e.target.value }); }}>
-              <option value="">â€” None â€”</option>
-              {jobs.filter(j => j.status === 'completed').map(j => <option key={j.id} value={j.id}>{j.job_no} â€” {j.description}</option>)}
+              <option value="">— None —</option>
+              {jobs.filter(j => j.status === 'completed').map(j => <option key={j.id} value={j.id}>{j.job_no} — {j.description}</option>)}
             </Sel>
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             <h4 style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 700 }}>Line Items</h4>
@@ -1180,7 +1263,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
                 <Inp placeholder="Description" value={item.desc} onChange={e => updateItem(idx, 'desc', e.target.value)} />
                 <Inp placeholder="Qty" type="number" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
                 <Inp placeholder="Rate" type="number" value={item.rate} onChange={e => updateItem(idx, 'rate', e.target.value)} />
-                <button onClick={() => setForm({ ...form, items: form.items.filter((_,i) => i !== idx) })} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '8px 10px', cursor: 'pointer', color: '#dc2626', fontWeight: 700 }}>Ã—</button>
+                <button onClick={() => setForm({ ...form, items: form.items.filter((_,i) => i !== idx) })} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '8px 10px', cursor: 'pointer', color: '#dc2626', fontWeight: 700 }}>×</button>
               </div>
             ))}
             <Btn variant="ghost" onClick={() => setForm({ ...form, items: [...form.items, { desc: '', qty: 1, rate: '', total: 0 }] })}>+ Add Line</Btn>
@@ -1245,7 +1328,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Btn variant="success" onClick={() => { setShowSF(v=>!v); setShowEF(false); setShowRE(false); }}>+ Record Sale</Btn>
           <Btn variant="warning" onClick={() => { setShowEF(v=>!v); setShowSF(false); setShowRE(false); }}>+ Add Expense</Btn>
-          <Btn variant="purple"  onClick={() => { setShowRE(v=>!v); setShowSF(false); setShowEF(false); }}>ðŸ” Recurring</Btn>
+          <Btn variant="purple"  onClick={() => { setShowRE(v=>!v); setShowSF(false); setShowEF(false); }}>🔁 Recurring</Btn>
         </div>
       </div>
 
@@ -1257,7 +1340,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700 }}>ðŸ—ƒï¸ Today's Cash Drawer</h3>
+        <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700 }}>🗃️ Today's Cash Drawer</h3>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           {['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(method => {
             const total = sales.filter(s => s.date === todayStr() && (s.payment_method||'Cash') === method).reduce((a,s)=>a+s.amount,0);
@@ -1283,11 +1366,11 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
 
       {dueRecurring.length > 0 && (
         <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: 16, marginBottom: 20 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#856404' }}>ðŸ” Recurring Expenses Due This Month</h3>
+          <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#856404' }}>🔁 Recurring Expenses Due This Month</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {dueRecurring.map(re => (
               <div key={re.id} style={{ background: '#fff', border: '1px solid #ffc107', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{re.category} â€” {fmt(re.amount)} â€” Day {re.day_of_month}</div></div>
+                <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{re.category} — {fmt(re.amount)} — Day {re.day_of_month}</div></div>
                 <Btn variant="warning" small onClick={() => recordRecurring(re)}>Record Now</Btn>
               </div>
             ))}
@@ -1300,7 +1383,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
           <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#15803d' }}>Record Sale</h4>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <Inp label="Date" type="date" value={sf.date} onChange={e => setSf({ ...sf, date: e.target.value })} />
-            <Inp label="Amount (GHâ‚µ)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} />
+            <Inp label="Amount (GH₵)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} />
             <Sel label="Payment Method" value={sf.payment_method} onChange={e => setSf({ ...sf, payment_method: e.target.value })}>
               {['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(m => <option key={m}>{m}</option>)}
             </Sel>
@@ -1319,7 +1402,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
               {['Paper','Ink & Toner','Maintenance','Salaries','Utilities','Other'].map(c => <option key={c}>{c}</option>)}
             </Sel>
             <Inp label="Description" value={ef.description} onChange={e => setEf({ ...ef, description: e.target.value })} />
-            <Inp label="Amount (GHâ‚µ)" type="number" value={ef.amount} onChange={e => setEf({ ...ef, amount: e.target.value })} />
+            <Inp label="Amount (GH₵)" type="number" value={ef.amount} onChange={e => setEf({ ...ef, amount: e.target.value })} />
             <Btn variant="warning" onClick={addExp}>Record</Btn>
             <Btn variant="ghost" onClick={() => setShowEF(false)}>Cancel</Btn>
           </div>
@@ -1328,13 +1411,13 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
 
       {showRE && (
         <div style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#7c3aed' }}>ðŸ” Manage Recurring Expenses</h4>
+          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#7c3aed' }}>🔁 Manage Recurring Expenses</h4>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 14 }}>
             <Inp label="Description" value={reForm.description} onChange={e => setReForm({ ...reForm, description: e.target.value })} placeholder="e.g. Rose Salary, ECG Bill" />
             <Sel label="Category" value={reForm.category} onChange={e => setReForm({ ...reForm, category: e.target.value })}>
               {['Salaries','Utilities','Maintenance','Paper','Ink & Toner','Other'].map(c => <option key={c}>{c}</option>)}
             </Sel>
-            <Inp label="Amount (GHâ‚µ)" type="number" value={reForm.amount} onChange={e => setReForm({ ...reForm, amount: e.target.value })} />
+            <Inp label="Amount (GH₵)" type="number" value={reForm.amount} onChange={e => setReForm({ ...reForm, amount: e.target.value })} />
             <Inp label="Day of Month" type="number" value={reForm.day_of_month} onChange={e => setReForm({ ...reForm, day_of_month: e.target.value })} />
             <Btn variant="purple" onClick={addRecurring}>Add</Btn>
           </div>
@@ -1342,7 +1425,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {recurringExpenses.map(re => (
                 <div key={re.id} style={{ background: '#fff', border: '1px solid #c4b5fd', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{re.category} â€” {fmt(re.amount)} â€” day {re.day_of_month}</div></div>
+                  <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{re.category} — {fmt(re.amount)} — day {re.day_of_month}</div></div>
                   <Btn variant="success" small onClick={() => recordRecurring(re)}>Record</Btn>
                   <Btn variant="danger"  small onClick={() => delRecurring(re.id)}>Del</Btn>
                 </div>
@@ -1355,7 +1438,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#15803d' }}>ðŸ’š Income ({sales.length})</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#15803d' }}>💚 Income ({sales.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {[...sales].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(s => (
@@ -1363,14 +1446,14 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
                 <span style={{ fontSize: 12, color: '#6b7280' }}>{s.date}</span>
                 {s.payment_method && <span style={{ fontSize: 10, background: '#f1f5f9', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{s.payment_method}</span>}
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{fmt(s.amount)}</span>
-                <button onClick={() => delSale(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>Ã—</button>
+                <button onClick={() => delSale(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>×</button>
               </div>
             ))}
           </div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>â¤ï¸ Expenses ({expenses.length})</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>❤️ Expenses ({expenses.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {[...expenses].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(e => (
@@ -1379,7 +1462,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
                 <span style={{ fontSize: 11, background: '#f1f5f9', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{e.category}</span>
                 <span style={{ fontSize: 12, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', whiteSpace: 'nowrap' }}>{fmt(e.amount)}</span>
-                <button onClick={() => delExp(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>Ã—</button>
+                <button onClick={() => delExp(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>×</button>
               </div>
             ))}
           </div>
@@ -1429,7 +1512,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>ðŸ‘· Staff Payroll</h2>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>👷 Staff Payroll</h2>
         <Btn onClick={() => setModal(true)}>+ Record Payment</Btn>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
@@ -1440,7 +1523,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 24 }}>
         {byStaff.map(s => (
           <div key={s.name} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>ðŸ‘¤ {s.name}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>👤 {s.name}</div>
             <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>All time: {fmt(s.total)}</div>
             <div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>This month: {fmt(s.paidThisMonth)}</div>
             <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>Last paid: {s.lastPaid || 'Never'}</div>
@@ -1454,9 +1537,9 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
           <tbody>
             {[...payroll].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(p => (
               <tr key={p.id}>
-                <TD style={{ fontWeight: 600 }}>ðŸ‘¤ {p.staff_name}</TD>
+                <TD style={{ fontWeight: 600 }}>👤 {p.staff_name}</TD>
                 <TD style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(p.amount)}</TD>
-                <TD style={{ color: '#6b7280' }}>{p.period || 'â€”'}</TD>
+                <TD style={{ color: '#6b7280' }}>{p.period || '—'}</TD>
                 <TD>{p.date}</TD>
                 <TD><span style={{ background: '#f1f5f9', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{p.payment_method}</span></TD>
                 <TD style={{ color: '#6b7280', fontSize: 12 }}>{p.notes}</TD>
@@ -1471,10 +1554,10 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
         <Modal title="Record Salary Payment" onClose={() => setModal(false)}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Sel label="Staff Member *" value={form.staff_name} onChange={e => setForm({ ...form, staff_name: e.target.value })}>
-              <option value="">â€” Select Staff â€”</option>
+              <option value="">— Select Staff —</option>
               {STAFF_LIST.map(s => <option key={s}>{s}</option>)}
             </Sel>
-            <Inp label="Amount (GHâ‚µ) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            <Inp label="Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
             <Inp label="Period (e.g. May 2026)" value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} />
             <Inp label="Date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
             <Sel label="Payment Method" value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })}>
@@ -1484,7 +1567,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId }) {
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : 'Record Payment'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Record Payment'}</Btn>
           </div>
         </Modal>
       )}
@@ -1522,7 +1605,7 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
   };
 
   const recordPayment = async (id) => {
-    const raw = prompt('Enter payment amount (GHâ‚µ):');
+    const raw = prompt('Enter payment amount (GH₵):');
     const amt = parseFloat(raw);
     if (!amt || isNaN(amt)) return;
     const loan = loans.find(l => l.id === id);
@@ -1534,7 +1617,7 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>ðŸ¦ Loans & Credit</h2>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>🏦 Loans & Credit</h2>
         <Btn onClick={() => { setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' }); setEditId(null); setModal(true); }}>+ Add Loan</Btn>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
@@ -1554,11 +1637,11 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
                   <TD style={{ fontWeight: 600 }}>{l.name}</TD>
                   <TD><span style={{ background: l.type === 'borrowed' ? '#fee2e2' : '#dcfce7', color: l.type === 'borrowed' ? '#dc2626' : '#16a34a', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{l.type === 'borrowed' ? 'Borrowed' : 'Lent'}</span></TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(l.amount)}</TD>
-                  <TD>{l.rate ? `${l.rate}%` : 'â€”'}</TD>
+                  <TD>{l.rate ? `${l.rate}%` : '—'}</TD>
                   <TD>{l.date}</TD>
-                  <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>{l.due_date || 'â€”'}{overdue ? ' âš ï¸' : ''}</TD>
+                  <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>{l.due_date || '—'}{overdue ? ' ⚠️' : ''}</TD>
                   <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(l.paid)}</TD>
-                  <TD style={{ fontWeight: 700, color: balance > 0 ? '#dc2626' : '#16a34a' }}>{balance > 0 ? fmt(balance) : 'âœ“ Settled'}</TD>
+                  <TD style={{ fontWeight: 700, color: balance > 0 ? '#dc2626' : '#16a34a' }}>{balance > 0 ? fmt(balance) : '✓ Settled'}</TD>
                   <TD style={{ color: '#6b7280', fontSize: 12 }}>{l.notes}</TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 3 }}>
@@ -1582,16 +1665,16 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
               <option value="borrowed">Borrowed (we owe)</option>
               <option value="lent">Lent (they owe us)</option>
             </Sel>
-            <Inp label="Amount (GHâ‚µ) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            <Inp label="Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
             <Inp label="Interest Rate (%)" type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} />
-            <Inp label="Already Paid (GHâ‚µ)" type="number" value={form.paid} onChange={e => setForm({ ...form, paid: e.target.value })} />
+            <Inp label="Already Paid (GH₵)" type="number" value={form.paid} onChange={e => setForm({ ...form, paid: e.target.value })} />
             <Inp label="Start Date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             <div style={{ gridColumn: '1/-1' }}><Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Savingâ€¦' : editId ? 'Save Changes' : 'Add Loan'}</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : editId ? 'Save Changes' : 'Add Loan'}</Btn>
           </div>
         </Modal>
       )}
@@ -1634,7 +1717,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>ðŸ“ˆ Reports & Analytics</h2>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>📈 Reports & Analytics</h2>
         <div style={{ display: 'flex', gap: 6 }}>
           {[['month','This Month'],['year','This Year'],['all','All Time']].map(([val, lbl]) => (
             <button key={val} onClick={() => setPeriod(val)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: period === val ? '#2563eb' : '#fff', color: period === val ? '#fff' : '#6b7280', borderColor: period === val ? '#2563eb' : '#e5e7eb' }}>{lbl}</button>
@@ -1650,11 +1733,11 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
         <StatCard label="Avg Job Value"   value={fmt(avgJobValue)} accent="#0891b2" />
       </div>
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue vs Expenses â€” Last 6 Months</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue vs Expenses — Last 6 Months</h3>
         <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
-          <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>â–  Revenue</span>
-          <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>â–  Expenses</span>
-          <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 700 }}>â–  Profit</span>
+          <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>■ Revenue</span>
+          <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>■ Expenses</span>
+          <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 700 }}>■ Profit</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 140 }}>
           {trend.map((t, i) => (
@@ -1680,7 +1763,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
               <div key={type} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                   <span style={{ fontWeight: 600 }}>{type} <span style={{ color: '#9ca3af' }}>({count})</span></span>
-                  <span style={{ fontWeight: 700, color: '#2563eb' }}>{fmt(revenue)} â€” {pct}%</span>
+                  <span style={{ fontWeight: 700, color: '#2563eb' }}>{fmt(revenue)} — {pct}%</span>
                 </div>
                 <div style={{ background: '#f1f5f9', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: '#2563eb', height: 8, borderRadius: 4 }} /></div>
               </div>
@@ -1697,7 +1780,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
               <div key={cat} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
                   <span style={{ fontWeight: 600 }}>{cat}</span>
-                  <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(total)} â€” {pct}%</span>
+                  <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(total)} — {pct}%</span>
                 </div>
                 <div style={{ background: '#f1f5f9', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: '#dc2626', height: 8, borderRadius: 4 }} /></div>
               </div>
@@ -1706,13 +1789,13 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
         </div>
       </div>
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>ðŸ† Top Customers</h3>
+        <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>🏆 Top Customers</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Rank','Customer','Jobs','Revenue'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
             {topCustomers.map((c, i) => (
               <tr key={c.name}>
-                <TD style={{ fontWeight: 800, color: i===0?'#f59e0b':i===1?'#9ca3af':i===2?'#b45309':'#374151' }}>{i===0?'ðŸ¥‡':i===1?'ðŸ¥ˆ':i===2?'ðŸ¥‰':`#${i+1}`}</TD>
+                <TD style={{ fontWeight: 800, color: i===0?'#f59e0b':i===1?'#9ca3af':i===2?'#b45309':'#374151' }}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</TD>
                 <TD style={{ fontWeight: 600 }}>{c.name}</TD>
                 <TD>{c.jobs}</TD>
                 <TD style={{ fontWeight: 700, color: '#16a34a' }}>{fmt(c.revenue)}</TD>
@@ -1762,16 +1845,16 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
   const toggleJob = (id) => setSelectedJobs(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]);
 
   const sections = [
-    { id: 'notifications', label: 'ðŸ“¢ Bulk Notifications' },
-    { id: 'summary',       label: 'ðŸ“Š Daily / Weekly Summary' },
-    { id: 'custom',        label: 'âœï¸ Custom Message' },
-    { id: 'missing',       label: 'âš ï¸ Missing Numbers' },
+    { id: 'notifications', label: '📢 Bulk Notifications' },
+    { id: 'summary',       label: '📊 Daily / Weekly Summary' },
+    { id: 'custom',        label: '✏️ Custom Message' },
+    { id: 'missing',       label: '⚠️ Missing Numbers' },
   ];
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>ðŸ“² WhatsApp Notifications</h2>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>📲 WhatsApp Notifications</h2>
         <div style={{ background: '#25D366', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>{jobsWithPhone.length} customers with WhatsApp</div>
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -1797,7 +1880,7 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
                 {jobsWithPhone.map(j => (
                   <div key={j.id} onClick={() => { toggleJob(j.id); handlePreview(j.id); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selectedJobs.includes(j.id) ? '#f0fdf4' : '#fff' }}>
                     <input type="checkbox" checked={selectedJobs.includes(j.id)} onChange={() => {}} style={{ accentColor: '#25D366' }} />
-                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{j.job_no} â€” {j.customer}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{j.whatsapp} Â· {j.status}</div></div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{j.job_no} — {j.customer}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{j.whatsapp} · {j.status}</div></div>
                     <Badge text={j.status} />
                   </div>
                 ))}
@@ -1805,13 +1888,13 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
               </div>
             </div>
             <button onClick={sendBulk} style={{ width: '100%', background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '11px', cursor: 'pointer', fontSize: 14, fontWeight: 700, marginTop: 8 }}>
-              ðŸ“² Send to {selectedJobs.length} Customer{selectedJobs.length !== 1 ? 's' : ''}
+              📲 Send to {selectedJobs.length} Customer{selectedJobs.length !== 1 ? 's' : ''}
             </button>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Message Preview</h3>
             {previewMsg ? <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{previewMsg}</div> : <div style={{ background: '#f8fafc', border: '2px dashed #e5e7eb', borderRadius: 8, padding: 30, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>Click a job to preview the message</div>}
-            {previewMsg && <button onClick={() => navigator.clipboard.writeText(previewMsg)} style={{ marginTop: 10, width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>ðŸ“‹ Copy</button>}
+            {previewMsg && <button onClick={() => navigator.clipboard.writeText(previewMsg)} style={{ marginTop: 10, width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>📋 Copy</button>}
           </div>
         </div>
       )}
@@ -1822,8 +1905,8 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
             <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Send Business Summary</h3>
             <Inp label="Send to (WhatsApp number)" value={summaryPhone} onChange={e => setSummaryPhone(e.target.value)} placeholder="+233..." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
-              <button onClick={() => openWhatsApp(summaryPhone, generateDailySummaryMsg(sales, expenses, jobs, invoices))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 8, padding: '14px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>ðŸ“Š Send Daily Summary</button>
-              <button onClick={() => openWhatsApp(summaryPhone, generateWeeklySummaryMsg(sales, expenses, jobs))} style={{ background: '#1a9e50', border: 'none', color: '#fff', borderRadius: 8, padding: '14px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>ðŸ“… Send Weekly Summary</button>
+              <button onClick={() => openWhatsApp(summaryPhone, generateDailySummaryMsg(sales, expenses, jobs, invoices))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 8, padding: '14px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>📊 Send Daily Summary</button>
+              <button onClick={() => openWhatsApp(summaryPhone, generateWeeklySummaryMsg(sales, expenses, jobs))} style={{ background: '#1a9e50', border: 'none', color: '#fff', borderRadius: 8, padding: '14px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>📅 Send Weekly Summary</button>
             </div>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
@@ -1844,29 +1927,29 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
                 <textarea value={customMsg} onChange={e => setCustomMsg(e.target.value)} rows={8} placeholder="Type your message here..." style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => navigator.clipboard.writeText(customMsg)} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>ðŸ“‹ Copy</button>
-                <button onClick={() => { if (customPhone && customMsg) openWhatsApp(customPhone, customMsg); else alert('Enter a phone number and message.'); }} style={{ flex: 2, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>ðŸ“² Open in WhatsApp</button>
+                <button onClick={() => navigator.clipboard.writeText(customMsg)} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
+                <button onClick={() => { if (customPhone && customMsg) openWhatsApp(customPhone, customMsg); else alert('Enter a phone number and message.'); }} style={{ flex: 2, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>📲 Open in WhatsApp</button>
               </div>
             </div>
             <div style={{ marginTop: 16 }}>
               <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>Quick Templates</p>
               {[
-                { label: 'Payment Reminder', msg: 'Hi, this is a friendly reminder that your invoice is due. Please make payment at your earliest convenience. Thank you! â€” Bigbiney Printing Press' },
-                { label: 'Thank You', msg: 'Thank you for your business! We appreciate your continued support. â€” Bigbiney Printing Press' },
-                { label: 'Promotion', msg: 'ðŸŽ‰ Special offer! Bring this message for 10% off your next print job. Valid this week only! â€” Bigbiney Printing Press' },
+                { label: 'Payment Reminder', msg: 'Hi, this is a friendly reminder that your invoice is due. Please make payment at your earliest convenience. Thank you! — Bigbiney Printing Press' },
+                { label: 'Thank You', msg: 'Thank you for your business! We appreciate your continued support. — Bigbiney Printing Press' },
+                { label: 'Promotion', msg: '🎉 Special offer! Bring this message for 10% off your next print job. Valid this week only! — Bigbiney Printing Press' },
               ].map(t => <button key={t.label} onClick={() => setCustomMsg(t.msg)} style={{ display: 'block', width: '100%', textAlign: 'left', background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 12, marginBottom: 6, color: '#374151' }}>{t.label}</button>)}
             </div>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Preview</h3>
-            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 100 }}>{customMsg || <span style={{ color: '#9ca3af' }}>Your message will appear hereâ€¦</span>}</div>
+            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 100 }}>{customMsg || <span style={{ color: '#9ca3af' }}>Your message will appear here…</span>}</div>
           </div>
         </div>
       )}
 
       {activeSection === 'missing' && (
         <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700 }}>âš ï¸ Jobs Missing WhatsApp Numbers</h3>
+          <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700 }}>⚠️ Jobs Missing WhatsApp Numbers</h3>
           <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6b7280' }}>{jobsWithoutPhone.length} active job(s) don't have a customer WhatsApp number.</p>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Job #','Customer','Status','Due Date','Price'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
@@ -1876,11 +1959,11 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
                   <TD style={{ fontWeight: 700, color: '#2563eb' }}>{j.job_no}</TD>
                   <TD>{j.customer}</TD>
                   <TD><Badge text={j.status} /></TD>
-                  <TD style={{ color: j.due_date < todayStr() ? '#dc2626' : '#374151' }}>{j.due_date || 'â€”'}</TD>
+                  <TD style={{ color: j.due_date < todayStr() ? '#dc2626' : '#374151' }}>{j.due_date || '—'}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
                 </tr>
               ))}
-              {jobsWithoutPhone.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: '#16a34a', fontWeight: 700 }}>âœ… All active jobs have WhatsApp numbers!</td></tr>}
+              {jobsWithoutPhone.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: '#16a34a', fontWeight: 700 }}>✅ All active jobs have WhatsApp numbers!</td></tr>}
             </tbody>
           </table>
         </div>
