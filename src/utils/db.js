@@ -76,7 +76,20 @@ async addJob(userId, job) {
   if (error) console.error('ADD JOB ERROR:', error.message, error.details, error.hint);
   return { data: data?.[0], error };
 },
-  async updateJob(id, updates) { const { data, error } = await supabase.from('jobs').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
+  async updateJob(id, updates) {
+  const allowed = ['customer','customer_id','description','type','status','priority',
+    'due_date','start_date','price','cost','machine','notes','qr_code',
+    'delivery_status','assigned_to','payment_method','whatsapp','job_no'];
+  const clean = {};
+  allowed.forEach(k => { if (updates[k] !== undefined) clean[k] = updates[k]; });
+  const { data, error } = await supabase
+    .from('jobs')
+    .update(clean)
+    .eq('id', id)
+    .select();
+  if (error) console.error('UPDATE JOB ERROR:', error.message);
+  return { data: data?.[0], error };
+},
   async deleteJob(id) { const { error } = await supabase.from('jobs').delete().eq('id', id); return { error }; },
 
   async getInventory(userId) { const { data, error } = await supabase.from('inventory').select('*').eq('user_id', userId).order('name'); return { data: data || [], error }; },
