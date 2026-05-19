@@ -54,7 +54,11 @@ const generateStatusChangeMsg = (job, newStatus) => {
   };
   return msgs[newStatus] || `Hi ${job.customer}, your job *${job.job_no}* status updated to *${newStatus.toUpperCase()}*.`;
 };
-const generateDailySummaryMsg = (sales, expenses, jobs, invoices) => {
+const generatePaymentReminderMsg = (job) =>
+  `Hi ${job.customer}! 💳 This is a friendly payment reminder for your print job *${job.job_no}*.\n\n📋 ${job.description}\n💰 Amount Due: ${fmt(job.price)}\n\nKindly make payment at your earliest convenience.\n\nThank you for choosing Bigbiney Printing Press! 🖨️`;
+
+const generateThankYouMsg = (job) =>
+  `Hi ${job.customer}! 🙏 Thank you for your business!\n\n📋 Job *${job.job_no}* — ${job.description} has been completed.\n\nWe truly appreciate your continued support and look forward to serving you again.\n\n— Bigbiney Printing Press 🖨️`;
   const today = todayStr();
   const todaySales   = sales.filter(s => s.date === today).reduce((a, s) => a + s.amount, 0);
   const todayExp     = expenses.filter(e => e.date === today).reduce((a, e) => a + e.amount, 0);
@@ -587,7 +591,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
       </div>
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>{['Job #','Customer','Description','Type','Assigned','Due','Price','Profit','Delivery','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+          <thead><tr>{['Job #','Customer','Description','Type','Assigned','Due','Price','Profit','Payment','Delivery','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
             {filtered.map(j => {
               const profit = (j.price||0) - (j.cost||0);
@@ -602,6 +606,13 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
                   <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151' }}>{j.due_date || '—'}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
                   <TD><span style={{ fontWeight: 700, color: profit >= 0 ? '#16a34a' : '#dc2626', fontSize: 12 }}>{fmt(profit)}<br/><span style={{ fontSize: 10 }}>{margin}%</span></span></TD>
+                  <TD>
+                    {j.payment_method === 'Payment Not Received'
+                      ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>⏳ UNPAID</span>
+                      : j.payment_method === 'Partial Payment'
+                      ? <span style={{ background: '#fff3cd', color: '#92400e', border: '1px solid #fde68a', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>💸 PARTIAL</span>
+                      : <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>✓ {j.payment_method||'Cash'}</span>}
+                  </TD>
                   <TD>
                     <select value={j.delivery_status || 'pending'} onChange={e => updateField(j.id, 'delivery_status', e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: 4, padding: '3px 6px', fontSize: 11, background: DELIVERY_COLORS[j.delivery_status||'pending']?.bg, color: DELIVERY_COLORS[j.delivery_status||'pending']?.color, cursor: 'pointer', fontWeight: 700 }}>
                       {DELIVERY_STATUSES.map(s => <option key={s}>{s}</option>)}
@@ -625,7 +636,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
                 </tr>
               );
             })}
-            {filtered.length === 0 && <tr><td colSpan={11} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No jobs found</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={12} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No jobs found</td></tr>}
           </tbody>
         </table>
       </div>
@@ -662,7 +673,13 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
               {DELIVERY_STATUSES.map(s => <option key={s}>{s}</option>)}
             </Sel>
             <Sel label="Payment Method" value={form.payment_method||'Cash'} onChange={e => setForm({ ...form, payment_method: e.target.value })}>
-              {['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(m => <option key={m}>{m}</option>)}
+              <option value="Payment Not Received">⏳ Payment Not Received</option>
+              <option value="Partial Payment">💸 Partial Payment</option>
+              <option value="Cash">💵 Cash</option>
+              <option value="Mobile Money">📱 Mobile Money</option>
+              <option value="Bank Transfer">🏦 Bank Transfer</option>
+              <option value="Credit">💳 Credit</option>
+              <option value="Other">Other</option>
             </Sel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Customer WhatsApp</label>
@@ -790,15 +807,23 @@ function JobMaterialsModal({ job, inventory, setInventory, jobMaterials, setJobM
 
 function WhatsAppMsgModal({ job, customers, onClose }) {
   const [phone, setPhone] = useState(job.whatsapp || '');
-  const [msg, setMsg]     = useState(generateJobReadyMsg(job));
+  const [msgType, setMsgType] = useState(job.status || 'completed');
+  const [msg, setMsg]     = useState(generateStatusChangeMsg(job, job.status) || generateJobReadyMsg(job));
 
-  // Auto-fill from customer if job has no whatsapp
   useEffect(() => {
     if (!phone && job.customer_id) {
       const c = customers?.find(x => x.id === job.customer_id);
       if (c) setPhone(c.whatsapp || c.phone || '');
     }
   }, []);
+
+  const handleMsgType = (type) => {
+    setMsgType(type);
+    if (type === 'ready') setMsg(generateJobReadyMsg(job));
+    else if (type === 'payment_reminder') setMsg(generatePaymentReminderMsg(job));
+    else if (type === 'thank_you') setMsg(generateThankYouMsg(job));
+    else setMsg(generateStatusChangeMsg(job, type));
+  };
 
   return (
     <Modal title="📲 WhatsApp Message" onClose={onClose}>
@@ -812,6 +837,15 @@ function WhatsAppMsgModal({ job, customers, onClose }) {
             ))}
           </select>
           <input placeholder="Or type number: +233..." value={phone} onChange={e => setPhone(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13, marginTop: 4 }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Message Type</label>
+          <select value={msgType} onChange={e => handleMsgType(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff' }}>
+            <option value="ready">✅ Job Ready for Pickup</option>
+            {JOB_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)} notification</option>)}
+            <option value="payment_reminder">💳 Payment Reminder</option>
+            <option value="thank_you">🙏 Thank You</option>
+          </select>
         </div>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message</label>
@@ -1425,7 +1459,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
             <Inp label="Date" type="date" value={sf.date} onChange={e => setSf({ ...sf, date: e.target.value })} />
             <Inp label="Amount (GH₵)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} />
             <Sel label="Payment Method" value={sf.payment_method} onChange={e => setSf({ ...sf, payment_method: e.target.value })}>
-              {['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(m => <option key={m}>{m}</option>)}
+              {['Cash','Mobile Money','Bank Transfer','Credit','Partial Payment','Other'].map(m => <option key={m}>{m}</option>)}
             </Sel>
             <Btn variant="success" onClick={addSale}>Record</Btn>
             <Btn variant="ghost" onClick={() => setShowSF(false)}>Cancel</Btn>
