@@ -59,6 +59,8 @@ const generatePaymentReminderMsg = (job) =>
 
 const generateThankYouMsg = (job) =>
   `Hi ${job.customer}! 🙏 Thank you for your business!\n\n📋 Job *${job.job_no}* — ${job.description} has been completed.\n\nWe truly appreciate your continued support and look forward to serving you again.\n\n— Bigbiney Printing Press 🖨️`;
+
+const generateDailySummaryMsg = (sales, expenses, jobs, invoices) => {
   const today = todayStr();
   const todaySales   = sales.filter(s => s.date === today).reduce((a, s) => a + s.amount, 0);
   const todayExp     = expenses.filter(e => e.date === today).reduce((a, e) => a + e.amount, 0);
