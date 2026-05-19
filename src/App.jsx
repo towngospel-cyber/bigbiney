@@ -94,16 +94,16 @@ const StatCard = ({ label, value, sub, accent }) => (
     {sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{sub}</div>}
   </div>
 );
-const Inp = ({ label, ...props }) => (
+const Inp = ({ label, id, ...props }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-    {label && <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
-    <input style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }} {...props} />
+    {label && <label htmlFor={id || props.name} style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
+    <input id={id || props.name || label?.toLowerCase().replace(/\s+/g,'-')} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }} {...props} />
   </div>
 );
-const Sel = ({ label, children, ...props }) => (
+const Sel = ({ label, id, children, ...props }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-    {label && <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
-    <select style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none' }} {...props}>{children}</select>
+    {label && <label htmlFor={id || label?.toLowerCase().replace(/\s+/g,'-')} style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
+    <select id={id || label?.toLowerCase().replace(/\s+/g,'-')} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none' }} {...props}>{children}</select>
   </div>
 );
 const Btn = ({ children, onClick, variant = 'primary', small, style: s, disabled }) => {
@@ -697,7 +697,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
         </Modal>
       )}
 
-      {msgModal && <WhatsAppMsgModal job={msgModal} onClose={() => setMsgModal(null)} />}
+      {msgModal && <WhatsAppMsgModal job={msgModal} customers={customers} onClose={() => setMsgModal(null)} />}
       {matModal && <JobMaterialsModal job={matModal} inventory={inventory} setInventory={setInventory} jobMaterials={jobMaterials.filter(m => m.job_id === matModal.id)} setJobMaterials={setJobMaterials} userId={userId} addNotif={addNotif} onClose={() => setMatModal(null)} />}
 
       {autoNotifQ.length > 0 && (
@@ -788,13 +788,31 @@ function JobMaterialsModal({ job, inventory, setInventory, jobMaterials, setJobM
   );
 }
 
-function WhatsAppMsgModal({ job, onClose }) {
+function WhatsAppMsgModal({ job, customers, onClose }) {
   const [phone, setPhone] = useState(job.whatsapp || '');
   const [msg, setMsg]     = useState(generateJobReadyMsg(job));
+
+  // Auto-fill from customer if job has no whatsapp
+  useEffect(() => {
+    if (!phone && job.customer_id) {
+      const c = customers?.find(x => x.id === job.customer_id);
+      if (c) setPhone(c.whatsapp || c.phone || '');
+    }
+  }, []);
+
   return (
     <Modal title="📲 WhatsApp Message" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Inp label="Customer WhatsApp Number" placeholder="+233..." value={phone} onChange={e => setPhone(e.target.value)} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Select from Contacts</label>
+          <select value={phone} onChange={e => setPhone(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff' }}>
+            <option value="">— Pick a contact —</option>
+            {(customers||[]).filter(c => c.whatsapp || c.phone).map(c => (
+              <option key={c.id} value={c.whatsapp || c.phone}>{c.name} — {c.whatsapp || c.phone}</option>
+            ))}
+          </select>
+          <input placeholder="Or type number: +233..." value={phone} onChange={e => setPhone(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13, marginTop: 4 }} />
+        </div>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message</label>
           <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={8} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
@@ -803,7 +821,7 @@ function WhatsAppMsgModal({ job, onClose }) {
           <button onClick={() => navigator.clipboard.writeText(msg)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
           <div style={{ display: 'flex', gap: 8 }}>
             <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-            <button onClick={() => { if (phone) openWhatsApp(phone, msg); else alert('Enter a phone number first.'); }} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Open in WhatsApp</button>
+            <button onClick={() => { if (phone) openWhatsApp(phone, msg); else alert('Select or enter a phone number first.'); }} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Open in WhatsApp</button>
           </div>
         </div>
       </div>
