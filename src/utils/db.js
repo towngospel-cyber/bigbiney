@@ -117,8 +117,21 @@ async deletePayroll(id) { const { error } = await supabase.from('payroll').delet
 
 // ─── LOANS (Supabase) ────────────────────────────────────────────────────────
 async getLoans(userId) { const { data, error } = await supabase.from('loans').select('*').eq('user_id', userId).order('created_at', { ascending: false }); return { data: data || [], error }; },
-async addLoan(userId, loan) { const { data, error } = await supabase.from('loans').insert([{ ...loan, user_id: userId }]).select(); return { data: data?.[0], error }; },
-async updateLoan(id, updates) { const { data, error } = await supabase.from('loans').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
+async addLoan(userId, loan) {
+  const { data, error } = await supabase
+    .from('loans')
+    .insert([{ ...loan, user_id: userId }])
+    .select();
+  return { data: data?.[0], error };
+},
+async updateLoan(id, updates) {
+  const { data, error } = await supabase
+    .from('loans')
+    .update(updates)
+    .eq('id', id)
+    .select();
+  return { data: data?.[0], error };
+},
 async deleteLoan(id) { const { error } = await supabase.from('loans').delete().eq('id', id); return { error }; },
 
 // ─── RECURRING EXPENSES ──────────────────────────────────────────────────────
