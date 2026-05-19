@@ -47,11 +47,33 @@ async setSetting(userId, key, value) {
 },
 
   async getJobs(userId) { const { data, error } = await supabase.from('jobs').select('*').eq('user_id', userId).order('job_no', { ascending: false }); return { data: data || [], error }; },
-  async addJob(userId, job) {
+async addJob(userId, job) {
+  const payload = {
+    user_id:         userId,
+    job_no:          job.job_no          || '',
+    customer:        job.customer        || '',
+    customer_id:     job.customer_id     || null,
+    description:     job.description     || '',
+    type:            job.type            || 'Digital',
+    status:          job.status          || 'queued',
+    priority:        job.priority        || 'normal',
+    due_date:        job.due_date        || null,
+    start_date:      job.start_date      || null,
+    price:           job.price           || 0,
+    cost:            job.cost            || 0,
+    machine:         job.machine         || '',
+    notes:           job.notes           || '',
+    qr_code:         job.qr_code         || '',
+    delivery_status: job.delivery_status || 'pending',
+    assigned_to:     job.assigned_to     || '',
+    payment_method:  job.payment_method  || 'Cash',
+    whatsapp:        job.whatsapp        || '',
+  };
   const { data, error } = await supabase
     .from('jobs')
-    .insert([{ ...job, user_id: userId }])
+    .insert([payload])
     .select();
+  if (error) console.error('ADD JOB ERROR:', error.message, error.details, error.hint);
   return { data: data?.[0], error };
 },
   async updateJob(id, updates) { const { data, error } = await supabase.from('jobs').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
