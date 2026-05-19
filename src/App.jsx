@@ -497,6 +497,16 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
   const [msgModal,   setMsgModal]   = useState(null);
   const [matModal,   setMatModal]   = useState(null);
   const [autoNotifQ, setAutoNotifQ] = useState([]);
+  const [staffList,  setStaffList]  = useState(STAFF_LIST);
+
+  // Load staff list from Supabase so deleted staff don't show
+  useEffect(() => {
+    db.getSetting(userId, 'staff_list').then(({ data }) => {
+      if (data && data.value) {
+        try { setStaffList(JSON.parse(data.value)); } catch { setStaffList(STAFF_LIST); }
+      }
+    });
+  }, [userId]);
 
   const filtered = jobs.filter(j => {
     const ms = filter === 'all' || j.status === filter;
@@ -623,7 +633,10 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
       {modal && (
         <Modal title={editId ? 'Edit Job' : 'New Job Ticket'} onClose={closeModal} wide>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Sel label="Customer *" value={form.customer} onChange={e => { const c = customers.find(x => x.name === e.target.value); setForm({ ...form, customer: e.target.value, customer_id: c?.id||'' }); }}>
+            <Sel label="Customer *" value={form.customer} onChange={e => {
+              const c = customers.find(x => x.name === e.target.value);
+              setForm({ ...form, customer: e.target.value, customer_id: c?.id||'', whatsapp: c?.whatsapp || c?.phone || form.whatsapp || '' });
+            }}>
               <option value="">— Select Customer —</option>
               {customers.map(c => <option key={c.id}>{c.name}</option>)}
             </Sel>
@@ -637,7 +650,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
             </Sel>
             <Sel label="Assigned To" value={form.assigned_to||''} onChange={e => setForm({ ...form, assigned_to: e.target.value })}>
               <option value="">— Unassigned —</option>
-              {STAFF_LIST.map(s => <option key={s}>{s}</option>)}
+              {staffList.map(s => <option key={s}>{s}</option>)}
             </Sel>
             <Sel label="Priority" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}>
               <option value="normal">Normal</option><option value="rush">Rush (+25%)</option><option value="urgent">Urgent</option>
@@ -651,7 +664,16 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
             <Sel label="Payment Method" value={form.payment_method||'Cash'} onChange={e => setForm({ ...form, payment_method: e.target.value })}>
               {['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(m => <option key={m}>{m}</option>)}
             </Sel>
-            <Inp label="Customer WhatsApp" placeholder="+233..." value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Customer WhatsApp</label>
+              <select value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff' }}>
+                <option value="">— Select or type below —</option>
+                {customers.filter(c => c.whatsapp || c.phone).map(c => (
+                  <option key={c.id} value={c.whatsapp || c.phone}>{c.name} — {c.whatsapp || c.phone}</option>
+                ))}
+              </select>
+              <input placeholder="Or type: +233..." value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 12, color: '#111', background: '#fff', marginTop: 4 }} />
+            </div>
             <Inp label="Start Date" type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} />
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             <Inp label="Price (GH₵)" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
