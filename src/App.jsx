@@ -310,7 +310,7 @@ export default function PrintingPressSystem() {
         {activeTab === 'invoices'  && <InvoicesTab invoices={invoices} setInvoices={setInvoices} jobs={jobs} customers={customers} setSales={setSales} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'finance'   && <FinanceTab sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
         {activeTab === 'payroll'   && <PayrollTab payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} expenses={expenses} setExpenses={setExpenses} />}
-        {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} />}
+        {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} sales={sales} expenses={expenses} setExpenses={setExpenses} />}
         {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} />}
         {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
       </main>
@@ -1671,19 +1671,35 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
   );
 }
 
-function LoansTab({ loans, setLoans, addNotif, userId }) {
-  const [modal,  setModal]  = useState(false);
-  const [form,   setForm]   = useState({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' });
-  const [editId, setEditId] = useState(null);
-  const [saving, setSaving] = useState(false);
+function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpenses }) {
+  const [modal,       setModal]       = useState(false);
+  const [form,        setForm]        = useState({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '', daily_repayment: '' });
+  const [editId,      setEditId]      = useState(null);
+  const [saving,      setSaving]      = useState(false);
+  const [repayModal,  setRepayModal]  = useState(null);
+  const [repayAmt,    setRepayAmt]    = useState('');
+  const [pendingDebt, setPendingDebt] = useState({});
 
-  const totalBorrowed = loans.filter(l => l.type === 'borrowed').reduce((a, l) => a + (l.amount - l.paid), 0);
-  const totalLent     = loans.filter(l => l.type === 'lent').reduce((a, l) => a + (l.amount - l.paid), 0);
+  useEffect(() => {
+    db.getSetting(userId, 'loan_carryover').then(({ data }) => {
+      if (data?.value) { try { setPendingDebt(JSON.parse(data.value)); } catch {} }
+    });
+  }, [userId]);
+
+  const savePendingDebt = async (updated) => {
+    setPendingDebt(updated);
+    await db.setSetting(userId, 'loan_carryover', JSON.stringify(updated));
+  };
+
+  const totalBorrowed    = loans.filter(l => l.type === 'borrowed').reduce((a, l) => a + (l.amount - l.paid), 0);
+  const totalLent        = loans.filter(l => l.type === 'lent').reduce((a, l) => a + (l.amount - l.paid), 0);
+  const todaySalesTotal  = (sales||[]).filter(s => s.date === todayStr()).reduce((a, s) => a + s.amount, 0);
+  const activeBorrowed   = loans.filter(l => l.type === 'borrowed' && l.paid < l.amount);
 
   const save = async () => {
     if (!form.name || !form.amount) return;
     setSaving(true);
-    const loan = { ...form, amount: parseFloat(form.amount)||0, rate: parseFloat(form.rate)||0, paid: parseFloat(form.paid)||0 };
+    const loan = { ...form, amount: parseFloat(form.amount)||0, rate: parseFloat(form.rate)||0, paid: parseFloat(form.paid)||0, daily_repayment: parseFloat(form.daily_repayment)||0 };
     if (editId) {
       const { data, error } = await db.updateLoan(editId, loan);
       if (!error) { setLoans(loans.map(l => l.id === editId ? data : l)); addNotif('Loan updated', 'success'); }
@@ -1691,16 +1707,21 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
       const { data, error } = await db.addLoan(userId, loan);
       if (!error) { setLoans([...loans, data]); addNotif('Loan recorded', 'success'); }
     }
-    setSaving(false); setModal(false); setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' }); setEditId(null);
+    setSaving(false); setModal(false);
+    setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '', daily_repayment: '' });
+    setEditId(null);
   };
 
   const del = async (id) => {
     if (!window.confirm('Delete this loan?')) return;
     const { error } = await db.deleteLoan(id);
-    if (!error) setLoans(loans.filter(l => l.id !== id));
+    if (!error) {
+      setLoans(loans.filter(l => l.id !== id));
+      const updated = { ...pendingDebt }; delete updated[id]; savePendingDebt(updated);
+    }
   };
 
-  const recordPayment = async (id) => {
+  const recordManualPayment = async (id) => {
     const raw = prompt('Enter payment amount (GH₵):');
     const amt = parseFloat(raw);
     if (!amt || isNaN(amt)) return;
@@ -1710,20 +1731,116 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
     if (!error) { setLoans(loans.map(l => l.id === id ? data : l)); addNotif(`Payment of ${fmt(amt)} recorded`, 'success'); }
   };
 
+  const doRepay = async (loan, amt) => {
+    const balance  = loan.amount - loan.paid;
+    const carryover = pendingDebt[loan.id] || 0;
+    const toPay    = Math.min(amt, balance, todaySalesTotal);
+    const carry    = Math.max(0, amt - toPay);
+    if (toPay <= 0) { addNotif(`Not enough sales today to repay ${loan.name}`, 'warning'); return; }
+    const newPaid = loan.paid + toPay;
+    const { data, error } = await db.updateLoan(loan.id, { paid: newPaid });
+    if (!error) {
+      setLoans(loans.map(l => l.id === loan.id ? data : l));
+      const { data: expData } = await db.addExpense(userId, {
+        date: todayStr(), category: 'Other',
+        description: `Loan repayment — ${loan.name}${carryover > 0 ? ` (incl. ${fmt(carryover)} carryover)` : ''}`,
+        amount: toPay,
+      });
+      if (expData && setExpenses) setExpenses(prev => [expData, ...prev]);
+      const updated = { ...pendingDebt, [loan.id]: carry };
+      if (newPaid >= loan.amount) delete updated[loan.id];
+      savePendingDebt(updated);
+      addNotif(`${fmt(toPay)} repaid from today's sales${carry > 0 ? ` — ${fmt(carry)} carries over to tomorrow` : ' ✓'}`, 'success');
+    }
+  };
+
+  const repayFromSales = (loan) => {
+    const carryover = pendingDebt[loan.id] || 0;
+    const target    = (loan.daily_repayment || 0) + carryover;
+    doRepay(loan, target);
+  };
+
+  const repayCustom = async () => {
+    const amt = parseFloat(repayAmt);
+    if (!amt || isNaN(amt) || !repayModal) return;
+    await doRepay(repayModal, amt);
+    setRepayModal(null); setRepayAmt('');
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>🏦 Loans & Credit</h2>
-        <Btn onClick={() => { setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '' }); setEditId(null); setModal(true); }}>+ Add Loan</Btn>
+        <Btn onClick={() => { setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '', daily_repayment: '' }); setEditId(null); setModal(true); }}>+ Add Loan</Btn>
       </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Total Borrowed" value={fmt(totalBorrowed)} accent="#dc2626" />
         <StatCard label="Total Lent Out" value={fmt(totalLent)}     accent="#f59e0b" />
         <StatCard label="Active Loans"   value={loans.filter(l => l.paid < l.amount).length} accent="#2563eb" />
+        <StatCard label="Today's Sales"  value={fmt(todaySalesTotal)} accent="#16a34a" sub="Available for repayment" />
       </div>
+
+      {activeBorrowed.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>💳 Daily Repayment Tracker</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 12 }}>
+            {activeBorrowed.map(l => {
+              const balance   = l.amount - l.paid;
+              const pct       = Math.round((l.paid / l.amount) * 100);
+              const carryover = pendingDebt[l.id] || 0;
+              const daily     = l.daily_repayment || 0;
+              const dueToday  = daily + carryover;
+              const canPay    = Math.min(dueToday, todaySalesTotal, balance);
+              return (
+                <div key={l.id} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>{l.name}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280' }}>Balance: <strong style={{ color: '#dc2626' }}>{fmt(balance)}</strong></div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 11, color: '#6b7280' }}>Daily target</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: '#2563eb' }}>{daily > 0 ? fmt(daily) : 'Not set'}</div>
+                    </div>
+                  </div>
+                  <div style={{ background: '#f1f5f9', borderRadius: 4, height: 8, marginBottom: 6 }}>
+                    <div style={{ width: `${pct}%`, background: pct >= 100 ? '#16a34a' : '#2563eb', height: 8, borderRadius: 4 }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10 }}>
+                    {fmt(l.paid)} paid of {fmt(l.amount)} ({pct}%)
+                    {carryover > 0 && <span style={{ color: '#f59e0b', fontWeight: 700, marginLeft: 8 }}>⚠️ {fmt(carryover)} carried over</span>}
+                  </div>
+                  {dueToday > 0 && (
+                    <div style={{ background: canPay >= dueToday ? '#f0fdf4' : '#fff3cd', border: `1px solid ${canPay >= dueToday ? '#bbf7d0' : '#fde68a'}`, borderRadius: 6, padding: '8px 10px', marginBottom: 10, fontSize: 12 }}>
+                      <strong>Due today: {fmt(dueToday)}</strong>
+                      {carryover > 0 && <span style={{ color: '#92400e' }}> (daily {fmt(daily)} + carry {fmt(carryover)})</span>}
+                      <br/>
+                      {canPay < dueToday
+                        ? <span style={{ color: '#dc2626' }}>Sales only cover {fmt(canPay)} — {fmt(dueToday - canPay)} carries to tomorrow</span>
+                        : <span style={{ color: '#16a34a' }}>✓ Today's sales can cover this</span>}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {daily > 0 && balance > 0 && (
+                      <button onClick={() => repayFromSales(l)} style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        💰 Pay {fmt(Math.min(dueToday || daily, balance, todaySalesTotal))} from Sales
+                      </button>
+                    )}
+                    <button onClick={() => { setRepayModal(l); setRepayAmt(String(daily || '')); }} style={{ flex: 1, background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                      ✏️ Custom Amount
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>{['Name','Type','Amount','Rate','Date','Due','Paid','Balance','Notes','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+          <thead><tr>{['Name','Type','Amount','Daily','Date','Due','Paid','Balance','Notes','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
             {loans.map(l => {
               const balance = l.amount - l.paid;
@@ -1733,7 +1850,7 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
                   <TD style={{ fontWeight: 600 }}>{l.name}</TD>
                   <TD><span style={{ background: l.type === 'borrowed' ? '#fee2e2' : '#dcfce7', color: l.type === 'borrowed' ? '#dc2626' : '#16a34a', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{l.type === 'borrowed' ? 'Borrowed' : 'Lent'}</span></TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(l.amount)}</TD>
-                  <TD>{l.rate ? `${l.rate}%` : '—'}</TD>
+                  <TD style={{ color: l.daily_repayment > 0 ? '#2563eb' : '#9ca3af', fontWeight: 600 }}>{l.daily_repayment > 0 ? fmt(l.daily_repayment) : '—'}</TD>
                   <TD>{l.date}</TD>
                   <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>{l.due_date || '—'}{overdue ? ' ⚠️' : ''}</TD>
                   <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(l.paid)}</TD>
@@ -1741,8 +1858,8 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
                   <TD style={{ color: '#6b7280', fontSize: 12 }}>{l.notes}</TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 3 }}>
-                      {balance > 0 && <Btn variant="success" small onClick={() => recordPayment(l.id)}>Pay</Btn>}
-                      <Btn variant="ghost"  small onClick={() => { setForm({ ...l, amount: String(l.amount), rate: String(l.rate), paid: String(l.paid) }); setEditId(l.id); setModal(true); }}>Edit</Btn>
+                      {balance > 0 && <Btn variant="success" small onClick={() => recordManualPayment(l.id)}>Pay</Btn>}
+                      <Btn variant="ghost"  small onClick={() => { setForm({ ...l, amount: String(l.amount), rate: String(l.rate||0), paid: String(l.paid), daily_repayment: String(l.daily_repayment||'') }); setEditId(l.id); setModal(true); }}>Edit</Btn>
                       <Btn variant="danger" small onClick={() => del(l.id)}>Del</Btn>
                     </div>
                   </TD>
@@ -1753,6 +1870,33 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
           </tbody>
         </table>
       </div>
+
+      {repayModal && (
+        <Modal title={`💰 Repay from Sales — ${repayModal.name}`} onClose={() => { setRepayModal(null); setRepayAmt(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>Today's Sales: {fmt(todaySalesTotal)}</div>
+              <div style={{ fontSize: 13, color: '#374151', marginTop: 4 }}>Loan Balance: <strong>{fmt(repayModal.amount - repayModal.paid)}</strong></div>
+              {(pendingDebt[repayModal.id] || 0) > 0 && <div style={{ fontSize: 12, color: '#f59e0b', fontWeight: 700, marginTop: 4 }}>⚠️ Carryover: {fmt(pendingDebt[repayModal.id])}</div>}
+            </div>
+            <Inp label="Amount to Repay (GH₵)" type="number" value={repayAmt} onChange={e => setRepayAmt(e.target.value)} placeholder={`e.g. ${repayModal.daily_repayment || 550}`} />
+            {repayAmt && parseFloat(repayAmt) > 0 && (
+              <div style={{ background: parseFloat(repayAmt) <= todaySalesTotal ? '#f0fdf4' : '#fff3cd', border: `1px solid ${parseFloat(repayAmt) <= todaySalesTotal ? '#bbf7d0' : '#fde68a'}`, borderRadius: 6, padding: 10, fontSize: 13 }}>
+                {parseFloat(repayAmt) > todaySalesTotal
+                  ? <span style={{ color: '#92400e' }}>⚠️ {fmt(parseFloat(repayAmt) - todaySalesTotal)} will carry over to tomorrow</span>
+                  : <span style={{ color: '#16a34a' }}>✓ Today's sales can cover this payment</span>}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Btn variant="ghost" onClick={() => { setRepayModal(null); setRepayAmt(''); }}>Cancel</Btn>
+              <Btn variant="success" onClick={repayCustom} disabled={!repayAmt || parseFloat(repayAmt) <= 0}>
+                Repay {repayAmt && parseFloat(repayAmt) > 0 ? fmt(parseFloat(repayAmt)) : ''}
+              </Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {modal && (
         <Modal title={editId ? 'Edit Loan' : 'Add Loan'} onClose={() => { setModal(false); setEditId(null); }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1761,13 +1905,21 @@ function LoansTab({ loans, setLoans, addNotif, userId }) {
               <option value="borrowed">Borrowed (we owe)</option>
               <option value="lent">Lent (they owe us)</option>
             </Sel>
-            <Inp label="Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            <Inp label="Total Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            <Inp label="Daily Repayment (GH₵)" type="number" value={form.daily_repayment} onChange={e => setForm({ ...form, daily_repayment: e.target.value })} placeholder="e.g. 550" />
             <Inp label="Interest Rate (%)" type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} />
             <Inp label="Already Paid (GH₵)" type="number" value={form.paid} onChange={e => setForm({ ...form, paid: e.target.value })} />
             <Inp label="Start Date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             <div style={{ gridColumn: '1/-1' }}><Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
           </div>
+          {form.amount && form.daily_repayment && parseFloat(form.daily_repayment) > 0 && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 14px', marginTop: 12 }}>
+              <span style={{ fontSize: 13, color: '#15803d', fontWeight: 700 }}>
+                At {fmt(parseFloat(form.daily_repayment))}/day → paid off in ~{Math.ceil((parseFloat(form.amount)||0) / (parseFloat(form.daily_repayment)||1))} days
+              </span>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
             <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : editId ? 'Save Changes' : 'Add Loan'}</Btn>
