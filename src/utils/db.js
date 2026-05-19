@@ -130,8 +130,10 @@ async updateLoan(id, updates) {
     .update(updates)
     .eq('id', id)
     .select();
+  if (error) console.error('UPDATE LOAN ERROR:', error.message);
   return { data: data?.[0], error };
 },
+  
 async deleteLoan(id) { const { error } = await supabase.from('loans').delete().eq('id', id); return { error }; },
 
 // ─── RECURRING EXPENSES ──────────────────────────────────────────────────────
