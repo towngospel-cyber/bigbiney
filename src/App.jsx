@@ -1330,7 +1330,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
             </Sel>
             <Sel label="Link to Job (optional)" value={form.job_id} onChange={e => { const j = jobs.find(x => x.id === e.target.value); if (j) setForm({ ...form, job_id: e.target.value, customer: j.customer, customer_id: j.customer_id, items: [{ desc: j.description, qty: 1, rate: String(j.price), total: j.price }] }); else setForm({ ...form, job_id: e.target.value }); }}>
               <option value="">— None —</option>
-              {jobs.filter(j => j.status === 'completed').map(j => <option key={j.id} value={j.id}>{j.job_no} — {j.description}</option>)}
+              {jobs.filter(j => !form.customer || j.customer === form.customer).map(j => <option key={j.id} value={j.id}>{j.job_no} — {j.description} ({j.status})</option>)}
             </Sel>
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             <h4 style={{ margin: '4px 0 0', fontSize: 13, fontWeight: 700 }}>Line Items</h4>
@@ -1792,7 +1792,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
 
   const repayFromSales = (loan) => {
     const carryover = pendingDebt[loan.id] || 0;
-    const target    = (loan.daily_repayment || 0) + carryover;
+    const target    = (parseFloat(loan.daily_repayment) || 0) + carryover;
     doRepay(loan, target);
   };
 
@@ -1825,7 +1825,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
               const balance   = l.amount - l.paid;
               const pct       = Math.round((l.paid / l.amount) * 100);
               const carryover = pendingDebt[l.id] || 0;
-              const daily     = l.daily_repayment || 0;
+              const daily     = parseFloat(l.daily_repayment) || 0;
               const dueToday  = daily + carryover;
               const canPay    = Math.min(dueToday, todaySalesTotal, balance);
               return (
@@ -1886,7 +1886,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
                   <TD style={{ fontWeight: 600 }}>{l.name}</TD>
                   <TD><span style={{ background: l.type === 'borrowed' ? '#fee2e2' : '#dcfce7', color: l.type === 'borrowed' ? '#dc2626' : '#16a34a', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{l.type === 'borrowed' ? 'Borrowed' : 'Lent'}</span></TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(l.amount)}</TD>
-                  <TD style={{ color: l.daily_repayment > 0 ? '#2563eb' : '#9ca3af', fontWeight: 600 }}>{l.daily_repayment > 0 ? fmt(l.daily_repayment) : '—'}</TD>
+                  <TD style={{ color: parseFloat(l.daily_repayment) > 0 ? '#2563eb' : '#9ca3af', fontWeight: 600 }}>{parseFloat(l.daily_repayment) > 0 ? fmt(parseFloat(l.daily_repayment)) : '—'}</TD>
                   <TD>{l.date}</TD>
                   <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>{l.due_date || '—'}{overdue ? ' ⚠️' : ''}</TD>
                   <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(l.paid)}</TD>
