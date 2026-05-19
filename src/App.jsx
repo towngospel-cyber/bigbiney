@@ -1479,6 +1479,23 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
   const [staffList,   setStaffList]   = useState(STAFF_LIST);
   const [addingStaff, setAddingStaff] = useState(false);
   const [newStaff,    setNewStaff]    = useState('');
+  const [staffLoaded, setStaffLoaded] = useState(false);
+
+  // Load staff list from Supabase on mount
+  useEffect(() => {
+    db.getSetting(userId, 'staff_list').then(({ data }) => {
+      if (data && data.value) {
+        try { setStaffList(JSON.parse(data.value)); } catch { setStaffList(STAFF_LIST); }
+      }
+      setStaffLoaded(true);
+    });
+  }, [userId]);
+
+  // Save staff list to Supabase whenever it changes (after initial load)
+  useEffect(() => {
+    if (!staffLoaded) return;
+    db.setSetting(userId, 'staff_list', JSON.stringify(staffList));
+  }, [staffList, staffLoaded, userId]);
 
   const totalPaid = payroll.reduce((a, p) => a + (p.amount||0), 0);
   const thisMonth = getCurrentMonth();
