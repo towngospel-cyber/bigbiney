@@ -2029,17 +2029,6 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
   );
 }
 
-  useEffect(() => {
-    db.getSetting(userId, 'loan_carryover').then(({ data }) => {
-      if (data?.value) { try { setPendingDebt(JSON.parse(data.value)); } catch {} }
-    });
-  }, [userId]);
-
-  const savePendingDebt = async (updated) => {
-    setPendingDebt(updated);
-    await db.setSetting(userId, 'loan_carryover', JSON.stringify(updated));
-  };
-
   const totalBorrowed    = loans.filter(l => l.type === 'borrowed').reduce((a, l) => a + (l.amount - l.paid), 0);
   const totalLent        = loans.filter(l => l.type === 'lent').reduce((a, l) => a + (l.amount - l.paid), 0);
   const todaySalesTotal  = (sales||[]).filter(s => s.date === todayStr()).reduce((a, s) => a + s.amount, 0);
