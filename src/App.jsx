@@ -1273,8 +1273,20 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
     if (!error) setInvoices(invoices.filter(i => i.id !== id));
   };
 
-  const printInvoice = (inv) => {
-    const items = inv.items && typeof inv.items === 'object' ? (Array.isArray(inv.items) ? inv.items : JSON.parse(inv.items)) : [{ desc: 'Services', qty: 1, rate: inv.amount, total: inv.amount }];
+  const printInvoice = (inv, jobsList) => {
+    let items;
+    if (inv.items && inv.items !== 'null') {
+      try {
+        const parsed = typeof inv.items === 'string' ? JSON.parse(inv.items) : inv.items;
+        items = Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+      } catch { items = null; }
+    }
+    if (!items) {
+      // Fall back to job description if linked
+      const linkedJob = (jobsList || jobs).find(j => j.id === inv.job_id);
+      const desc = linkedJob ? `${linkedJob.job_no} — ${linkedJob.description}` : inv.customer + ' — Print Services';
+      items = [{ desc, qty: 1, rate: inv.amount, total: inv.amount }];
+    }
     const w = window.open('', '', 'width=700,height=600');
     w.document.write(`<!DOCTYPE html><html><head><title>Invoice ${inv.invoice_no}</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto}table{width:100%;border-collapse:collapse;margin:16px 0}th{background:#0f172a;color:#fff;padding:8px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px}.tot td{font-weight:800}@media print{body{padding:20px}}</style></head><body><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px"><div><div style="font-size:22px;font-weight:900">🖨️ Bigbiney Printing Press</div></div><div style="text-align:right"><h2 style="color:#2563eb;margin:0 0 4px">${inv.invoice_no}</h2><p style="margin:0;font-size:13px">Date: <strong>${inv.date}</strong></p><p style="margin:0;font-size:13px">Due: <strong>${inv.due_date||'On receipt'}</strong></p><span style="background:${inv.status==='paid'?'#dcfce7':'#fee2e2'};color:${inv.status==='paid'?'#15803d':'#dc2626'};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${inv.status.toUpperCase()}</span></div></div><p><strong>Bill To:</strong> ${inv.customer}</p><table><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead><tbody>${items.map(it=>`<tr><td>${it.desc||'Services'}</td><td>${it.qty}</td><td>GH₵${(parseFloat(it.rate)||0).toFixed(2)}</td><td>GH₵${((parseFloat(it.qty)||0)*(parseFloat(it.rate)||0)).toFixed(2)}</td></tr>`).join('')}<tr class="tot"><td colspan="3" style="text-align:right">Total</td><td>GH₵${inv.amount.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;color:#16a34a">Paid</td><td style="color:#16a34a">GH₵${inv.paid.toFixed(2)}</td></tr><tr><td colspan="3" style="text-align:right;color:#dc2626">Balance</td><td style="color:#dc2626">GH₵${(inv.amount-inv.paid).toFixed(2)}</td></tr></tbody></table><p style="color:#9ca3af;font-size:11px">Printed ${new Date().toLocaleString()} — Bigbiney Printing Press</p><script>window.onload=()=>window.print()</script></body></html>`);
     w.document.close();
@@ -1708,13 +1720,298 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
 }
 
 function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpenses }) {
-  const [modal,       setModal]       = useState(false);
-  const [form,        setForm]        = useState({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '', daily_repayment: '' });
-  const [editId,      setEditId]      = useState(null);
-  const [saving,      setSaving]      = useState(false);
-  const [repayModal,  setRepayModal]  = useState(null);
-  const [repayAmt,    setRepayAmt]    = useState('');
-  const [pendingDebt, setPendingDebt] = useState({});
+  const [modal,         setModal]         = useState(false);
+  const [form,          setForm]          = useState({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '', daily_repayment: '' });
+  const [editId,        setEditId]        = useState(null);
+  const [saving,        setSaving]        = useState(false);
+  const [payAnyModal,   setPayAnyModal]   = useState(null);
+  const [payAnyAmt,     setPayAnyAmt]     = useState('');
+  const [setDailyModal, setSetDailyModal] = useState(null);
+  const [newDaily,      setNewDaily]      = useState('');
+  const [pendingDebt,   setPendingDebt]   = useState({});
+  const [lastAutoDate,  setLastAutoDate]  = useState({});
+
+  useEffect(() => {
+    db.getSetting(userId, 'loan_carryover').then(({ data }) => {
+      if (data?.value) { try { setPendingDebt(JSON.parse(data.value)); } catch {} }
+    });
+    db.getSetting(userId, 'loan_auto_date').then(({ data }) => {
+      if (data?.value) { try { setLastAutoDate(JSON.parse(data.value)); } catch {} }
+    });
+  }, [userId]);
+
+  const savePendingDebt = async (upd) => { setPendingDebt(upd); await db.setSetting(userId, 'loan_carryover', JSON.stringify(upd)); };
+  const saveAutoDate    = async (upd) => { setLastAutoDate(upd); await db.setSetting(userId, 'loan_auto_date',  JSON.stringify(upd)); };
+
+  const totalBorrowed  = loans.filter(l => l.type === 'borrowed').reduce((a, l) => a + (l.amount - l.paid), 0);
+  const totalLent      = loans.filter(l => l.type === 'lent').reduce((a, l) => a + (l.amount - l.paid), 0);
+  const todaySales     = (sales||[]).filter(s => s.date === todayStr()).reduce((a, s) => a + s.amount, 0);
+  const activeBorrowed = loans.filter(l => l.type === 'borrowed' && l.paid < l.amount);
+  const autoRanToday   = (id) => lastAutoDate[id] === todayStr();
+
+  const save = async () => {
+    if (!form.name || !form.amount) return;
+    setSaving(true);
+    const payload = {
+      name: form.name, type: form.type, notes: form.notes||'',
+      amount:          parseFloat(form.amount)          || 0,
+      rate:            parseFloat(form.rate)            || 0,
+      paid:            parseFloat(form.paid)            || 0,
+      daily_repayment: parseFloat(form.daily_repayment) || 0,
+      date:     form.date     || null,
+      due_date: form.due_date || null,
+    };
+    if (editId) {
+      const { data, error } = await db.updateLoan(editId, payload);
+      if (!error) { setLoans(loans.map(l => l.id === editId ? { ...l, ...data } : l)); addNotif('Loan updated', 'success'); }
+      else addNotif('Save error: ' + error.message, 'warning');
+    } else {
+      const { data, error } = await db.addLoan(userId, payload);
+      if (!error) { setLoans([...loans, data]); addNotif('Loan recorded', 'success'); }
+      else addNotif('Save error: ' + error.message, 'warning');
+    }
+    setSaving(false); setModal(false);
+    setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '', daily_repayment: '' });
+    setEditId(null);
+  };
+
+  const saveDaily = async () => {
+    const amt = parseFloat(newDaily);
+    if (!amt || !setDailyModal) return;
+    const { data, error } = await db.updateLoan(setDailyModal.id, { daily_repayment: amt });
+    if (!error) {
+      setLoans(loans.map(l => l.id === setDailyModal.id ? { ...l, daily_repayment: amt } : l));
+      addNotif(`Daily repayment set to ${fmt(amt)}`, 'success');
+    } else addNotif('Error: ' + error.message, 'warning');
+    setSetDailyModal(null); setNewDaily('');
+  };
+
+  const del = async (id) => {
+    if (!window.confirm('Delete this loan?')) return;
+    const { error } = await db.deleteLoan(id);
+    if (!error) { setLoans(loans.filter(l => l.id !== id)); const u = { ...pendingDebt }; delete u[id]; savePendingDebt(u); }
+  };
+
+  const doRepay = async (loan, amt, label) => {
+    const balance = loan.amount - loan.paid;
+    const toPay   = Math.min(amt, balance);
+    const carry   = Math.max(0, amt - toPay);
+    if (toPay <= 0) { addNotif('Loan already fully paid', 'warning'); return false; }
+    const newPaid = loan.paid + toPay;
+    const { data, error } = await db.updateLoan(loan.id, { paid: newPaid });
+    if (!error) {
+      setLoans(loans.map(l => l.id === loan.id ? { ...l, paid: newPaid } : l));
+      const { data: expData } = await db.addExpense(userId, { date: todayStr(), category: 'Other', description: label || `Loan repayment — ${loan.name}`, amount: toPay });
+      if (expData && setExpenses) setExpenses(prev => [expData, ...prev]);
+      const upd = { ...pendingDebt, [loan.id]: carry };
+      if (newPaid >= loan.amount) delete upd[loan.id];
+      savePendingDebt(upd);
+      addNotif(`${fmt(toPay)} paid${carry > 0 ? ` — ${fmt(carry)} carries to tomorrow` : ' ✓ Done for today'}`, 'success');
+      return true;
+    }
+    addNotif('Error: ' + error.message, 'warning'); return false;
+  };
+
+  const handleGetDaily = async (loan) => {
+    if (autoRanToday(loan.id)) { addNotif('Already deducted today for this loan', 'info'); return; }
+    const daily    = parseFloat(loan.daily_repayment) || 0;
+    const carryover= pendingDebt[loan.id] || 0;
+    const target   = daily + carryover;
+    if (target <= 0) { addNotif('Set a daily amount first using ⚙️', 'warning'); return; }
+    const ok = await doRepay(loan, target, `Loan daily repayment — ${loan.name}${carryover > 0 ? ` (incl. ${fmt(carryover)} carryover)` : ''}`);
+    if (ok) { const upd = { ...lastAutoDate, [loan.id]: todayStr() }; saveAutoDate(upd); }
+  };
+
+  const handlePayAny = async () => {
+    const amt = parseFloat(payAnyAmt);
+    if (!amt || !payAnyModal) return;
+    await doRepay(payAnyModal, amt, `Loan payment — ${payAnyModal.name}`);
+    setPayAnyModal(null); setPayAnyAmt('');
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>🏦 Loans & Credit</h2>
+        <Btn onClick={() => { setForm({ name: '', type: 'borrowed', amount: '', rate: '', date: todayStr(), due_date: '', paid: '0', notes: '', daily_repayment: '' }); setEditId(null); setModal(true); }}>+ Add Loan</Btn>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard label="Total Borrowed" value={fmt(totalBorrowed)} accent="#dc2626" />
+        <StatCard label="Total Lent Out" value={fmt(totalLent)}     accent="#f59e0b" />
+        <StatCard label="Active Loans"   value={loans.filter(l => l.paid < l.amount).length} accent="#2563eb" />
+        <StatCard label="Today's Sales"  value={fmt(todaySales)} accent="#16a34a" sub="Available for repayment" />
+      </div>
+
+      {activeBorrowed.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700 }}>💳 Loan Repayment Tracker</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 16 }}>
+            {activeBorrowed.map(l => {
+              const daily    = parseFloat(l.daily_repayment) || 0;
+              const balance  = l.amount - l.paid;
+              const pct      = Math.round((l.paid / l.amount) * 100);
+              const carryover= pendingDebt[l.id] || 0;
+              const dueToday = daily + carryover;
+              const alreadyRan = autoRanToday(l.id);
+              const daysLeft = daily > 0 ? Math.ceil(balance / daily) : null;
+              return (
+                <div key={l.id} style={{ background: '#fff', border: '2px solid #e5e7eb', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ background: '#0f172a', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ color: '#fff', fontWeight: 800, fontSize: 15 }}>{l.name}</div>
+                      <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>Balance: <strong style={{ color: '#f87171' }}>{fmt(balance)}</strong></div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ color: '#94a3b8', fontSize: 11 }}>Daily Target</div>
+                      <div style={{ color: daily > 0 ? '#4ade80' : '#fbbf24', fontWeight: 900, fontSize: 20 }}>{daily > 0 ? fmt(daily) : 'Not set'}</div>
+                      {daysLeft && <div style={{ color: '#94a3b8', fontSize: 10 }}>~{daysLeft} days left</div>}
+                    </div>
+                  </div>
+                  <div style={{ padding: '14px 18px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b7280', marginBottom: 6 }}>
+                      <span>{fmt(l.paid)} paid of {fmt(l.amount)}</span>
+                      <span style={{ fontWeight: 800, color: '#2563eb' }}>{pct}%</span>
+                    </div>
+                    <div style={{ background: '#f1f5f9', borderRadius: 6, height: 12, marginBottom: 12, overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: 12, borderRadius: 6, background: 'linear-gradient(90deg, #2563eb, #16a34a)', transition: 'width 0.4s' }} />
+                    </div>
+                    {carryover > 0 && (
+                      <div style={{ background: '#fff3cd', border: '1px solid #fde68a', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 10, color: '#92400e', fontWeight: 600 }}>
+                        ⚠️ Carryover: <strong>{fmt(carryover)}</strong> — Due today: <strong>{fmt(dueToday)}</strong>
+                      </div>
+                    )}
+                    {alreadyRan && (
+                      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 10, color: '#15803d', fontWeight: 600 }}>
+                        ✅ Daily deduction already done today
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <button onClick={() => handleGetDaily(l)} disabled={alreadyRan || daily <= 0}
+                        style={{ background: alreadyRan ? '#f1f5f9' : daily > 0 ? '#2563eb' : '#e5e7eb', color: alreadyRan ? '#9ca3af' : daily > 0 ? '#fff' : '#6b7280', border: 'none', borderRadius: 8, padding: '12px 8px', cursor: alreadyRan || daily <= 0 ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        {alreadyRan ? '✅ Paid Today' : `💰 Deduct ${daily > 0 ? fmt(dueToday) : 'Daily'}`}
+                      </button>
+                      <button onClick={() => { setPayAnyModal(l); setPayAnyAmt(''); }}
+                        style={{ background: '#f0fdf4', color: '#16a34a', border: '2px solid #16a34a', borderRadius: 8, padding: '12px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        ✏️ Pay Any Amount
+                      </button>
+                      <button onClick={() => { setSetDailyModal(l); setNewDaily(String(daily || '')); }}
+                        style={{ background: '#eff6ff', color: '#2563eb', border: '2px solid #bfdbfe', borderRadius: 8, padding: '10px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700, gridColumn: '1/-1' }}>
+                        ⚙️ {daily > 0 ? `Change Daily Amount (${fmt(daily)}/day)` : 'Set Daily Repayment Amount'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Name','Type','Amount','Daily','Date','Due','Paid','Balance','Notes','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+          <tbody>
+            {loans.map(l => {
+              const balance = l.amount - l.paid;
+              const overdue = l.due_date && l.due_date < todayStr() && balance > 0;
+              return (
+                <tr key={l.id} style={{ background: overdue ? '#fff5f5' : 'transparent' }}>
+                  <TD style={{ fontWeight: 600 }}>{l.name}</TD>
+                  <TD><span style={{ background: l.type === 'borrowed' ? '#fee2e2' : '#dcfce7', color: l.type === 'borrowed' ? '#dc2626' : '#16a34a', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{l.type === 'borrowed' ? 'Borrowed' : 'Lent'}</span></TD>
+                  <TD style={{ fontWeight: 600 }}>{fmt(l.amount)}</TD>
+                  <TD style={{ color: parseFloat(l.daily_repayment) > 0 ? '#2563eb' : '#9ca3af', fontWeight: 600 }}>{parseFloat(l.daily_repayment) > 0 ? fmt(parseFloat(l.daily_repayment)) : '—'}</TD>
+                  <TD>{l.date}</TD>
+                  <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>{l.due_date || '—'}{overdue ? ' ⚠️' : ''}</TD>
+                  <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(l.paid)}</TD>
+                  <TD style={{ fontWeight: 700, color: balance > 0 ? '#dc2626' : '#16a34a' }}>{balance > 0 ? fmt(balance) : '✓ Settled'}</TD>
+                  <TD style={{ color: '#6b7280', fontSize: 12 }}>{l.notes}</TD>
+                  <TD>
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      {balance > 0 && <Btn variant="success" small onClick={() => { setPayAnyModal(l); setPayAnyAmt(''); }}>Pay</Btn>}
+                      <Btn variant="ghost"  small onClick={() => { setForm({ name: l.name, type: l.type, notes: l.notes||'', amount: String(l.amount), rate: String(l.rate||0), paid: String(l.paid), daily_repayment: String(l.daily_repayment||''), date: l.date||todayStr(), due_date: l.due_date||'' }); setEditId(l.id); setModal(true); }}>Edit</Btn>
+                      <Btn variant="danger" small onClick={() => del(l.id)}>Del</Btn>
+                    </div>
+                  </TD>
+                </tr>
+              );
+            })}
+            {loans.length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No loans recorded</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      {setDailyModal && (
+        <Modal title={`⚙️ Set Daily Repayment — ${setDailyModal.name}`} onClose={() => { setSetDailyModal(null); setNewDaily(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 14, fontSize: 13 }}>
+              <div style={{ fontWeight: 700, color: '#1d4ed8' }}>Loan Balance: {fmt(setDailyModal.amount - setDailyModal.paid)}</div>
+              <div style={{ color: '#374151', marginTop: 4 }}>This amount will be deducted daily when you click "Deduct Daily".</div>
+            </div>
+            <Inp label="Daily Repayment Amount (GH₵)" type="number" value={newDaily} onChange={e => setNewDaily(e.target.value)} placeholder="e.g. 550" />
+            {newDaily && parseFloat(newDaily) > 0 && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: 12, fontSize: 13, color: '#15803d', fontWeight: 700 }}>
+                At {fmt(parseFloat(newDaily))}/day → paid off in ~{Math.ceil((setDailyModal.amount - setDailyModal.paid) / parseFloat(newDaily))} days
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Btn variant="ghost" onClick={() => { setSetDailyModal(null); setNewDaily(''); }}>Cancel</Btn>
+              <Btn onClick={saveDaily} disabled={!newDaily || parseFloat(newDaily) <= 0}>Save Daily Amount</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {payAnyModal && (
+        <Modal title={`💳 Pay — ${payAnyModal.name}`} onClose={() => { setPayAnyModal(null); setPayAnyAmt(''); }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>Remaining Balance: {fmt(payAnyModal.amount - payAnyModal.paid)}</div>
+              {(pendingDebt[payAnyModal.id] || 0) > 0 && <div style={{ fontSize: 12, color: '#f59e0b', fontWeight: 700, marginTop: 4 }}>⚠️ Carryover amount: {fmt(pendingDebt[payAnyModal.id])}</div>}
+            </div>
+            <Inp label="Amount to Pay (GH₵)" type="number" value={payAnyAmt} onChange={e => setPayAnyAmt(e.target.value)} placeholder="Enter any amount" />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Btn variant="ghost" onClick={() => { setPayAnyModal(null); setPayAnyAmt(''); }}>Cancel</Btn>
+              <Btn variant="success" onClick={handlePayAny} disabled={!payAnyAmt || parseFloat(payAnyAmt) <= 0}>
+                Pay {payAnyAmt && parseFloat(payAnyAmt) > 0 ? fmt(parseFloat(payAnyAmt)) : ''}
+              </Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {modal && (
+        <Modal title={editId ? 'Edit Loan' : 'Add Loan'} onClose={() => { setModal(false); setEditId(null); }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ gridColumn: '1/-1' }}><Inp label="Name / Lender / Borrower *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
+            <Sel label="Type" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+              <option value="borrowed">Borrowed (we owe)</option>
+              <option value="lent">Lent (they owe us)</option>
+            </Sel>
+            <Inp label="Total Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+            <Inp label="Daily Repayment (GH₵)" type="number" value={form.daily_repayment} onChange={e => setForm({ ...form, daily_repayment: e.target.value })} placeholder="e.g. 550" />
+            <Inp label="Interest Rate (%)" type="number" value={form.rate} onChange={e => setForm({ ...form, rate: e.target.value })} />
+            <Inp label="Already Paid (GH₵)" type="number" value={form.paid} onChange={e => setForm({ ...form, paid: e.target.value })} />
+            <Inp label="Start Date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+            <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
+            <div style={{ gridColumn: '1/-1' }}><Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
+          </div>
+          {form.amount && form.daily_repayment && parseFloat(form.daily_repayment) > 0 && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 14px', marginTop: 12 }}>
+              <span style={{ fontSize: 13, color: '#15803d', fontWeight: 700 }}>
+                At {fmt(parseFloat(form.daily_repayment))}/day → paid off in ~{Math.ceil((parseFloat(form.amount)||0)/(parseFloat(form.daily_repayment)||1))} days
+              </span>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
+            <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
+            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : editId ? 'Save Changes' : 'Add Loan'}</Btn>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
 
   useEffect(() => {
     db.getSetting(userId, 'loan_carryover').then(({ data }) => {
