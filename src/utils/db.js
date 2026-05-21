@@ -36,7 +36,24 @@ async setSetting(userId, key, value) {
   async signout() { return await supabase.auth.signOut(); },
   async getCurrentUser() { const { data: { user } } = await supabase.auth.getUser(); return user; },
 
-  async getCustomers(userId) { const { data, error } = await supabase.from('customers').select('*').eq('user_id', userId).order('name'); return { data: data || [], error }; },
+async getCustomers(userId) {
+  let all = [];
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('user_id', userId)
+      .order('name')
+      .range(from, from + pageSize - 1);
+    if (error || !data || data.length === 0) break;
+    all = [...all, ...data];
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return { data: all, error: null };
+},
   async addCustomer(userId, customer) { const { data, error } = await supabase.from('customers').insert([{ ...customer, user_id: userId }]).select(); return { data: data?.[0], error }; },
   async updateCustomer(id, updates) { const { data, error } = await supabase.from('customers').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
 
