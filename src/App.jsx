@@ -504,6 +504,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
   const [matModal,   setMatModal]   = useState(null);
   const [autoNotifQ, setAutoNotifQ] = useState([]);
   const [staffList,  setStaffList]  = useState(STAFF_LIST);
+  const [smsSendingId, setSmsSendingId] = useState(null);
 
   // Load staff list from Supabase so deleted staff don't show
   useEffect(() => {
@@ -569,6 +570,31 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
     if (!error) { setJobs([...jobs, data]); addNotif(`Duplicated as ${no}`, 'success'); }
   };
 
+  const sendSmsNotification = async (job) => {
+    const phone = job.whatsapp;
+    if (!phone) { alert('This job has no phone number on file.'); return; }
+    setSmsSendingId(job.id);
+    try {
+      const message = `Hi ${job.customer}, your print job ${job.job_no} (${job.description}) is ready for pickup at Bigbiney Printing Press. Total: GHS ${Number(job.price).toFixed(2)}.`;
+      const res = await fetch('/api/hubtel/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: phone, message }),
+      });
+      if (res.ok) {
+        const { data, error } = await db.updateJob(job.id, { sms_notified_at: new Date().toISOString() });
+        if (!error) setJobs(jobs.map(j => j.id === job.id ? data : j));
+        addNotif(`SMS sent to ${job.customer}`, 'success');
+      } else {
+        addNotif(`SMS failed for ${job.customer}`, 'warning');
+      }
+    } catch (e) {
+      addNotif(`SMS failed for ${job.customer}`, 'warning');
+    } finally {
+      setSmsSendingId(null);
+    }
+  };
+
   const printTicket = (j) => {
     const w = window.open('', '', 'width=600,height=500');
     w.document.write(`<html><body style="font-family:Arial;padding:30px;max-width:500px"><h2>🖨️ JOB TICKET — ${j.job_no}</h2><p><b>Customer:</b> ${j.customer}</p><p><b>Description:</b> ${j.description}</p><p><b>Type:</b> ${j.type} &nbsp; <b>Machine:</b> ${j.machine||'TBD'}</p><p><b>Assigned To:</b> ${j.assigned_to||'Unassigned'}</p><p><b>Priority:</b> ${(j.priority||'').toUpperCase()} &nbsp; <b>Status:</b> ${j.status}</p><p><b>Delivery:</b> ${j.delivery_status||'pending'}</p><p><b>Start:</b> ${j.start_date||'TBD'} &nbsp; <b>Due:</b> ${j.due_date||'TBD'}</p><p><b>Price:</b> GH₵${j.price} &nbsp; <b>Est. Cost:</b> GH₵${j.cost}</p>${j.notes ? `<p><b>Notes:</b> ${j.notes}</p>` : ''}<div style="margin-top:20px;padding:10px;border:2px solid #000;display:inline-block;font-size:20px;font-weight:bold;letter-spacing:4px">${j.qr_code}</div><p style="font-size:10px;color:#999">Printed ${new Date().toLocaleString()} — Bigbiney Printing Press</p></body></html>`);
@@ -630,6 +656,9 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
                       <Btn variant="ghost"   small onClick={() => openEdit(j)}>Edit</Btn>
                       <Btn variant="ghost"   small onClick={() => printTicket(j)}>🖨️</Btn>
                       <Btn variant="teal"    small onClick={() => setMsgModal(j)}>📲</Btn>
+                      <Btn variant="primary" small onClick={() => sendSmsNotification(j)} disabled={smsSendingId === j.id || !j.whatsapp}>
+                        {smsSendingId === j.id ? '…' : j.sms_notified_at ? '✓ SMS' : '📱 SMS'}
+                      </Btn>
                       <Btn variant="ghost"   small onClick={() => setMatModal(j)}>📦</Btn>
                       <Btn variant="warning" small onClick={() => duplicate(j)}>Copy</Btn>
                       <Btn variant="danger"  small onClick={() => del(j.id)}>Del</Btn>
