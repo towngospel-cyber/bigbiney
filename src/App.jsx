@@ -545,8 +545,9 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
     return { label: d.toLocaleString('en', { month: 'short' }), inc: sumAmt(sales, s => s.date?.startsWith(k)), exp: sumAmt(expenses, e => e.date?.startsWith(k)) };
   });
   // Chart series by selected range
-  const series = range === '6m' ? m6 : Array.from({ length: range === '7d' ? 7 : 30 }, (_, i, arr) => {
-    const d = new Date(); d.setDate(d.getDate() - (arr.length - 1 - i));
+  const nDays = range === '7d' ? 7 : 30;
+  const series = range === '6m' ? m6 : Array.from({ length: nDays }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (nDays - 1 - i));
     const ds = d.toISOString().split('T')[0];
     return { label: range === '7d' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] : `${d.getDate()}/${d.getMonth() + 1}`, inc: sumAmt(sales, s => s.date === ds), exp: sumAmt(expenses, e => e.date === ds) };
   });
