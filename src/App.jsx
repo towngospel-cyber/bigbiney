@@ -133,6 +133,38 @@ table{border-collapse:collapse}
   input,select,textarea{font-size:16px}.btn,.iconbtn{min-height:38px}
   .modal-back{align-items:flex-end;padding:0}.modal{max-width:none!important;max-height:94vh;border-radius:18px 18px 0 0}
 }
+.muted{color:var(--muted)}.ellip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.d-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.d-hero h2{margin:0;font-size:25px;letter-spacing:-.02em}.d-hero p{margin:4px 0 0;color:var(--muted)}.d-hero p b{color:var(--ink)}
+.d-actions{display:flex;gap:8px;flex-wrap:wrap}
+.d-act{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+.d-act:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-1px)}.d-act.p{background:var(--primary);border-color:var(--primary);color:#fff}.d-act.p:hover{color:#fff;filter:brightness(1.08)}
+.d-alert{display:flex;gap:12px;align-items:flex-start;background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--amber-ink);border-radius:14px;padding:12px 16px;margin-bottom:16px}
+.d-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.d-chips span{background:var(--surface);color:var(--ink);border:1px solid var(--amber-line);border-radius:999px;padding:2px 10px;font-size:12px}
+.d-wa{background:#25D366;border:0;color:#fff;border-radius:999px;padding:7px 14px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
+.d-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);min-width:0}
+.d-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}.d-head h3{margin:0;font-size:14px;font-weight:700}
+.d-link{background:none;border:0;color:var(--primary);font-weight:600;font-size:12px;cursor:pointer;padding:0}.d-link:hover{text-decoration:underline}
+.d-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-bottom:14px}
+.d-kpi{padding:16px 18px;transition:.15s}.d-kpi:hover{transform:translateY(-2px)}
+.d-kpi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.d-ico{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:17px}
+.d-kpi-v{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.1}.d-kpi-l{color:var(--muted);font-weight:600;font-size:12px;margin:3px 0 8px}
+.d-delta{font-size:12px;font-weight:700}.d-delta span{font-weight:500;color:var(--muted)}.d-delta.good{color:var(--green-ink)}.d-delta.bad{color:var(--red-ink)}.d-delta.flat{color:var(--muted);font-weight:500}
+.d-grid{display:grid;gap:14px;margin-bottom:14px}
+.g-2-1{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}.g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:1100px){.g-2-1,.g-3{grid-template-columns:minmax(0,1fr)}}
+.d-seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px}
+.d-seg button{border:0;background:none;color:var(--muted);font-weight:600;font-size:12px;padding:5px 12px;border-radius:999px;cursor:pointer}.d-seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.d-readout{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;margin-bottom:8px;align-items:center}.d-readout span{display:inline-flex;align-items:center;gap:6px}.d-readout i{width:10px;height:10px;border-radius:3px;display:inline-block}.d-readout b{font-size:14px}.d-readout .muted{margin-left:auto}
+.d-xlabels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px}
+.d-tag{display:inline-block;background:var(--surface-2);color:var(--ink-2);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;white-space:nowrap}.d-tag.hot{background:var(--red-bg);color:var(--red-ink)}
+.d-facts{display:grid;gap:6px;font-size:13px;font-weight:600}
+.d-stack{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--surface-2);margin-bottom:14px}.d-stack i{display:block;height:100%}
+.d-legend{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:12px}.d-legend div{display:flex;align-items:center;gap:7px}.d-legend i{width:9px;height:9px;border-radius:50%;flex:none}.d-legend span{text-transform:capitalize;color:var(--ink-2)}.d-legend b{margin-left:auto}
+.d-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:13px}.d-row:last-child{border-bottom:0}
+.d-bar{display:grid;grid-template-columns:minmax(80px,1.1fr) 1.4fr auto;align-items:center;gap:10px;font-size:12px;margin-bottom:9px}
+.d-bar>div{background:var(--surface-2);border-radius:999px;height:8px;overflow:hidden}.d-bar>div i{display:block;height:100%;border-radius:999px;background:var(--blue-ink);transition:width .5s ease}.d-bar b{min-width:20px;text-align:right}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -396,169 +428,294 @@ export default function PrintingPressSystem() {
   );
 }
 
+/* ───────────── MODERN DASHBOARD ───────────── */
+const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+const sumAmt = (arr, pred) => arr.filter(pred).reduce((a, x) => a + Number(x.amount || 0), 0);
+const pctChange = (cur, prev) => (prev > 0 ? ((cur - prev) / prev) * 100 : null);
+const greeting = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
+
+const Spark = ({ data, color, w = 96, h = 30 }) => {
+  const max = Math.max(...data, 1);
+  const pts = data.map((v, i) => `${(i / (data.length - 1 || 1)) * w},${h - 3 - (v / max) * (h - 6)}`).join(' ');
+  return <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true"><polyline points={pts} fill="none" style={{ stroke: color }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+};
+
+const Ring = ({ pct, color, size = 112, big, small }) => {
+  const r = size / 2 - 9, c = 2 * Math.PI * r;
+  return (
+    <div style={{ position: 'relative', width: size, height: size, flex: 'none' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth="9" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" style={{ stroke: color, transition: 'stroke-dashoffset .6s ease' }} strokeWidth="9" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(100, Math.max(0, pct)) / 100)} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center', lineHeight: 1.1 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 800 }}>{big}</div><div style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{small}</div></div>
+      </div>
+    </div>
+  );
+};
+
+const Kpi = ({ label, value, icon, color, delta, invert, spark, sub }) => {
+  const up = delta !== null && delta !== undefined && delta >= 0;
+  const good = delta === null || delta === undefined ? null : (invert ? !up : up);
+  return (
+    <div className="d-card d-kpi">
+      <div className="d-kpi-top">
+        <span className="d-ico" style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}>{icon}</span>
+        {spark && <Spark data={spark} color={color} />}
+      </div>
+      <div className="d-kpi-v">{value}</div>
+      <div className="d-kpi-l">{label}</div>
+      {delta !== null && delta !== undefined
+        ? <div className={`d-delta ${good ? 'good' : 'bad'}`}>{up ? '▲' : '▼'} {Math.abs(Math.round(delta))}% <span>vs last month</span></div>
+        : <div className="d-delta flat">{sub || 'No comparison yet'}</div>}
+    </div>
+  );
+};
+
+const FlowChart = ({ series }) => {
+  const [hov, setHov] = useState(null);
+  const W = 600, H = 210, P = 10, n = series.length;
+  const max = Math.max(...series.flatMap(s => [s.inc, s.exp]), 1);
+  const x = (i) => P + (i / (n - 1 || 1)) * (W - 2 * P);
+  const y = (v) => H - P - (v / max) * (H - 2 * P - 10);
+  const line = (k) => series.map((s, i) => `${i ? 'L' : 'M'}${x(i)},${y(s[k])}`).join(' ');
+  const area = `${line('inc')} L${x(n - 1)},${H - P} L${x(0)},${H - P} Z`;
+  const totInc = series.reduce((a, s) => a + s.inc, 0), totExp = series.reduce((a, s) => a + s.exp, 0);
+  const cur = hov !== null ? series[hov] : null;
+  const step = Math.ceil(n / 7);
+  return (
+    <div>
+      <div className="d-readout">
+        <span><i style={{ background: 'var(--green-ink)' }} />Income <b>{fmt(cur ? cur.inc : totInc)}</b></span>
+        <span><i style={{ background: 'var(--red-ink)' }} />Expenses <b>{fmt(cur ? cur.exp : totExp)}</b></span>
+        <span className="muted">{cur ? cur.label : 'Period total'}</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 210, display: 'block' }} onMouseLeave={() => setHov(null)} role="img" aria-label="Income versus expenses chart">
+        <defs><linearGradient id="inc-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" style={{ stopColor: 'var(--green-ink)', stopOpacity: 0.28 }} /><stop offset="100%" style={{ stopColor: 'var(--green-ink)', stopOpacity: 0 }} /></linearGradient></defs>
+        {[0, 1, 2, 3].map(i => <line key={i} x1={P} x2={W - P} y1={P + 10 + i * ((H - 2 * P - 10) / 3)} y2={P + 10 + i * ((H - 2 * P - 10) / 3)} style={{ stroke: 'var(--line-soft)' }} strokeWidth="1" vectorEffect="non-scaling-stroke" />)}
+        <path d={area} fill="url(#inc-g)" />
+        <path d={line('inc')} fill="none" style={{ stroke: 'var(--green-ink)' }} strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        <path d={line('exp')} fill="none" style={{ stroke: 'var(--red-ink)' }} strokeWidth="2" strokeDasharray="5 4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        {hov !== null && <line x1={x(hov)} x2={x(hov)} y1={P} y2={H - P} style={{ stroke: 'var(--faint)' }} strokeWidth="1" vectorEffect="non-scaling-stroke" />}
+        {series.map((s, i) => <rect key={i} x={x(i) - (W / n) / 2} y="0" width={W / n} height={H} fill="transparent" onMouseEnter={() => setHov(i)} onTouchStart={() => setHov(i)} />)}
+      </svg>
+      <div className="d-xlabels">{series.map((s, i) => <span key={i} style={{ visibility: i % step === 0 ? 'visible' : 'hidden' }}>{s.label}</span>)}</div>
+    </div>
+  );
+};
+
 function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, setActiveTab, overdueJobs, monthlyGoal, setMonthlyGoal }) {
   const [editGoal, setEditGoal]   = useState(false);
   const [goalInput, setGoalInput] = useState('');
-  const month        = getCurrentMonth();
-  const monthlySales = sales.filter(s => s.date?.startsWith(month)).reduce((a, s) => a + s.amount, 0);
-  const monthlyExp   = expenses.filter(e => e.date?.startsWith(month)).reduce((a, e) => a + e.amount, 0);
-  const activeJobs   = jobs.filter(j => j.status === 'in-progress').length;
-  const lowStock     = inventory.filter(i => i.quantity <= i.reorder_point);
-  const unpaidTotal  = invoices.filter(i => i.status !== 'paid').reduce((a, i) => a + (i.amount - i.paid), 0);
-  const goalPct      = monthlyGoal > 0 ? Math.min(100, Math.round((monthlySales / monthlyGoal) * 100)) : 0;
-  const margin       = monthlySales > 0 ? ((monthlySales - monthlyExp) / monthlySales) * 100 : 0;
+  const [range, setRange]         = useState('30d');
 
-  let healthScore = 100;
-  if (margin < 10) healthScore -= 30; else if (margin < 25) healthScore -= 15;
-  if (overdueJobs.length > 5) healthScore -= 25; else if (overdueJobs.length > 0) healthScore -= overdueJobs.length * 4;
-  if (lowStock.length > 3) healthScore -= 20; else if (lowStock.length > 0) healthScore -= lowStock.length * 5;
-  if (monthlySales === 0) healthScore -= 20;
-  healthScore = Math.max(0, Math.min(100, healthScore));
-  const healthColor = healthScore >= 75 ? '#16a34a' : healthScore >= 50 ? '#f59e0b' : '#dc2626';
-  const healthLabel = healthScore >= 75 ? '🟢 Healthy' : healthScore >= 50 ? '🟡 Needs Attention' : '🔴 Critical';
+  const today = todayStr();
+  const month = getCurrentMonth();
+  const prevD = new Date(); prevD.setDate(1); prevD.setMonth(prevD.getMonth() - 1);
+  const prevMonth = monthKey(prevD);
 
-  const last7 = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (6 - i));
-    const ds = d.toISOString().split('T')[0];
-    return { day: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()], amt: sales.filter(s => s.date === ds).reduce((a, s) => a + s.amount, 0) };
+  const monthlySales = sumAmt(sales, s => s.date?.startsWith(month));
+  const monthlyExp   = sumAmt(expenses, e => e.date?.startsWith(month));
+  const prevSales    = sumAmt(sales, s => s.date?.startsWith(prevMonth));
+  const prevExp      = sumAmt(expenses, e => e.date?.startsWith(prevMonth));
+  const profit = monthlySales - monthlyExp, prevProfit = prevSales - prevExp;
+  const todaySales = sumAmt(sales, s => s.date === today);
+  const dueToday   = jobs.filter(j => j.due_date === today && !['completed', 'cancelled'].includes(j.status)).length;
+
+  const unpaid      = invoices.filter(i => i.status !== 'paid');
+  const unpaidTotal = unpaid.reduce((a, i) => a + (i.amount - i.paid), 0);
+  const lowStock    = inventory.filter(i => i.quantity <= i.reorder_point);
+  const goalPct     = monthlyGoal > 0 ? Math.min(100, Math.round((monthlySales / monthlyGoal) * 100)) : 0;
+  const margin      = monthlySales > 0 ? ((monthlySales - monthlyExp) / monthlySales) * 100 : 0;
+
+  let health = 100;
+  if (margin < 10) health -= 30; else if (margin < 25) health -= 15;
+  if (overdueJobs.length > 5) health -= 25; else if (overdueJobs.length > 0) health -= overdueJobs.length * 4;
+  if (lowStock.length > 3) health -= 20; else if (lowStock.length > 0) health -= lowStock.length * 5;
+  if (monthlySales === 0) health -= 20;
+  health = Math.max(0, Math.min(100, health));
+  const hColor = health >= 75 ? 'var(--green-ink)' : health >= 50 ? 'var(--amber-ink)' : 'var(--red-ink)';
+  const hLabel = health >= 75 ? 'Healthy' : health >= 50 ? 'Needs attention' : 'Critical';
+
+  // 6-month trend (KPI sparklines)
+  const m6 = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (5 - i));
+    const k = monthKey(d);
+    return { label: d.toLocaleString('en', { month: 'short' }), inc: sumAmt(sales, s => s.date?.startsWith(k)), exp: sumAmt(expenses, e => e.date?.startsWith(k)) };
   });
-  const maxBar = Math.max(...last7.map(d => d.amt), 1);
+  // Chart series by selected range
+  const series = range === '6m' ? m6 : Array.from({ length: range === '7d' ? 7 : 30 }, (_, i, arr) => {
+    const d = new Date(); d.setDate(d.getDate() - (arr.length - 1 - i));
+    const ds = d.toISOString().split('T')[0];
+    return { label: range === '7d' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] : `${d.getDate()}/${d.getMonth() + 1}`, inc: sumAmt(sales, s => s.date === ds), exp: sumAmt(expenses, e => e.date === ds) };
+  });
+
+  // Pipeline, deadlines, machines, customers
+  const pipeline = JOB_STATUSES.map(s => ({ s, n: jobs.filter(j => j.status === s).length }));
+  const totalJobs = jobs.length || 1;
+  const weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekStr = weekEnd.toISOString().split('T')[0];
+  const dueSoon = jobs.filter(j => j.due_date && j.due_date >= today && j.due_date <= weekStr && !['completed', 'cancelled'].includes(j.status)).sort((a, b) => a.due_date.localeCompare(b.due_date)).slice(0, 6);
+  const daysLeft = (ds) => Math.round((new Date(ds) - new Date(today)) / 86400000);
+  const load = MACHINES.map(m => ({ m, n: jobs.filter(j => j.machine === m && ['queued', 'in-progress'].includes(j.status)).length }));
+  const maxLoad = Math.max(...load.map(l => l.n), 1);
+  const byCust = {};
+  jobs.filter(j => j.status !== 'cancelled').forEach(j => { if (j.customer) byCust[j.customer] = (byCust[j.customer] || 0) + Number(j.price || 0); });
+  const topCust = Object.entries(byCust).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topMax = topCust[0]?.[1] || 1;
 
   return (
     <div>
+      <div className="d-hero">
+        <div>
+          <h2>{greeting()} 👋</h2>
+          <p>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} · Today: <b>{fmt(todaySales)}</b> revenue · <b>{dueToday}</b> job{dueToday === 1 ? '' : 's'} due</p>
+        </div>
+        <div className="d-actions">
+          <button className="d-act" onClick={() => setActiveTab('jobs')}>🖨️ Jobs</button>
+          <button className="d-act" onClick={() => setActiveTab('invoices')}>🧾 Invoices</button>
+          <button className="d-act" onClick={() => setActiveTab('finance')}>💰 Finance</button>
+          <button className="d-act" onClick={() => setActiveTab('inventory')}>📦 Stock</button>
+          <button className="d-act p" onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateDailySummaryMsg(sales, expenses, jobs, invoices))}>📲 Send daily summary</button>
+        </div>
+      </div>
+
       {overdueJobs.length > 0 && (
-        <div style={{ background: 'var(--amber-bg)', border: '1px solid #ffc107', borderRadius: 8, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div className="d-alert">
           <span style={{ fontSize: 20 }}>⚠️</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#856404', marginBottom: 6 }}>{overdueJobs.length} Overdue Job{overdueJobs.length > 1 ? 's' : ''} — Action Required</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {overdueJobs.map(j => (
-                <span key={j.id} style={{ background: 'var(--surface)', border: '1px solid #ffc107', borderRadius: 4, padding: '3px 8px', fontSize: 12 }}>
-                  <strong>{j.job_no}</strong> — {j.customer} (due {j.due_date})
-                </span>
-              ))}
-            </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <b>{overdueJobs.length} overdue job{overdueJobs.length > 1 ? 's' : ''} need attention</b>
+            <div className="d-chips">{overdueJobs.slice(0, 6).map(j => <span key={j.id}><b>{j.job_no}</b> · {j.customer} · due {j.due_date}</span>)}{overdueJobs.length > 6 && <span>+{overdueJobs.length - 6} more</span>}</div>
           </div>
-          <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>📲 WhatsApp Alert</button>
+          <button className="d-wa" onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))}>📲 WhatsApp alert</button>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 24 }}>
-        <StatCard label="Monthly Income"   value={fmt(monthlySales)} accent="#16a34a" />
-        <StatCard label="Monthly Expenses" value={fmt(monthlyExp)}   accent="#dc2626" />
-        <StatCard label="Monthly Profit"   value={fmt(monthlySales - monthlyExp)} accent={monthlySales >= monthlyExp ? 'var(--primary)' : '#dc2626'} />
-        <StatCard label="Active Jobs"      value={activeJobs} sub={overdueJobs.length > 0 ? `⚠️ ${overdueJobs.length} overdue` : 'On track'} accent="#f59e0b" />
-        <StatCard label="Outstanding"      value={fmt(unpaidTotal)} sub={`${invoices.filter(i=>i.status!=='paid').length} invoice(s)`} accent="#7c3aed" />
-        <StatCard label="Low Stock Items"  value={lowStock.length} sub={lowStock.length > 0 ? 'Needs reorder' : 'All good'} accent={lowStock.length > 0 ? '#dc2626' : '#16a34a'} />
+      <div className="d-kpis">
+        <Kpi label="Monthly income" value={fmt(monthlySales)} icon="💵" color="var(--green-ink)" delta={pctChange(monthlySales, prevSales)} spark={m6.map(m => m.inc)} />
+        <Kpi label="Monthly expenses" value={fmt(monthlyExp)} icon="💸" color="var(--red-ink)" delta={pctChange(monthlyExp, prevExp)} invert spark={m6.map(m => m.exp)} />
+        <Kpi label="Monthly profit" value={fmt(profit)} icon="📈" color="var(--primary)" delta={pctChange(profit, prevProfit)} spark={m6.map(m => Math.max(0, m.inc - m.exp))} />
+        <Kpi label="Outstanding invoices" value={fmt(unpaidTotal)} icon="🧾" color="var(--amber-ink)" delta={null} sub={`${unpaid.length} unpaid invoice${unpaid.length === 1 ? '' : 's'}`} />
       </div>
 
-      <div style={{ background: 'var(--surface)', border: `2px solid ${healthColor}`, borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>💊 Business Health Score</h3>
-          <span style={{ fontSize: 17, fontWeight: 900, color: healthColor }}>{healthScore}/100 — {healthLabel}</span>
-        </div>
-        <div style={{ background: 'var(--surface-2)', borderRadius: 6, height: 14, overflow: 'hidden', marginBottom: 12 }}>
-          <div style={{ width: `${healthScore}%`, height: 14, borderRadius: 6, background: healthColor, transition: 'width 0.5s ease' }} />
-        </div>
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, color: margin >= 25 ? '#16a34a' : margin >= 10 ? '#f59e0b' : '#dc2626', fontWeight: 600 }}>{margin >= 25 ? '✅' : margin >= 10 ? '⚠️' : '❌'} Profit Margin: {Math.round(margin)}%</span>
-          <span style={{ fontSize: 12, color: overdueJobs.length === 0 ? '#16a34a' : overdueJobs.length <= 2 ? '#f59e0b' : '#dc2626', fontWeight: 600 }}>{overdueJobs.length === 0 ? '✅' : '⚠️'} Overdue Jobs: {overdueJobs.length}</span>
-          <span style={{ fontSize: 12, color: lowStock.length === 0 ? '#16a34a' : '#f59e0b', fontWeight: 600 }}>{lowStock.length === 0 ? '✅' : '⚠️'} Low Stock: {lowStock.length}</span>
-        </div>
-      </div>
-
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>🎯 Monthly Revenue Goal</h3>
-          <button onClick={() => { setGoalInput(String(monthlyGoal)); setEditGoal(true); }} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 4, padding: '3px 10px', cursor: 'pointer', fontSize: 12, color: 'var(--muted)' }}>{monthlyGoal > 0 ? 'Edit Goal' : 'Set Goal'}</button>
-        </div>
-        {editGoal && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-            <Inp placeholder="Monthly target (GH₵)" type="number" value={goalInput} onChange={e => setGoalInput(e.target.value)} />
-            <Btn small onClick={() => { setMonthlyGoal(parseFloat(goalInput)||0); setEditGoal(false); }}>Save</Btn>
-            <Btn small variant="ghost" onClick={() => setEditGoal(false)}>Cancel</Btn>
+      <div className="d-grid g-2-1">
+        <div className="d-card">
+          <div className="d-head">
+            <h3>Income vs expenses</h3>
+            <div className="d-seg" role="tablist">{[['7d', '7 days'], ['30d', '30 days'], ['6m', '6 months']].map(([k, l]) => <button key={k} className={range === k ? 'on' : ''} onClick={() => setRange(k)}>{l}</button>)}</div>
           </div>
-        )}
-        {monthlyGoal > 0 ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-              <span style={{ fontWeight: 700, color: goalPct >= 100 ? '#16a34a' : 'var(--ink-2)' }}>{fmt(monthlySales)} earned</span>
-              <span style={{ color: 'var(--muted)' }}>Goal: {fmt(monthlyGoal)} — <strong style={{ color: goalPct >= 100 ? '#16a34a' : 'var(--primary)' }}>{goalPct}%</strong></span>
-            </div>
-            <div style={{ background: 'var(--surface-2)', borderRadius: 6, height: 14, overflow: 'hidden' }}>
-              <div style={{ width: `${goalPct}%`, height: 14, borderRadius: 6, background: goalPct >= 100 ? '#16a34a' : goalPct >= 75 ? 'var(--primary)' : goalPct >= 50 ? '#f59e0b' : '#dc2626', transition: 'width 0.4s ease' }} />
-            </div>
-            {goalPct >= 100 && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 700 }}>🎉 Goal achieved! Keep going!</p>}
-          </>
-        ) : <p style={{ margin: 0, color: 'var(--faint)', fontSize: 13 }}>Set a monthly revenue target to track your progress.</p>}
-      </div>
+          <FlowChart series={series} />
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue — Last 7 Days</h3>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
-            {last7.map((d, i) => (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: '100%', background: d.amt > 0 ? 'var(--primary)' : 'var(--line)', borderRadius: '3px 3px 0 0', height: `${Math.max(2, Math.round((d.amt / maxBar) * 100))}px` }} title={fmt(d.amt)} />
-                <span style={{ fontSize: 10, color: 'var(--muted)' }}>{d.day}</span>
+        <div style={{ display: 'grid', gap: 14, minWidth: 0 }}>
+          <div className="d-card">
+            <div className="d-head"><h3>🎯 Monthly goal</h3><button className="d-link" onClick={() => { setGoalInput(String(monthlyGoal || '')); setEditGoal(v => !v); }}>{monthlyGoal > 0 ? 'Edit' : 'Set goal'}</button></div>
+            {editGoal && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <Inp placeholder="Target (GH₵)" type="number" value={goalInput} onChange={e => setGoalInput(e.target.value)} />
+                <Btn small onClick={() => { setMonthlyGoal(parseFloat(goalInput) || 0); setEditGoal(false); }}>Save</Btn>
               </div>
-            ))}
+            )}
+            {monthlyGoal > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <Ring pct={goalPct} color={goalPct >= 100 ? 'var(--green-ink)' : 'var(--primary)'} big={`${goalPct}%`} small="of goal" />
+                <div style={{ fontSize: 13, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700 }}>{fmt(monthlySales)}</div>
+                  <div className="muted">of {fmt(monthlyGoal)}</div>
+                  <div style={{ marginTop: 6, fontWeight: 600, color: goalPct >= 100 ? 'var(--green-ink)' : 'var(--ink-2)' }}>{goalPct >= 100 ? '🎉 Goal achieved!' : `${fmt(monthlyGoal - monthlySales)} to go`}</div>
+                </div>
+              </div>
+            ) : <p className="muted" style={{ margin: 0 }}>Set a monthly revenue target to track progress.</p>}
+          </div>
+
+          <div className="d-card">
+            <div className="d-head"><h3>💊 Business health</h3><span className="d-tag" style={{ color: hColor }}>{hLabel}</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <Ring pct={health} color={hColor} big={health} small="/ 100" />
+              <div className="d-facts">
+                <span>{margin >= 25 ? '✅' : margin >= 10 ? '⚠️' : '❌'} Margin {Math.round(margin)}%</span>
+                <span>{overdueJobs.length === 0 ? '✅' : '⚠️'} Overdue {overdueJobs.length}</span>
+                <span>{lowStock.length === 0 ? '✅' : '⚠️'} Low stock {lowStock.length}</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Job Pipeline</h3>
-          {JOB_STATUSES.map(s => {
-            const count = jobs.filter(j => j.status === s).length;
-            const pct   = jobs.length > 0 ? Math.round((count / jobs.length) * 100) : 0;
-            const col   = STATUS_COLORS[s] || {};
+      </div>
+
+      <div className="d-grid g-3">
+        <div className="d-card">
+          <div className="d-head"><h3>Job pipeline</h3><span className="muted">{jobs.length} total</span></div>
+          <div className="d-stack">{pipeline.filter(p => p.n > 0).map(p => <i key={p.s} title={`${p.s}: ${p.n}`} style={{ width: `${(p.n / totalJobs) * 100}%`, background: STATUS_COLORS[p.s]?.color }} />)}</div>
+          <div className="d-legend">{pipeline.map(p => <div key={p.s}><i style={{ background: STATUS_COLORS[p.s]?.color }} /><span>{p.s}</span><b>{p.n}</b></div>)}</div>
+        </div>
+
+        <div className="d-card">
+          <div className="d-head"><h3>⏰ Due this week</h3><button className="d-link" onClick={() => setActiveTab('jobs')}>All jobs →</button></div>
+          {dueSoon.length === 0 ? <p className="muted" style={{ margin: 0 }}>Nothing due in the next 7 days.</p> : dueSoon.map(j => {
+            const d = daysLeft(j.due_date);
             return (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <span style={{ width: 80, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: col.color || '#555' }}>{s}</span>
-                <div style={{ flex: 1, background: 'var(--surface-2)', borderRadius: 4, height: 8 }}>
-                  <div style={{ width: `${pct}%`, background: col.color || 'var(--primary)', height: 8, borderRadius: 4 }} />
-                </div>
-                <span style={{ fontSize: 12, color: 'var(--muted)', width: 20, textAlign: 'right' }}>{count}</span>
+              <div key={j.id} className="d-row">
+                <div style={{ minWidth: 0 }}><b>{j.job_no}</b> <span className="muted">· {j.customer}</span><div className="muted ellip">{j.description}</div></div>
+                <span className={`d-tag ${d <= 1 ? 'hot' : ''}`}>{d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : `${d} days`}</span>
               </div>
             );
           })}
         </div>
-      </div>
 
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Recent Jobs</h3>
-          <Btn variant="ghost" small onClick={() => setActiveTab('jobs')}>View All →</Btn>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr>{['Job #','Customer','Description','Type','Due','Price','Status'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
-            <tbody>
-              {[...jobs].sort((a,b) => (b.job_no||'').localeCompare(a.job_no||'')).slice(0,5).map(j => (
-                <tr key={j.id}>
-                  <TD style={{ fontWeight: 700, color: 'var(--primary)' }}>{j.job_no}</TD>
-                  <TD>{j.customer}</TD><TD>{j.description}</TD><TD>{j.type}</TD>
-                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : 'var(--ink-2)' }}>{j.due_date}</TD>
-                  <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
-                  <TD><Badge text={j.status} /></TD>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="d-card">
+          <div className="d-head"><h3>🏭 Machine workload</h3><span className="muted">queued + running</span></div>
+          {load.map(l => (
+            <div key={l.m} className="d-bar">
+              <span className="ellip">{l.m}</span>
+              <div><i style={{ width: `${(l.n / maxLoad) * 100}%` }} /></div>
+              <b>{l.n}</b>
+            </div>
+          ))}
         </div>
       </div>
 
-      {lowStock.length > 0 && (
-        <div style={{ background: 'var(--surface)', border: '1px solid #fca5a5', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#dc2626' }}>⚠️ Low Stock Alerts</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {lowStock.map(i => (
-              <div key={i.id} style={{ background: 'var(--red-bg)', border: '1px solid var(--red-line)', borderRadius: 6, padding: '6px 12px', fontSize: 12 }}>
-                <strong>{i.name}</strong> — {i.quantity} {i.unit} left (reorder at {i.reorder_point})
+      <div className="d-grid g-2-1">
+        <div className="d-card">
+          <div className="d-head"><h3>Recent jobs</h3><button className="d-link" onClick={() => setActiveTab('jobs')}>View all →</button></div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Job #', 'Customer', 'Description', 'Due', 'Price', 'Status'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+              <tbody>
+                {[...jobs].sort((a, b) => (b.job_no || '').localeCompare(a.job_no || '')).slice(0, 6).map(j => (
+                  <tr key={j.id}>
+                    <TD style={{ fontWeight: 700, color: 'var(--primary)' }}>{j.job_no}</TD>
+                    <TD>{j.customer}</TD><TD>{j.description}</TD>
+                    <TD style={{ color: j.due_date < today && !['completed', 'cancelled'].includes(j.status) ? 'var(--red-ink)' : 'var(--ink-2)' }}>{j.due_date}</TD>
+                    <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
+                    <TD><Badge text={j.status} /></TD>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gap: 14, minWidth: 0, alignContent: 'start' }}>
+          <div className="d-card">
+            <div className="d-head"><h3>🏆 Top customers</h3><span className="muted">by job value</span></div>
+            {topCust.length === 0 ? <p className="muted" style={{ margin: 0 }}>No jobs yet.</p> : topCust.map(([name, v], i) => (
+              <div key={name} className="d-bar">
+                <span className="ellip">{i + 1}. {name}</span>
+                <div><i style={{ width: `${(v / topMax) * 100}%`, background: 'var(--primary)' }} /></div>
+                <b>{fmt(v)}</b>
               </div>
             ))}
           </div>
+          <div className="d-card" style={lowStock.length ? { borderColor: 'var(--red-line)' } : undefined}>
+            <div className="d-head"><h3>📦 Stock alerts</h3><button className="d-link" onClick={() => setActiveTab('inventory')}>Inventory →</button></div>
+            {lowStock.length === 0 ? <p className="muted" style={{ margin: 0 }}>✅ All items are above reorder level.</p> : lowStock.slice(0, 5).map(i => (
+              <div key={i.id} className="d-row"><span className="ellip"><b>{i.name}</b></span><span className="d-tag hot">{i.quantity} {i.unit} left</span></div>
+            ))}
+            {lowStock.length > 5 && <div className="muted" style={{ marginTop: 6 }}>+{lowStock.length - 5} more</div>}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
