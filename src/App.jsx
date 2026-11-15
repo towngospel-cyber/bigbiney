@@ -12,25 +12,17 @@ const fmt = (n) => `GH₵${Number(n).toLocaleString(undefined, { minimumFraction
 const todayStr = () => new Date().toISOString().split('T')[0];
 const getCurrentMonth = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; };
 
+const tone = (n) => ({ bg: `var(--${n}-bg)`, color: `var(--${n}-ink)`, border: `var(--${n}-line)` });
 const STATUS_COLORS = {
-  quoting:       { bg: '#f0f9ff', color: '#0369a1',  border: '#bae6fd' },
-  queued:        { bg: '#fefce8', color: '#854d0e',  border: '#fde68a' },
-  'in-progress': { bg: '#eff6ff', color: '#1d4ed8',  border: '#bfdbfe' },
-  'on-hold':     { bg: '#fff7ed', color: '#c2410c',  border: '#fed7aa' },
-  completed:     { bg: '#f0fdf4', color: '#15803d',  border: '#bbf7d0' },
-  cancelled:     { bg: '#fef2f2', color: '#b91c1c',  border: '#fecaca' },
+  quoting: tone('sky'), queued: tone('amber'), 'in-progress': tone('blue'),
+  'on-hold': tone('orange'), completed: tone('green'), cancelled: tone('red'),
 };
 const PRIORITY_COLORS = {
-  normal: { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
-  rush:   { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
-  urgent: { bg: '#7f1d1d', color: '#ffffff', border: '#7f1d1d' },
+  normal: tone('slate'), rush: tone('red'), urgent: { bg: '#7f1d1d', color: '#ffffff', border: '#7f1d1d' },
 };
 const DELIVERY_COLORS = {
-  pending:            { bg: '#f1f5f9', color: '#475569' },
-  ready:              { bg: '#fef3c7', color: '#92400e' },
-  'out-for-delivery': { bg: '#dbeafe', color: '#1e40af' },
-  delivered:          { bg: '#d1fae5', color: '#065f46' },
-  collected:          { bg: '#f0fdf4', color: '#15803d' },
+  pending: tone('slate'), ready: tone('amber'), 'out-for-delivery': tone('blue'),
+  delivered: tone('green'), collected: tone('green'),
 };
 
 const openWhatsApp = (phone, message) => {
@@ -78,58 +70,108 @@ const generateWeeklySummaryMsg = (sales, expenses, jobs) => {
   return `🖨️ *BIGBINEY PRINTING PRESS*\n*WEEKLY SUMMARY* — ${todayStr()}\n\n💰 *THIS WEEK*\n• Revenue: ${fmt(weekSales)}\n• Expenses: ${fmt(weekExp)}\n• Profit: ${fmt(weekSales - weekExp)}\n\n📅 *MONTH TO DATE*\n• Revenue: ${fmt(monthSales)}\n\n_Bigbiney Printing Press Manager_`;
 };
 
+const GLOBAL_CSS = `:root{--bg:#f4f6f9;--surface:#fff;--surface-2:#eef1f5;--line:#dde2ea;--line-soft:#edf0f4;--ink:#14181f;--ink-2:#3a4352;--muted:#646e7e;--faint:#8a93a2;--primary:#0a7fc2;--shadow:0 1px 2px rgba(20,24,31,.06),0 4px 14px rgba(20,24,31,.05);
+--sky-bg:#f0f9ff;--sky-ink:#0369a1;--sky-line:#bae6fd;--amber-bg:#fefce8;--amber-ink:#854d0e;--amber-line:#fde68a;--blue-bg:#eff6ff;--blue-ink:#1d4ed8;--blue-line:#bfdbfe;
+--orange-bg:#fff7ed;--orange-ink:#c2410c;--orange-line:#fed7aa;--green-bg:#f0fdf4;--green-ink:#15803d;--green-line:#bbf7d0;--red-bg:#fef2f2;--red-ink:#b91c1c;--red-line:#fecaca;--slate-bg:#f1f5f9;--slate-ink:#475569;--slate-line:#e2e8f0;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1218;--surface:#171b24;--surface-2:#202634;--line:#2a3140;--line-soft:#222836;--ink:#e8ebf0;--ink-2:#c3c9d4;--muted:#98a1b3;--faint:#6f7889;--primary:#1a86cc;--shadow:none;--sky-bg:#0c2a3d;--sky-ink:#7dd3fc;--sky-line:#164e63;--amber-bg:#33290a;--amber-ink:#fcd34d;--amber-line:#5c4a12;--blue-bg:#14264d;--blue-ink:#93b4fb;--blue-line:#1e3a8a;--orange-bg:#3a1d0a;--orange-ink:#fdba74;--orange-line:#7c2d12;--green-bg:#0f2e1c;--green-ink:#6ee7a0;--green-line:#14532d;--red-bg:#3b1414;--red-ink:#fca5a5;--red-line:#7f1d1d;--slate-bg:#1e2633;--slate-ink:#a9b4c6;--slate-line:#334155;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1218;--surface:#171b24;--surface-2:#202634;--line:#2a3140;--line-soft:#222836;--ink:#e8ebf0;--ink-2:#c3c9d4;--muted:#98a1b3;--faint:#6f7889;--primary:#1a86cc;--shadow:none;--sky-bg:#0c2a3d;--sky-ink:#7dd3fc;--sky-line:#164e63;--amber-bg:#33290a;--amber-ink:#fcd34d;--amber-line:#5c4a12;--blue-bg:#14264d;--blue-ink:#93b4fb;--blue-line:#1e3a8a;--orange-bg:#3a1d0a;--orange-ink:#fdba74;--orange-line:#7c2d12;--green-bg:#0f2e1c;--green-ink:#6ee7a0;--green-line:#14532d;--red-bg:#3b1414;--red-ink:#fca5a5;--red-line:#7f1d1d;--slate-bg:#1e2633;--slate-ink:#a9b4c6;--slate-line:#334155;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{color:var(--ink)}button,input,select,textarea{font:inherit}
+input,select,textarea{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 22%,transparent)}
+button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.fld{display:flex;flex-direction:column;gap:4px}.fld label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.muted{color:var(--muted)}.grow{flex:1}.center{text-align:center}.center-t{text-align:center;padding:16px}.err{margin:0;padding:8px 10px;border-radius:8px;background:var(--red-bg);border:1px solid var(--red-line);color:var(--red-ink);font-size:13px}
+.btn{border:0;border-radius:8px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;color:#fff;transition:filter .12s}
+.btn:hover:not(:disabled){filter:brightness(1.08)}.btn:disabled{opacity:.55;cursor:not-allowed}.btn.sm{padding:6px 11px;font-size:12px}
+.btn-primary{background:var(--primary)}.btn-success{background:#16a34a}.btn-danger{background:#dc2626}.btn-warning{background:#d98a06}.btn-purple{background:#7c3aed}.btn-teal{background:#0891b2}.btn-wa{background:#1fa855}
+.btn-ghost{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.badge{border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.stat{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--primary);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow)}
+.stat-v{font-size:22px;font-weight:800;margin-bottom:2px}.stat-l{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}.stat-s{font-size:11px;color:var(--faint);margin-top:3px}
+.th{padding:10px 12px;font-size:11px;font-weight:700;color:var(--muted);text-align:left;border-bottom:1px solid var(--line);text-transform:uppercase;white-space:nowrap;background:var(--surface-2)}
+.td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--line-soft)}
+table{border-collapse:collapse}
+.modal-back{position:fixed;inset:0;background:rgba(8,12,20,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surface);border-radius:14px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.modal-h{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-h h3{margin:0;font-size:16px}.x{background:none;border:0;font-size:26px;line-height:1;cursor:pointer;color:var(--muted)}.modal-b{padding:20px}
+.login{min-height:100vh;display:grid;place-items:center;padding:16px}
+.login-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:32px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.login-card h1{margin:0;font-size:21px;text-align:center}.login-card p{margin:0;text-align:center;font-size:13px}.login-logo{font-size:42px;text-align:center}
+.app{display:flex;min-height:100vh}.content{flex:1;min-width:0}
+.side{width:224px;flex:none;position:sticky;top:0;height:100vh;overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:14px 10px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;gap:10px;align-items:center;font-size:24px;font-weight:800;padding:4px 10px 16px;line-height:1.1}.brand span{font-size:15px}.brand small{font-weight:500;color:var(--muted);font-size:12px}
+.nav{display:flex;align-items:center;gap:12px;background:none;border:0;border-radius:8px;padding:10px 12px;cursor:pointer;color:var(--ink-2);font-weight:600;text-align:left}
+.nav:hover{background:var(--surface-2)}.nav.on{background:color-mix(in srgb,var(--primary) 13%,transparent);color:var(--primary)}
+.ico{width:22px;text-align:center;flex:none}.pill{margin-left:auto;background:#dc2626;color:#fff;border-radius:999px;font-size:11px;padding:1px 7px}
+.who{font-size:12px;color:var(--muted);padding:8px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 24px;min-height:58px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.page-title{margin:0;font-size:19px;display:flex;gap:8px;align-items:center}.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.iconbtn{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:8px;width:38px;height:36px;cursor:pointer;font-size:16px}
+.dot{position:absolute;top:-5px;right:-5px;background:#dc2626;color:#fff;border-radius:999px;min-width:17px;height:17px;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.chip{border:1px solid;border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer}.chip.bad{background:var(--red-bg);color:var(--red-ink);border-color:var(--red-line)}.chip.warn{background:var(--amber-bg);color:var(--amber-ink);border-color:var(--amber-line)}
+.rel{position:relative}.panel{position:absolute;right:0;top:115%;width:min(340px,88vw);max-height:380px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.2);z-index:300}
+.panel-h{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+.note{display:flex;gap:8px;align-items:flex-start;padding:10px 14px;border-bottom:1px solid var(--line-soft);font-size:12px}.note.unread{background:var(--blue-bg)}
+.link{background:none;border:0;color:var(--muted);cursor:pointer;font-size:12px}
+.main{padding:24px;max-width:1400px;margin:0 auto}
+.bottom,.sheet-back{display:none}
+@media (max-width:860px){
+  .side{display:none}.top{padding:8px 14px}.page-title{font-size:17px}.hide-sm{display:none}.main{padding:14px 12px 96px}
+  .bottom{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+  .bottom button{flex:1;position:relative;background:none;border:0;padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;color:var(--muted);cursor:pointer}
+  .bottom button.on{color:var(--primary);font-weight:700}.bottom .ico{font-size:19px}.sm-dot{position:absolute;top:6px;right:calc(50% - 20px);width:9px;height:9px;min-width:0;padding:0;border-radius:50%;background:#dc2626}
+  .sheet-back{display:flex;position:fixed;inset:0;z-index:200;background:rgba(8,12,20,.5);align-items:flex-end}
+  .sheet{width:100%;background:var(--surface);border-radius:18px 18px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
+  .sheet-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sheet-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px;font-size:12px}
+  .tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);color:var(--ink);font-weight:600;font-size:12px;cursor:pointer}.tile.on{border-color:var(--primary);color:var(--primary)}.tile .ico{font-size:22px}.tile .pill{position:absolute;top:6px;right:6px;margin:0}
+  /* make the existing screens fit narrow widths */
+  [style*="grid-template-columns"]:not([style*="auto-fit"]){grid-template-columns:1fr!important}
+  [style*="justify-content: space-between"]{flex-wrap:wrap;gap:8px}
+  table{display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  input,select,textarea{font-size:16px}.btn,.iconbtn{min-height:38px}
+  .modal-back{align-items:flex-end;padding:0}.modal{max-width:none!important;max-height:94vh;border-radius:18px 18px 0 0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+`;
+
 const Badge = ({ text, type = 'status' }) => {
   const c = type === 'status' ? (STATUS_COLORS[text] || {}) : type === 'priority' ? (PRIORITY_COLORS[text] || {}) : (DELIVERY_COLORS[text] || {});
-  return <span style={{ background: c.bg, color: c.color, border: `1px solid ${c.border || c.bg}`, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>{text}</span>;
+  return <span className="badge" style={{ background: c.bg, color: c.color, border: `1px solid ${c.border || c.bg}` }}>{text}</span>;
 };
 const Modal = ({ title, onClose, children, wide }) => (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-    <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: wide ? 800 : 600, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.2)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid #e5e7eb', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#111' }}>{title}</h3>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#6b7280', lineHeight: 1 }}>×</button>
-      </div>
-      <div style={{ padding: 24 }}>{children}</div>
+  <div className="modal-back">
+    <div className="modal" role="dialog" aria-modal="true" aria-label={title} style={{ maxWidth: wide ? 800 : 600 }}>
+      <div className="modal-h"><h3>{title}</h3><button className="x" onClick={onClose} aria-label="Close">×</button></div>
+      <div className="modal-b">{children}</div>
     </div>
   </div>
 );
 const StatCard = ({ label, value, sub, accent }) => (
-  <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '18px 20px', borderLeft: `4px solid ${accent || '#2563eb'}`, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-    <div style={{ fontSize: 22, fontWeight: 800, color: accent || '#2563eb', marginBottom: 4 }}>{value}</div>
-    <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-    {sub && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{sub}</div>}
+  <div className="stat" style={{ borderLeftColor: accent || 'var(--primary)' }}>
+    <div className="stat-v" style={{ color: accent || 'var(--primary)' }}>{value}</div>
+    <div className="stat-l">{label}</div>
+    {sub && <div className="stat-s">{sub}</div>}
   </div>
 );
 const Inp = ({ label, id, ...props }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-    {label && <label htmlFor={id || props.name} style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
-    <input id={id || props.name || label?.toLowerCase().replace(/\s+/g,'-')} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }} {...props} />
+  <div className="fld">
+    {label && <label htmlFor={id || props.name}>{label}</label>}
+    <input id={id || props.name || label?.toLowerCase().replace(/\s+/g, '-')} {...props} />
   </div>
 );
 const Sel = ({ label, id, children, ...props }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-    {label && <label htmlFor={id || label?.toLowerCase().replace(/\s+/g,'-')} style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</label>}
-    <select id={id || label?.toLowerCase().replace(/\s+/g,'-')} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff', outline: 'none' }} {...props}>{children}</select>
+  <div className="fld">
+    {label && <label htmlFor={id || label?.toLowerCase().replace(/\s+/g, '-')}>{label}</label>}
+    <select id={id || label?.toLowerCase().replace(/\s+/g, '-')} {...props}>{children}</select>
   </div>
 );
-const Btn = ({ children, onClick, variant = 'primary', small, style: s, disabled }) => {
-  const v = {
-    primary: { background: '#2563eb', color: '#fff', border: 'none' },
-    success: { background: '#16a34a', color: '#fff', border: 'none' },
-    danger:  { background: '#dc2626', color: '#fff', border: 'none' },
-    ghost:   { background: '#f1f5f9', color: '#374151', border: '1px solid #e2e8f0' },
-    warning: { background: '#f59e0b', color: '#fff', border: 'none' },
-    purple:  { background: '#7c3aed', color: '#fff', border: 'none' },
-    teal:    { background: '#0891b2', color: '#fff', border: 'none' },
-  };
-  return (
-    <button onClick={onClick} disabled={disabled} style={{ ...v[variant], padding: small ? '5px 10px' : '9px 16px', borderRadius: 6, cursor: disabled ? 'not-allowed' : 'pointer', fontSize: small ? 12 : 13, fontWeight: 600, opacity: disabled ? 0.6 : 1, whiteSpace: 'nowrap', ...s }}>
-      {children}
-    </button>
-  );
-};
-const TH = ({ children }) => <th style={{ padding: '10px 12px', fontSize: 11, fontWeight: 700, color: '#6b7280', textAlign: 'left', borderBottom: '1px solid #e5e7eb', textTransform: 'uppercase', whiteSpace: 'nowrap', background: '#f8fafc' }}>{children}</th>;
-const TD = ({ children, style: s }) => <td style={{ padding: '10px 12px', fontSize: 13, borderBottom: '1px solid #f1f5f9', ...s }}>{children}</td>;
+const Btn = ({ children, onClick, variant = 'primary', small, style, disabled }) => (
+  <button className={`btn btn-${variant}${small ? ' sm' : ''}`} onClick={onClick} disabled={disabled} style={style}>{children}</button>
+);
+const TH = ({ children }) => <th className="th">{children}</th>;
+const TD = ({ children, style }) => <td className="td" style={style}>{children}</td>;
 
 export default function PrintingPressSystem() {
   const [currentUser,       setCurrentUser]       = useState(null);
@@ -150,6 +192,13 @@ export default function PrintingPressSystem() {
   const [jobMaterials,      setJobMaterials]      = useState([]);
   const [notifs,            setNotifs]            = useState([]);
   const [monthlyGoal,       setMonthlyGoalState]  = useState(0);
+  const [theme, setTheme] = useState(() => { try { return localStorage.getItem('theme') || 'auto'; } catch { return 'auto'; } });
+  const [moreOpen, setMoreOpen] = useState(false);
+  useEffect(() => {
+    const r = document.documentElement;
+    if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
+    try { localStorage.setItem('theme', theme); } catch {}
+  }, [theme]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -217,19 +266,16 @@ export default function PrintingPressSystem() {
 
   if (!currentUser) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0f172a 100%)', fontFamily: '"Segoe UI", system-ui, sans-serif' }}>
-        <div style={{ background: '#fff', padding: 40, borderRadius: 12, width: '100%', maxWidth: 420, boxShadow: '0 32px 80px rgba(0,0,0,0.4)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 44, marginBottom: 8 }}>🖨️</div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>Bigbiney Printing Press</h1>
-            <p style={{ color: '#6b7280', fontSize: 13, marginTop: 6 }}>Management System — syncs across all devices</p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Inp label="Email" type="email" placeholder="admin@bigbiney.com" value={loginData.email} onChange={e => setLoginData({ ...loginData, email: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            <Inp label="Password" type="password" placeholder="••••••••" value={loginData.password} onChange={e => setLoginData({ ...loginData, password: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
-            {loginError && <p style={{ color: '#dc2626', fontSize: 12, margin: 0, padding: '6px 10px', background: '#fef2f2', borderRadius: 4, border: '1px solid #fecaca' }}>{loginError}</p>}
-            <Btn onClick={handleLogin}>Sign In →</Btn>
-          </div>
+      <div className="login">
+        <style>{GLOBAL_CSS}</style>
+        <div className="login-card">
+          <div className="login-logo">🖨️</div>
+          <h1>Bigbiney Printing Press</h1>
+          <p className="muted">Management system · syncs across all devices</p>
+          <Inp label="Email" type="email" autoComplete="username" placeholder="admin@bigbiney.com" value={loginData.email} onChange={e => setLoginData({ ...loginData, email: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+          <Inp label="Password" type="password" autoComplete="current-password" placeholder="••••••••" value={loginData.password} onChange={e => setLoginData({ ...loginData, password: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+          {loginError && <p className="err" role="alert">{loginError}</p>}
+          <Btn onClick={handleLogin}>Sign in →</Btn>
         </div>
       </div>
     );
@@ -237,8 +283,8 @@ export default function PrintingPressSystem() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Segoe UI", system-ui, sans-serif', color: '#6b7280' }}>
-        <div style={{ textAlign: 'center' }}><div style={{ fontSize: 40, marginBottom: 16 }}>🖨️</div><p>Loading Bigbiney Printing Press…</p></div>
+      <div className="login"><style>{GLOBAL_CSS}</style>
+        <div className="center"><div className="login-logo">🖨️</div><p className="muted">Loading Bigbiney Printing Press…</p></div>
       </div>
     );
   }
@@ -259,56 +305,57 @@ export default function PrintingPressSystem() {
     { id: 'reports',   label: '📈 Reports' },
     { id: 'whatsapp',  label: '📲 WhatsApp' },
   ];
+  const MAIN_TABS = ['dashboard', 'jobs', 'customers', 'finance'];
+  const parts = (t) => { const i = t.label.indexOf(' '); return [t.label.slice(0, i), t.label.slice(i + 1)]; };
+  const go = (id) => { setActiveTab(id); setMoreOpen(false); setShowNotif(false); window.scrollTo({ top: 0 }); };
+  const [curIcon, curName] = parts(TABS.find(t => t.id === activeTab));
+  const themeNext = { auto: 'light', light: 'dark', dark: 'auto' }[theme];
+  const themeIcon = { auto: '🌓', light: '☀️', dark: '🌙' }[theme];
+  const badgeFor = (id) => (id === 'inventory' ? lowStock.length : id === 'jobs' ? overdueJobs.length : 0);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: '"Segoe UI", system-ui, sans-serif', color: '#111' }}>
-      <header style={{ background: '#0f172a', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, position: 'sticky', top: 0, zIndex: 200 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>🖨️</span>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 15 }}>Bigbiney Printing Press</span>
-          {lowStock.length > 0 && <span style={{ background: '#dc2626', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{lowStock.length} LOW STOCK</span>}
-          {overdueJobs.length > 0 && <span style={{ background: '#f59e0b', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10 }}>{overdueJobs.length} OVERDUE</span>}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {overdueJobs.length > 0 && (
-            <button onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>📲 Alert Admin</button>
-          )}
-          <div style={{ position: 'relative' }}>
-            <button onClick={() => setShowNotif(v => !v)} style={{ background: showNotif ? '#1e3a5f' : 'transparent', border: '1px solid #334155', color: '#fff', borderRadius: 6, padding: '6px 10px', cursor: 'pointer', fontSize: 16, position: 'relative' }}>
-              🔔
-              {unread > 0 && <span style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: '#fff', borderRadius: '50%', width: 16, height: 16, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread}</span>}
-            </button>
-            {showNotif && (
-              <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, width: 320, maxHeight: 360, overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.14)', zIndex: 300 }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff' }}>
-                  <span style={{ fontWeight: 700, fontSize: 13 }}>Notifications</span>
-                  <button onClick={() => setNotifs(n => n.map(x => ({ ...x, read: true })))} style={{ background: 'none', border: 'none', fontSize: 11, color: '#6b7280', cursor: 'pointer' }}>Mark all read</button>
-                </div>
-                {notifs.slice(0, 8).map(n => (
-                  <div key={n.id} style={{ padding: '10px 16px', display: 'flex', gap: 8, alignItems: 'flex-start', borderBottom: '1px solid #f9fafb', background: n.read ? '#fff' : '#f0f9ff' }}>
-                    <span style={{ fontSize: 14, flexShrink: 0 }}>{n.type === 'warning' ? '⚠️' : n.type === 'success' ? '✅' : 'ℹ️'}</span>
-                    <span style={{ fontSize: 12, color: '#374151', flex: 1 }}>{n.message}</span>
-                    <button onClick={() => setNotifs(prev => prev.filter(x => x.id !== n.id))} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 16, lineHeight: 1, flexShrink: 0 }}>×</button>
-                  </div>
-                ))}
-                {notifs.length === 0 && <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 12, padding: 20 }}>All clear!</p>}
-              </div>
-            )}
-          </div>
-          <span style={{ color: '#94a3b8', fontSize: 12 }}>👤 {currentUser.email}</span>
-          <button onClick={handleLogout} style={{ background: '#1e3a5f', border: '1px solid #334155', color: '#94a3b8', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: 12 }}>Logout</button>
-        </div>
-      </header>
-
-      <nav style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 24px', display: 'flex', overflowX: 'auto' }}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setActiveTab(t.id)} style={{ padding: '13px 14px', background: 'transparent', border: 'none', borderBottom: activeTab === t.id ? '3px solid #2563eb' : '3px solid transparent', cursor: 'pointer', fontSize: 13, fontWeight: activeTab === t.id ? 700 : 500, color: activeTab === t.id ? '#2563eb' : '#6b7280', whiteSpace: 'nowrap', transition: 'all 0.15s' }}>
-            {t.label}
+    <div className="app">
+      <style>{GLOBAL_CSS}</style>
+      <aside className="side">
+        <div className="brand">🖨️ <span>Bigbiney<br /><small>Printing Press</small></span></div>
+        {TABS.map(t => { const [ic, nm] = parts(t); return (
+          <button key={t.id} className={`nav${activeTab === t.id ? ' on' : ''}`} onClick={() => go(t.id)} aria-current={activeTab === t.id ? 'page' : undefined}>
+            <span className="ico">{ic}</span><span>{nm}</span>{badgeFor(t.id) > 0 && <b className="pill">{badgeFor(t.id)}</b>}
           </button>
-        ))}
-      </nav>
+        ); })}
+        <div className="grow" />
+        <span className="who">👤 {currentUser.email}</span>
+      </aside>
 
-      <main style={{ padding: '28px 24px', maxWidth: 1400, margin: '0 auto' }}>
+      <div className="content">
+        <header className="top">
+          <h1 className="page-title"><span>{curIcon}</span> {curName}</h1>
+          <div className="top-actions">
+            {lowStock.length > 0 && <button className="chip bad" onClick={() => go('inventory')}>{lowStock.length} low stock</button>}
+            {overdueJobs.length > 0 && <button className="chip warn" onClick={() => go('jobs')}>{overdueJobs.length} overdue</button>}
+            {overdueJobs.length > 0 && <button className="btn btn-wa sm hide-sm" onClick={() => openWhatsApp(ADMIN_WHATSAPP, generateAdminReminderMsg(overdueJobs))}>📲 Alert admin</button>}
+            <button className="iconbtn" onClick={() => setTheme(themeNext)} title={`Theme: ${theme} (click for ${themeNext})`} aria-label="Change theme">{themeIcon}</button>
+            <div className="rel">
+              <button className="iconbtn" onClick={() => setShowNotif(v => !v)} aria-label="Notifications">🔔{unread > 0 && <span className="dot">{unread}</span>}</button>
+              {showNotif && (
+                <div className="panel">
+                  <div className="panel-h"><b>Notifications</b><button className="link" onClick={() => setNotifs(n => n.map(x => ({ ...x, read: true })))}>Mark all read</button></div>
+                  {notifs.slice(0, 8).map(n => (
+                    <div key={n.id} className={`note${n.read ? '' : ' unread'}`}>
+                      <span>{n.type === 'warning' ? '⚠️' : n.type === 'success' ? '✅' : 'ℹ️'}</span>
+                      <span className="grow">{n.message}</span>
+                      <button className="link" onClick={() => setNotifs(prev => prev.filter(x => x.id !== n.id))} aria-label="Dismiss">×</button>
+                    </div>
+                  ))}
+                  {notifs.length === 0 && <p className="muted center-t">All clear!</p>}
+                </div>
+              )}
+            </div>
+            <button className="btn btn-ghost sm hide-sm" onClick={handleLogout}>Logout</button>
+          </div>
+        </header>
+
+        <main className="main">
         {activeTab === 'dashboard' && <DashboardTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} setActiveTab={setActiveTab} overdueJobs={overdueJobs} monthlyGoal={monthlyGoal} setMonthlyGoal={saveGoal} />}
         {activeTab === 'jobs'      && <JobsTab jobs={jobs} setJobs={setJobs} customers={customers} addNotif={addNotif} userId={currentUser.id} inventory={inventory} setInventory={setInventory} jobMaterials={jobMaterials} setJobMaterials={setJobMaterials} />}
         {activeTab === 'customers' && <CustomersTab customers={customers} setCustomers={setCustomers} jobs={jobs} invoices={invoices} addNotif={addNotif} userId={currentUser.id} />}
@@ -319,7 +366,32 @@ export default function PrintingPressSystem() {
         {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} sales={sales} expenses={expenses} setExpenses={setExpenses} />}
         {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} />}
         {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
-      </main>
+        </main>
+      </div>
+
+      <nav className="bottom" aria-label="Main">
+        {MAIN_TABS.map(id => { const t = TABS.find(x => x.id === id); const [ic, nm] = parts(t); return (
+          <button key={id} className={activeTab === id ? 'on' : ''} onClick={() => go(id)}><span className="ico">{ic}</span><span>{nm}</span></button>
+        ); })}
+        <button className={!MAIN_TABS.includes(activeTab) ? 'on' : ''} onClick={() => setMoreOpen(true)}>
+          <span className="ico">☰</span><span>More</span>{(lowStock.length + overdueJobs.length) > 0 && <i className="dot sm-dot" />}
+        </button>
+      </nav>
+
+      {moreOpen && (
+        <div className="sheet-back" onClick={() => setMoreOpen(false)}>
+          <div className="sheet" onClick={e => e.stopPropagation()} role="dialog" aria-label="More">
+            <div className="sheet-grid">
+              {TABS.filter(t => !MAIN_TABS.includes(t.id)).map(t => { const [ic, nm] = parts(t); return (
+                <button key={t.id} className={`tile${activeTab === t.id ? ' on' : ''}`} onClick={() => go(t.id)}>
+                  <span className="ico">{ic}</span>{nm}{badgeFor(t.id) > 0 && <b className="pill">{badgeFor(t.id)}</b>}
+                </button>
+              ); })}
+            </div>
+            <div className="sheet-f"><span className="muted">👤 {currentUser.email}</span><Btn variant="ghost" small onClick={handleLogout}>Logout</Btn></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -355,13 +427,13 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
   return (
     <div>
       {overdueJobs.length > 0 && (
-        <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ background: 'var(--amber-bg)', border: '1px solid #ffc107', borderRadius: 8, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <span style={{ fontSize: 20 }}>⚠️</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#856404', marginBottom: 6 }}>{overdueJobs.length} Overdue Job{overdueJobs.length > 1 ? 's' : ''} — Action Required</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {overdueJobs.map(j => (
-                <span key={j.id} style={{ background: '#fff', border: '1px solid #ffc107', borderRadius: 4, padding: '3px 8px', fontSize: 12 }}>
+                <span key={j.id} style={{ background: 'var(--surface)', border: '1px solid #ffc107', borderRadius: 4, padding: '3px 8px', fontSize: 12 }}>
                   <strong>{j.job_no}</strong> — {j.customer} (due {j.due_date})
                 </span>
               ))}
@@ -374,18 +446,18 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginBottom: 24 }}>
         <StatCard label="Monthly Income"   value={fmt(monthlySales)} accent="#16a34a" />
         <StatCard label="Monthly Expenses" value={fmt(monthlyExp)}   accent="#dc2626" />
-        <StatCard label="Monthly Profit"   value={fmt(monthlySales - monthlyExp)} accent={monthlySales >= monthlyExp ? '#2563eb' : '#dc2626'} />
+        <StatCard label="Monthly Profit"   value={fmt(monthlySales - monthlyExp)} accent={monthlySales >= monthlyExp ? 'var(--primary)' : '#dc2626'} />
         <StatCard label="Active Jobs"      value={activeJobs} sub={overdueJobs.length > 0 ? `⚠️ ${overdueJobs.length} overdue` : 'On track'} accent="#f59e0b" />
         <StatCard label="Outstanding"      value={fmt(unpaidTotal)} sub={`${invoices.filter(i=>i.status!=='paid').length} invoice(s)`} accent="#7c3aed" />
         <StatCard label="Low Stock Items"  value={lowStock.length} sub={lowStock.length > 0 ? 'Needs reorder' : 'All good'} accent={lowStock.length > 0 ? '#dc2626' : '#16a34a'} />
       </div>
 
-      <div style={{ background: '#fff', border: `2px solid ${healthColor}`, borderRadius: 8, padding: 20, marginBottom: 20 }}>
+      <div style={{ background: 'var(--surface)', border: `2px solid ${healthColor}`, borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>💊 Business Health Score</h3>
           <span style={{ fontSize: 17, fontWeight: 900, color: healthColor }}>{healthScore}/100 — {healthLabel}</span>
         </div>
-        <div style={{ background: '#f1f5f9', borderRadius: 6, height: 14, overflow: 'hidden', marginBottom: 12 }}>
+        <div style={{ background: 'var(--surface-2)', borderRadius: 6, height: 14, overflow: 'hidden', marginBottom: 12 }}>
           <div style={{ width: `${healthScore}%`, height: 14, borderRadius: 6, background: healthColor, transition: 'width 0.5s ease' }} />
         </div>
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
@@ -395,10 +467,10 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
         </div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>🎯 Monthly Revenue Goal</h3>
-          <button onClick={() => { setGoalInput(String(monthlyGoal)); setEditGoal(true); }} style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: 4, padding: '3px 10px', cursor: 'pointer', fontSize: 12, color: '#6b7280' }}>{monthlyGoal > 0 ? 'Edit Goal' : 'Set Goal'}</button>
+          <button onClick={() => { setGoalInput(String(monthlyGoal)); setEditGoal(true); }} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 4, padding: '3px 10px', cursor: 'pointer', fontSize: 12, color: 'var(--muted)' }}>{monthlyGoal > 0 ? 'Edit Goal' : 'Set Goal'}</button>
         </div>
         {editGoal && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
@@ -410,30 +482,30 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
         {monthlyGoal > 0 ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-              <span style={{ fontWeight: 700, color: goalPct >= 100 ? '#16a34a' : '#374151' }}>{fmt(monthlySales)} earned</span>
-              <span style={{ color: '#6b7280' }}>Goal: {fmt(monthlyGoal)} — <strong style={{ color: goalPct >= 100 ? '#16a34a' : '#2563eb' }}>{goalPct}%</strong></span>
+              <span style={{ fontWeight: 700, color: goalPct >= 100 ? '#16a34a' : 'var(--ink-2)' }}>{fmt(monthlySales)} earned</span>
+              <span style={{ color: 'var(--muted)' }}>Goal: {fmt(monthlyGoal)} — <strong style={{ color: goalPct >= 100 ? '#16a34a' : 'var(--primary)' }}>{goalPct}%</strong></span>
             </div>
-            <div style={{ background: '#f1f5f9', borderRadius: 6, height: 14, overflow: 'hidden' }}>
-              <div style={{ width: `${goalPct}%`, height: 14, borderRadius: 6, background: goalPct >= 100 ? '#16a34a' : goalPct >= 75 ? '#2563eb' : goalPct >= 50 ? '#f59e0b' : '#dc2626', transition: 'width 0.4s ease' }} />
+            <div style={{ background: 'var(--surface-2)', borderRadius: 6, height: 14, overflow: 'hidden' }}>
+              <div style={{ width: `${goalPct}%`, height: 14, borderRadius: 6, background: goalPct >= 100 ? '#16a34a' : goalPct >= 75 ? 'var(--primary)' : goalPct >= 50 ? '#f59e0b' : '#dc2626', transition: 'width 0.4s ease' }} />
             </div>
             {goalPct >= 100 && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#16a34a', fontWeight: 700 }}>🎉 Goal achieved! Keep going!</p>}
           </>
-        ) : <p style={{ margin: 0, color: '#9ca3af', fontSize: 13 }}>Set a monthly revenue target to track your progress.</p>}
+        ) : <p style={{ margin: 0, color: 'var(--faint)', fontSize: 13 }}>Set a monthly revenue target to track your progress.</p>}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
           <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue — Last 7 Days</h3>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120 }}>
             {last7.map((d, i) => (
               <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: '100%', background: d.amt > 0 ? '#2563eb' : '#e5e7eb', borderRadius: '3px 3px 0 0', height: `${Math.max(2, Math.round((d.amt / maxBar) * 100))}px` }} title={fmt(d.amt)} />
-                <span style={{ fontSize: 10, color: '#6b7280' }}>{d.day}</span>
+                <div style={{ width: '100%', background: d.amt > 0 ? 'var(--primary)' : 'var(--line)', borderRadius: '3px 3px 0 0', height: `${Math.max(2, Math.round((d.amt / maxBar) * 100))}px` }} title={fmt(d.amt)} />
+                <span style={{ fontSize: 10, color: 'var(--muted)' }}>{d.day}</span>
               </div>
             ))}
           </div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
           <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Job Pipeline</h3>
           {JOB_STATUSES.map(s => {
             const count = jobs.filter(j => j.status === s).length;
@@ -442,17 +514,17 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
             return (
               <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <span style={{ width: 80, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: col.color || '#555' }}>{s}</span>
-                <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 4, height: 8 }}>
-                  <div style={{ width: `${pct}%`, background: col.color || '#2563eb', height: 8, borderRadius: 4 }} />
+                <div style={{ flex: 1, background: 'var(--surface-2)', borderRadius: 4, height: 8 }}>
+                  <div style={{ width: `${pct}%`, background: col.color || 'var(--primary)', height: 8, borderRadius: 4 }} />
                 </div>
-                <span style={{ fontSize: 12, color: '#6b7280', width: 20, textAlign: 'right' }}>{count}</span>
+                <span style={{ fontSize: 12, color: 'var(--muted)', width: 20, textAlign: 'right' }}>{count}</span>
               </div>
             );
           })}
         </div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Recent Jobs</h3>
           <Btn variant="ghost" small onClick={() => setActiveTab('jobs')}>View All →</Btn>
@@ -463,9 +535,9 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
             <tbody>
               {[...jobs].sort((a,b) => (b.job_no||'').localeCompare(a.job_no||'')).slice(0,5).map(j => (
                 <tr key={j.id}>
-                  <TD style={{ fontWeight: 700, color: '#2563eb' }}>{j.job_no}</TD>
+                  <TD style={{ fontWeight: 700, color: 'var(--primary)' }}>{j.job_no}</TD>
                   <TD>{j.customer}</TD><TD>{j.description}</TD><TD>{j.type}</TD>
-                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151' }}>{j.due_date}</TD>
+                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : 'var(--ink-2)' }}>{j.due_date}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
                   <TD><Badge text={j.status} /></TD>
                 </tr>
@@ -476,11 +548,11 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
       </div>
 
       {lowStock.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #fca5a5', borderRadius: 8, padding: 20 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid #fca5a5', borderRadius: 8, padding: 20 }}>
           <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#dc2626' }}>⚠️ Low Stock Alerts</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {lowStock.map(i => (
-              <div key={i.id} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '6px 12px', fontSize: 12 }}>
+              <div key={i.id} style={{ background: 'var(--red-bg)', border: '1px solid var(--red-line)', borderRadius: 6, padding: '6px 12px', fontSize: 12 }}>
                 <strong>{i.name}</strong> — {i.quantity} {i.unit} left (reorder at {i.reorder_point})
               </div>
             ))}
@@ -606,18 +678,18 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Job Management</h2>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search…" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search…" style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '7px 10px', fontSize: 13 }} />
           <Btn onClick={openNew}>+ New Job</Btn>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
         {['all', ...JOB_STATUSES].map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', background: filter === s ? '#2563eb' : '#fff', color: filter === s ? '#fff' : '#6b7280', borderColor: filter === s ? '#2563eb' : '#e5e7eb' }}>
+          <button key={s} onClick={() => setFilter(s)} style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize', background: filter === s ? 'var(--primary)' : '#fff', color: filter === s ? '#fff' : 'var(--muted)', borderColor: filter === s ? 'var(--primary)' : 'var(--line)' }}>
             {s === 'all' ? `All (${jobs.length})` : `${s} (${jobs.filter(j=>j.status===s).length})`}
           </button>
         ))}
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Job #','Customer','Description','Type','Assigned','Due','Price','Profit','Payment','Delivery','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
@@ -626,28 +698,28 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
               const margin = j.price > 0 ? Math.round((profit / j.price) * 100) : 0;
               return (
                 <tr key={j.id}>
-                  <TD style={{ fontWeight: 700, color: '#2563eb' }}>{j.job_no}</TD>
+                  <TD style={{ fontWeight: 700, color: 'var(--primary)' }}>{j.job_no}</TD>
                   <TD>{j.customer}</TD>
                   <TD style={{ maxWidth: 160 }}>{j.description}</TD>
                   <TD>{j.type}</TD>
-                  <TD style={{ color: '#6b7280', fontSize: 12 }}>{j.assigned_to || '—'}</TD>
-                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : '#374151' }}>{j.due_date || '—'}</TD>
+                  <TD style={{ color: 'var(--muted)', fontSize: 12 }}>{j.assigned_to || '—'}</TD>
+                  <TD style={{ color: j.due_date < todayStr() && !['completed','cancelled'].includes(j.status) ? '#dc2626' : 'var(--ink-2)' }}>{j.due_date || '—'}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
                   <TD><span style={{ fontWeight: 700, color: profit >= 0 ? '#16a34a' : '#dc2626', fontSize: 12 }}>{fmt(profit)}<br/><span style={{ fontSize: 10 }}>{margin}%</span></span></TD>
                   <TD>
                     {j.payment_method === 'Payment Not Received'
-                      ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>⏳ UNPAID</span>
+                      ? <span style={{ background: 'var(--red-bg)', color: '#dc2626', border: '1px solid var(--red-line)', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>⏳ UNPAID</span>
                       : j.payment_method === 'Partial Payment'
-                      ? <span style={{ background: '#fff3cd', color: '#92400e', border: '1px solid #fde68a', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>💸 PARTIAL</span>
-                      : <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>✓ {j.payment_method||'Cash'}</span>}
+                      ? <span style={{ background: 'var(--amber-bg)', color: '#92400e', border: '1px solid #fde68a', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>💸 PARTIAL</span>
+                      : <span style={{ background: 'var(--green-bg)', color: 'var(--green-ink)', border: '1px solid var(--green-line)', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>✓ {j.payment_method||'Cash'}</span>}
                   </TD>
                   <TD>
-                    <select value={j.delivery_status || 'pending'} onChange={e => updateField(j.id, 'delivery_status', e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: 4, padding: '3px 6px', fontSize: 11, background: DELIVERY_COLORS[j.delivery_status||'pending']?.bg, color: DELIVERY_COLORS[j.delivery_status||'pending']?.color, cursor: 'pointer', fontWeight: 700 }}>
+                    <select value={j.delivery_status || 'pending'} onChange={e => updateField(j.id, 'delivery_status', e.target.value)} style={{ border: '1px solid var(--line)', borderRadius: 4, padding: '3px 6px', fontSize: 11, background: DELIVERY_COLORS[j.delivery_status||'pending']?.bg, color: DELIVERY_COLORS[j.delivery_status||'pending']?.color, cursor: 'pointer', fontWeight: 700 }}>
                       {DELIVERY_STATUSES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </TD>
                   <TD>
-                    <select value={j.status} onChange={e => updateField(j.id, 'status', e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: 4, padding: '3px 6px', fontSize: 11, background: STATUS_COLORS[j.status]?.bg, color: STATUS_COLORS[j.status]?.color, cursor: 'pointer', fontWeight: 700 }}>
+                    <select value={j.status} onChange={e => updateField(j.id, 'status', e.target.value)} style={{ border: '1px solid var(--line)', borderRadius: 4, padding: '3px 6px', fontSize: 11, background: STATUS_COLORS[j.status]?.bg, color: STATUS_COLORS[j.status]?.color, cursor: 'pointer', fontWeight: 700 }}>
                       {JOB_STATUSES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </TD>
@@ -667,7 +739,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
                 </tr>
               );
             })}
-            {filtered.length === 0 && <tr><td colSpan={12} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No jobs found</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={12} style={{ textAlign: 'center', padding: 32, color: 'var(--faint)' }}>No jobs found</td></tr>}
           </tbody>
         </table>
       </div>
@@ -713,29 +785,29 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
               <option value="Other">Other</option>
             </Sel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Customer WhatsApp</label>
-              <select value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff' }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>Customer WhatsApp</label>
+              <select value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: 'var(--ink)', background: 'var(--surface)' }}>
                 <option value="">— Select or type below —</option>
                 {customers.filter(c => c.whatsapp || c.phone).map(c => (
                   <option key={c.id} value={c.whatsapp || c.phone}>{c.name} — {c.whatsapp || c.phone}</option>
                 ))}
               </select>
-              <input placeholder="Or type: +233..." value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 12, color: '#111', background: '#fff', marginTop: 4 }} />
+              <input placeholder="Or type: +233..." value={form.whatsapp||''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '7px 10px', fontSize: 12, color: 'var(--ink)', background: 'var(--surface)', marginTop: 4 }} />
             </div>
             <Inp label="Start Date" type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} />
             <Inp label="Due Date" type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             <Inp label="Price (GH₵)" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
             <Inp label="Est. Cost (GH₵)" type="number" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} />
             {form.price && form.cost && (
-              <div style={{ gridColumn: '1/-1', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 14px' }}>
+              <div style={{ gridColumn: '1/-1', background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '10px 14px' }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>
                   Estimated Profit: {fmt((parseFloat(form.price)||0)-(parseFloat(form.cost)||0))} ({form.price > 0 ? Math.round((((parseFloat(form.price)||0)-(parseFloat(form.cost)||0))/(parseFloat(form.price)||1))*100) : 0}% margin)
                 </span>
               </div>
             )}
             <div style={{ gridColumn: '1/-1' }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Notes</label>
-              <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Notes</label>
+              <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={3} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
@@ -749,15 +821,15 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
       {matModal && <JobMaterialsModal job={matModal} inventory={inventory} setInventory={setInventory} jobMaterials={jobMaterials.filter(m => m.job_id === matModal.id)} setJobMaterials={setJobMaterials} userId={userId} addNotif={addNotif} onClose={() => setMatModal(null)} />}
 
       {autoNotifQ.length > 0 && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 9998, width: 340 }}>
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: 20, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 9998, width: 340 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <span style={{ fontWeight: 700, fontSize: 14 }}>📲 Send Status Update?</span>
-            <button onClick={() => setAutoNotifQ([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#9ca3af' }}>×</button>
+            <button onClick={() => setAutoNotifQ([])} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--faint)' }}>×</button>
           </div>
-          <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 10px' }}>Job <strong>{autoNotifQ[0].job.job_no}</strong> → <strong>{autoNotifQ[0].job.status}</strong>. Notify {autoNotifQ[0].job.customer}?</p>
+          <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 10px' }}>Job <strong>{autoNotifQ[0].job.job_no}</strong> → <strong>{autoNotifQ[0].job.status}</strong>. Notify {autoNotifQ[0].job.customer}?</p>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => { openWhatsApp(autoNotifQ[0].phone, autoNotifQ[0].msg); setAutoNotifQ(q => q.slice(1)); addNotif(`WhatsApp sent to ${autoNotifQ[0].job.customer}`, 'success'); }} style={{ flex: 1, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Send WhatsApp</button>
-            <button onClick={() => setAutoNotifQ(q => q.slice(1))} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: '#6b7280' }}>Skip</button>
+            <button onClick={() => setAutoNotifQ(q => q.slice(1))} style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '8px 12px', cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>Skip</button>
           </div>
         </div>
       )}
@@ -815,7 +887,7 @@ function JobMaterialsModal({ job, inventory, setInventory, jobMaterials, setJobM
       </div>
       <div style={{ marginBottom: 12 }}>
         <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700 }}>Materials Used</h4>
-        {jobMaterials.length === 0 ? <p style={{ color: '#9ca3af', fontSize: 13 }}>No materials linked yet</p> : (
+        {jobMaterials.length === 0 ? <p style={{ color: 'var(--faint)', fontSize: 13 }}>No materials linked yet</p> : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Item','Qty','Unit Cost','Total',''].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
             <tbody>
@@ -830,7 +902,7 @@ function JobMaterialsModal({ job, inventory, setInventory, jobMaterials, setJobM
           </table>
         )}
       </div>
-      {jobMaterials.length > 0 && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 14px' }}><span style={{ fontWeight: 700, color: '#16a34a' }}>Total Material Cost: {fmt(totalCost)}</span></div>}
+      {jobMaterials.length > 0 && <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '10px 14px' }}><span style={{ fontWeight: 700, color: '#16a34a' }}>Total Material Cost: {fmt(totalCost)}</span></div>}
       <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}><Btn variant="ghost" onClick={onClose}>Close</Btn></div>
     </Modal>
   );
@@ -860,18 +932,18 @@ function WhatsAppMsgModal({ job, customers, onClose }) {
     <Modal title="📲 WhatsApp Message" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Select from Contacts</label>
-          <select value={phone} onChange={e => setPhone(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff' }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>Select from Contacts</label>
+          <select value={phone} onChange={e => setPhone(e.target.value)} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: 'var(--ink)', background: 'var(--surface)' }}>
             <option value="">— Pick a contact —</option>
             {(customers||[]).filter(c => c.whatsapp || c.phone).map(c => (
               <option key={c.id} value={c.whatsapp || c.phone}>{c.name} — {c.whatsapp || c.phone}</option>
             ))}
           </select>
-          <input placeholder="Or type number: +233..." value={phone} onChange={e => setPhone(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13, marginTop: 4 }} />
+          <input placeholder="Or type number: +233..." value={phone} onChange={e => setPhone(e.target.value)} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '7px 10px', fontSize: 13, marginTop: 4 }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Message Type</label>
-          <select value={msgType} onChange={e => handleMsgType(e.target.value)} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: '#111', background: '#fff' }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>Message Type</label>
+          <select value={msgType} onChange={e => handleMsgType(e.target.value)} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '8px 10px', fontSize: 13, color: 'var(--ink)', background: 'var(--surface)' }}>
             <option value="ready">✅ Job Ready for Pickup</option>
             {JOB_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)} notification</option>)}
             <option value="payment_reminder">💳 Payment Reminder</option>
@@ -879,11 +951,11 @@ function WhatsAppMsgModal({ job, customers, onClose }) {
           </select>
         </div>
         <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message</label>
-          <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={8} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Message</label>
+          <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={8} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
-          <button onClick={() => navigator.clipboard.writeText(msg)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
+          <button onClick={() => navigator.clipboard.writeText(msg)} style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
           <div style={{ display: 'flex', gap: 8 }}>
             <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
             <button onClick={() => { if (phone) openWhatsApp(phone, msg); else alert('Select or enter a phone number first.'); }} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>Open in WhatsApp</button>
@@ -1018,7 +1090,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Customer CRM</h2>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search name, phone, email…" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '7px 10px', fontSize: 13, minWidth: 180 }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search name, phone, email…" style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '7px 10px', fontSize: 13, minWidth: 180 }} />
           <Btn onClick={() => { setForm(EMPTY_CX); setEditId(null); setModal(true); }}>+ Add Customer</Btn>
           <label style={{ background: '#16a34a', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: 6, cursor: importing ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', opacity: importing ? 0.6 : 1 }}>
             {importing ? 'Importing…' : '📥 Import CSV'}
@@ -1028,18 +1100,18 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
           {customers.length > 0 && <Btn variant="danger" onClick={delAll}>🗑️ Delete All</Btn>}
         </div>
       </div>
-      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 14px', marginBottom: 16, fontSize: 12, color: '#15803d' }}>
-        📥 <strong>CSV Import:</strong> Your file needs a <strong>name</strong> column. Optional: email, phone, whatsapp, address. <button onClick={downloadTemplate} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 12, fontWeight: 700, padding: 0 }}>Download template →</button>
+      <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '8px 14px', marginBottom: 16, fontSize: 12, color: 'var(--green-ink)' }}>
+        📥 <strong>CSV Import:</strong> Your file needs a <strong>name</strong> column. Optional: email, phone, whatsapp, address. <button onClick={downloadTemplate} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: 12, fontWeight: 700, padding: 0 }}>Download template →</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total Customers" value={customers.length} accent="#2563eb" />
+        <StatCard label="Total Customers" value={customers.length} accent="var(--primary)" />
         <StatCard label="With WhatsApp"   value={customers.filter(c=>c.whatsapp||c.phone).length} accent="#25D366" />
         <StatCard label="Outstanding"     value={fmt(invoices.filter(i=>i.status!=='paid').reduce((a,i)=>a+(i.amount-i.paid),0))} accent="#dc2626" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: selected ? '1fr 380px' : '1fr', gap: 20 }}>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Name','Email','Phone','WhatsApp','Jobs','Revenue','Outstanding','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
             <tbody>
@@ -1049,9 +1121,9 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
                 const cOwed = invoices.filter(i => i.customer_id === c.id && i.status !== 'paid').reduce((a,i) => a+(i.amount-i.paid), 0);
                 const wa    = c.whatsapp || c.phone || '';
                 return (
-                  <tr key={c.id} onClick={() => setSelected(selected?.id === c.id ? null : c)} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selected?.id === c.id ? '#eff6ff' : 'transparent' }}>
+                  <tr key={c.id} onClick={() => setSelected(selected?.id === c.id ? null : c)} style={{ borderBottom: '1px solid var(--line-soft)', cursor: 'pointer', background: selected?.id === c.id ? '#eff6ff' : 'transparent' }}>
                     <TD style={{ fontWeight: 600 }}>{c.name}</TD>
-                    <TD style={{ color: '#6b7280', fontSize: 12 }}>{c.email || '—'}</TD>
+                    <TD style={{ color: 'var(--muted)', fontSize: 12 }}>{c.email || '—'}</TD>
                     <TD style={{ fontSize: 12 }}>{c.phone || '—'}</TD>
                     <TD>
                       {wa ? (
@@ -1070,35 +1142,35 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
                   </tr>
                 );
               })}
-              {filtered.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No customers found</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--faint)' }}>No customers found</td></tr>}
             </tbody>
           </table>
         </div>
 
         {selected && (
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{selected.name}</h3>
-              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 20 }}>×</button>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 20 }}>×</button>
             </div>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>📧 {selected.email || 'No email'}</p>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 3px' }}>📞 {selected.phone || 'No phone'}</p>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 6px' }}>💬 WhatsApp: {selected.whatsapp || selected.phone || 'Not set'}</p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 3px' }}>📧 {selected.email || 'No email'}</p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 3px' }}>📞 {selected.phone || 'No phone'}</p>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 6px' }}>💬 WhatsApp: {selected.whatsapp || selected.phone || 'Not set'}</p>
             {(selected.whatsapp || selected.phone) && (
               <button onClick={() => openWhatsApp(selected.whatsapp || selected.phone, `Hi ${selected.name}! This is Bigbiney Printing Press.`)} style={{ background: '#25D366', border: 'none', color: '#fff', borderRadius: 4, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'block', width: '100%' }}>
                 💬 Open WhatsApp
               </button>
             )}
-            <button onClick={() => printStatement(selected)} style={{ background: '#2563eb', border: 'none', color: '#fff', borderRadius: 4, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 10, display: 'block', width: '100%' }}>
+            <button onClick={() => printStatement(selected)} style={{ background: 'var(--primary)', border: 'none', color: '#fff', borderRadius: 4, padding: '6px 12px', cursor: 'pointer', fontSize: 12, fontWeight: 700, marginBottom: 10, display: 'block', width: '100%' }}>
               🖨️ Print Statement
             </button>
-            <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 16px' }}>📍 {selected.address || 'No address'}</p>
-            <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#6b7280', marginBottom: 8 }}>Job History</h4>
+            <p style={{ fontSize: 12, color: 'var(--muted)', margin: '0 0 16px' }}>📍 {selected.address || 'No address'}</p>
+            <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 8 }}>Job History</h4>
             {jobs.filter(j => j.customer_id === selected.id).map(j => (
-              <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#f8fafc', borderRadius: 6, marginBottom: 6 }}>
+              <div key={j.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--bg)', borderRadius: 6, marginBottom: 6 }}>
                 <div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb' }}>{j.job_no}</span>
-                  <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 8 }}>{(j.description||'').substring(0, 28)}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>{j.job_no}</span>
+                  <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 8 }}>{(j.description||'').substring(0, 28)}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 600 }}>{fmt(j.price)}</span>
@@ -1106,7 +1178,7 @@ function CustomersTab({ customers, setCustomers, jobs, invoices, addNotif, userI
                 </div>
               </div>
             ))}
-            {jobs.filter(j => j.customer_id === selected.id).length === 0 && <p style={{ fontSize: 12, color: '#9ca3af' }}>No jobs yet</p>}
+            {jobs.filter(j => j.customer_id === selected.id).length === 0 && <p style={{ fontSize: 12, color: 'var(--faint)' }}>No jobs yet</p>}
           </div>
         )}
       </div>
@@ -1177,14 +1249,14 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
         <Btn onClick={() => { setForm(EMPTY_INV); setEditId(null); setModal(true); }}>+ Add Item</Btn>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total Items" value={inventory.length} accent="#2563eb" />
+        <StatCard label="Total Items" value={inventory.length} accent="var(--primary)" />
         <StatCard label="Stock Value" value={fmt(totalValue)} accent="#16a34a" />
         <StatCard label="Low Stock"   value={lowCount} accent={lowCount > 0 ? '#dc2626' : '#16a34a'} />
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-        {cats.map(c => <button key={c} onClick={() => setCat(c)} style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: cat === c ? '#2563eb' : '#fff', color: cat === c ? '#fff' : '#6b7280', borderColor: cat === c ? '#2563eb' : '#e5e7eb' }}>{c}</button>)}
+        {cats.map(c => <button key={c} onClick={() => setCat(c)} style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: cat === c ? 'var(--primary)' : '#fff', color: cat === c ? '#fff' : 'var(--muted)', borderColor: cat === c ? 'var(--primary)' : 'var(--line)' }}>{c}</button>)}
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Item','Category','Qty','Unit','Reorder At','Unit Cost','Value','Supplier','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
@@ -1196,15 +1268,15 @@ function InventoryTab({ inventory, setInventory, addNotif, userId }) {
                   <TD>{item.category}</TD>
                   <TD style={{ fontWeight: 700, color: low ? '#dc2626' : '#111' }}>{item.quantity}</TD>
                   <TD>{item.unit}</TD>
-                  <TD style={{ color: '#6b7280' }}>{item.reorder_point}</TD>
+                  <TD style={{ color: 'var(--muted)' }}>{item.reorder_point}</TD>
                   <TD>{fmt(item.unit_cost||0)}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(item.quantity*(item.unit_cost||0))}</TD>
-                  <TD style={{ color: '#6b7280' }}>{item.supplier}</TD>
-                  <TD>{low ? <span style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>⚠️ LOW</span> : <span style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>OK</span>}</TD>
+                  <TD style={{ color: 'var(--muted)' }}>{item.supplier}</TD>
+                  <TD>{low ? <span style={{ background: 'var(--red-bg)', color: '#dc2626', border: '1px solid var(--red-line)', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>⚠️ LOW</span> : <span style={{ background: 'var(--green-bg)', color: 'var(--green-ink)', border: '1px solid var(--green-line)', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>OK</span>}</TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                      <button onClick={() => adjust(item.id, -1)} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#dc2626' }}>−</button>
-                      <button onClick={() => adjust(item.id,  1)} style={{ background: '#dcfce7', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#16a34a' }}>+</button>
+                      <button onClick={() => adjust(item.id, -1)} style={{ background: 'var(--red-bg)', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#dc2626' }}>−</button>
+                      <button onClick={() => adjust(item.id,  1)} style={{ background: 'var(--green-bg)', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', fontWeight: 800, color: '#16a34a' }}>+</button>
                       <Btn variant="ghost"  small onClick={() => { setForm({ ...item, quantity: String(item.quantity), reorder_point: String(item.reorder_point), unit_cost: String(item.unit_cost) }); setEditId(item.id); setModal(true); }}>Edit</Btn>
                       <Btn variant="danger" small onClick={() => del(item.id)}>Del</Btn>
                     </div>
@@ -1346,20 +1418,20 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
         <Btn onClick={() => setModal(true)}>+ Create Invoice</Btn>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total Invoiced" value={fmt(invoices.reduce((a,i)=>a+i.amount,0))} accent="#2563eb" />
+        <StatCard label="Total Invoiced" value={fmt(invoices.reduce((a,i)=>a+i.amount,0))} accent="var(--primary)" />
         <StatCard label="Collected"      value={fmt(invoices.reduce((a,i)=>a+i.paid,0))}   accent="#16a34a" />
         <StatCard label="Outstanding"    value={fmt(outstanding)} accent="#dc2626" />
         <StatCard label="Overdue"        value={invoices.filter(i=>i.status!=='paid'&&i.due_date<todayStr()).length} accent="#f59e0b" />
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Invoice #','Customer','Date','Due','Amount','Paid','Balance','Status','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
             {invoices.map(inv => (
               <tr key={inv.id}>
-                <TD style={{ fontWeight: 700, color: '#2563eb' }}>{inv.invoice_no}</TD>
+                <TD style={{ fontWeight: 700, color: 'var(--primary)' }}>{inv.invoice_no}</TD>
                 <TD>{inv.customer}</TD><TD>{inv.date}</TD>
-                <TD style={{ color: inv.due_date < todayStr() && inv.status !== 'paid' ? '#dc2626' : '#374151' }}>{inv.due_date}</TD>
+                <TD style={{ color: inv.due_date < todayStr() && inv.status !== 'paid' ? '#dc2626' : 'var(--ink-2)' }}>{inv.due_date}</TD>
                 <TD style={{ fontWeight: 600 }}>{fmt(inv.amount)}</TD>
                 <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(inv.paid)}</TD>
                 <TD style={{ color: inv.amount-inv.paid > 0 ? '#dc2626' : '#16a34a', fontWeight: 600 }}>{fmt(inv.amount-inv.paid)}</TD>
@@ -1374,7 +1446,7 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
                 </TD>
               </tr>
             ))}
-            {invoices.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No invoices yet</td></tr>}
+            {invoices.length === 0 && <tr><td colSpan={9} style={{ textAlign: 'center', padding: 32, color: 'var(--faint)' }}>No invoices yet</td></tr>}
           </tbody>
         </table>
       </div>
@@ -1396,11 +1468,11 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
                 <Inp placeholder="Description" value={item.desc} onChange={e => updateItem(idx, 'desc', e.target.value)} />
                 <Inp placeholder="Qty" type="number" value={item.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} />
                 <Inp placeholder="Rate" type="number" value={item.rate} onChange={e => updateItem(idx, 'rate', e.target.value)} />
-                <button onClick={() => setForm({ ...form, items: form.items.filter((_,i) => i !== idx) })} style={{ background: '#fee2e2', border: 'none', borderRadius: 4, padding: '8px 10px', cursor: 'pointer', color: '#dc2626', fontWeight: 700 }}>×</button>
+                <button onClick={() => setForm({ ...form, items: form.items.filter((_,i) => i !== idx) })} style={{ background: 'var(--red-bg)', border: 'none', borderRadius: 4, padding: '8px 10px', cursor: 'pointer', color: '#dc2626', fontWeight: 700 }}>×</button>
               </div>
             ))}
             <Btn variant="ghost" onClick={() => setForm({ ...form, items: [...form.items, { desc: '', qty: 1, rate: '', total: 0 }] })}>+ Add Line</Btn>
-            <div style={{ textAlign: 'right', fontSize: 17, fontWeight: 800, color: '#2563eb' }}>Total: {fmt(calcTotal(form.items))}</div>
+            <div style={{ textAlign: 'right', fontSize: 17, fontWeight: 800, color: 'var(--primary)' }}>Total: {fmt(calcTotal(form.items))}</div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
             <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
@@ -1468,42 +1540,42 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Monthly Income"   value={fmt(mSales)} accent="#16a34a" />
         <StatCard label="Monthly Expenses" value={fmt(mExp)}   accent="#dc2626" />
-        <StatCard label="Monthly Profit"   value={fmt(mSales - mExp)} accent={mSales >= mExp ? '#2563eb' : '#dc2626'} />
+        <StatCard label="Monthly Profit"   value={fmt(mSales - mExp)} accent={mSales >= mExp ? 'var(--primary)' : '#dc2626'} />
         <StatCard label="All-Time Revenue" value={fmt(sales.reduce((a,s)=>a+s.amount,0))} accent="#7c3aed" />
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 16, marginBottom: 20 }}>
         <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700 }}>🗃️ Today's Cash Drawer</h3>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           {['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(method => {
             const total = sales.filter(s => s.date === todayStr() && (s.payment_method||'Cash') === method).reduce((a,s)=>a+s.amount,0);
             if (total === 0) return null;
-            return <div key={method} style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}><div style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>{fmt(total)}</div><div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{method}</div></div>;
+            return <div key={method} style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}><div style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>{fmt(total)}</div><div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{method}</div></div>;
           })}
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#2563eb' }}>{fmt(todaySales)}</div>
-            <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>Today Total</div>
+          <div style={{ background: 'var(--blue-bg)', border: '1px solid #bfdbfe', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary)' }}>{fmt(todaySales)}</div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Today Total</div>
           </div>
-          {todaySales === 0 && <span style={{ fontSize: 13, color: '#9ca3af' }}>No sales recorded today yet</span>}
+          {todaySales === 0 && <span style={{ fontSize: 13, color: 'var(--faint)' }}>No sales recorded today yet</span>}
         </div>
       </div>
 
       {pmBreakdown.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 16, marginBottom: 20 }}>
           <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700 }}>Payment Method Breakdown (All Time)</h3>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {pmBreakdown.map(p => <div key={p.method} style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 16px', textAlign: 'center' }}><div style={{ fontSize: 16, fontWeight: 800, color: '#2563eb' }}>{fmt(p.total)}</div><div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{p.method}</div></div>)}
+            {pmBreakdown.map(p => <div key={p.method} style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 16px', textAlign: 'center' }}><div style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary)' }}>{fmt(p.total)}</div><div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{p.method}</div></div>)}
           </div>
         </div>
       )}
 
       {dueRecurring.length > 0 && (
-        <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+        <div style={{ background: 'var(--amber-bg)', border: '1px solid #ffc107', borderRadius: 8, padding: 16, marginBottom: 20 }}>
           <h3 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#856404' }}>🔁 Recurring Expenses Due This Month</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {dueRecurring.map(re => (
-              <div key={re.id} style={{ background: '#fff', border: '1px solid #ffc107', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{re.category} — {fmt(re.amount)} — Day {re.day_of_month}</div></div>
+              <div key={re.id} style={{ background: 'var(--surface)', border: '1px solid #ffc107', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: 'var(--muted)' }}>{re.category} — {fmt(re.amount)} — Day {re.day_of_month}</div></div>
                 <Btn variant="warning" small onClick={() => recordRecurring(re)}>Record Now</Btn>
               </div>
             ))}
@@ -1512,8 +1584,8 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       )}
 
       {showSF && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#15803d' }}>Record Sale</h4>
+        <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--green-ink)' }}>Record Sale</h4>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <Inp label="Date" type="date" value={sf.date} onChange={e => setSf({ ...sf, date: e.target.value })} />
             <Inp label="Amount (GH₵)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} />
@@ -1527,7 +1599,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       )}
 
       {showEF && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+        <div style={{ background: 'var(--red-bg)', border: '1px solid var(--red-line)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
           <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#b91c1c' }}>Record Expense</h4>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <Inp label="Date" type="date" value={ef.date} onChange={e => setEf({ ...ef, date: e.target.value })} />
@@ -1543,7 +1615,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       )}
 
       {showRE && (
-        <div style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+        <div style={{ background: 'var(--surface-2)', border: '1px solid #c4b5fd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
           <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: '#7c3aed' }}>🔁 Manage Recurring Expenses</h4>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 14 }}>
             <Inp label="Description" value={reForm.description} onChange={e => setReForm({ ...reForm, description: e.target.value })} placeholder="e.g. Rose Salary, ECG Bill" />
@@ -1557,8 +1629,8 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
           {recurringExpenses.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {recurringExpenses.map(re => (
-                <div key={re.id} style={{ background: '#fff', border: '1px solid #c4b5fd', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{re.category} — {fmt(re.amount)} — day {re.day_of_month}</div></div>
+                <div key={re.id} style={{ background: 'var(--surface)', border: '1px solid #c4b5fd', borderRadius: 6, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div><div style={{ fontWeight: 700, fontSize: 13 }}>{re.description}</div><div style={{ fontSize: 11, color: 'var(--muted)' }}>{re.category} — {fmt(re.amount)} — day {re.day_of_month}</div></div>
                   <Btn variant="success" small onClick={() => recordRecurring(re)}>Record</Btn>
                   <Btn variant="danger"  small onClick={() => delRecurring(re.id)}>Del</Btn>
                 </div>
@@ -1569,33 +1641,33 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#15803d' }}>💚 Income ({sales.length})</h3>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', background: 'var(--green-bg)', borderBottom: '1px solid var(--green-line)' }}>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--green-ink)' }}>💚 Income ({sales.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {[...sales].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(s => (
               <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f9fafb', gap: 6 }}>
-                <span style={{ fontSize: 12, color: '#6b7280' }}>{s.date}</span>
-                {s.payment_method && <span style={{ fontSize: 10, background: '#f1f5f9', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{s.payment_method}</span>}
+                <span style={{ fontSize: 12, color: 'var(--muted)' }}>{s.date}</span>
+                {s.payment_method && <span style={{ fontSize: 10, background: 'var(--surface-2)', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{s.payment_method}</span>}
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{fmt(s.amount)}</span>
-                <button onClick={() => delSale(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>×</button>
+                <button onClick={() => delSale(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--faint)', fontSize: 16 }}>×</button>
               </div>
             ))}
           </div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', background: '#fef2f2', borderBottom: '1px solid #fecaca' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', background: 'var(--red-bg)', borderBottom: '1px solid var(--red-line)' }}>
             <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>❤️ Expenses ({expenses.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {[...expenses].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(e => (
               <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f9fafb', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#6b7280', whiteSpace: 'nowrap' }}>{e.date}</span>
-                <span style={{ fontSize: 11, background: '#f1f5f9', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{e.category}</span>
+                <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{e.date}</span>
+                <span style={{ fontSize: 11, background: 'var(--surface-2)', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{e.category}</span>
                 <span style={{ fontSize: 12, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626', whiteSpace: 'nowrap' }}>{fmt(e.amount)}</span>
-                <button onClick={() => delExp(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16 }}>×</button>
+                <button onClick={() => delExp(e.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--faint)', fontSize: 16 }}>×</button>
               </div>
             ))}
           </div>
@@ -1694,33 +1766,33 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
         </div>
       </div>
       {addingStaff && (
-        <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: 14, marginBottom: 16, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+        <div style={{ background: 'var(--sky-bg)', border: '1px solid #bae6fd', borderRadius: 8, padding: 14, marginBottom: 16, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <Inp label="New Staff Name" value={newStaff} onChange={e => setNewStaff(e.target.value)} placeholder="e.g. Kojo" />
           <Btn onClick={addStaffMember}>Add</Btn>
           <Btn variant="ghost" onClick={() => { setAddingStaff(false); setNewStaff(''); }}>Cancel</Btn>
         </div>
       )}
-      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 14px', marginBottom: 16, fontSize: 12, color: '#15803d' }}>
+      <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '8px 14px', marginBottom: 16, fontSize: 12, color: 'var(--green-ink)' }}>
         💡 Salary payments are <strong>automatically recorded as expenses</strong> and deducted from monthly income.
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total Paid (All Time)" value={fmt(totalPaid)} accent="#2563eb" />
+        <StatCard label="Total Paid (All Time)" value={fmt(totalPaid)} accent="var(--primary)" />
         <StatCard label="Paid This Month"       value={fmt(monthPaid)} accent="#16a34a" />
         <StatCard label="Staff Members"         value={staffList.length} accent="#7c3aed" />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 24 }}>
         {byStaff.map(s => (
-          <div key={s.name} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, position: 'relative' }}>
-            <button onClick={() => removeStaff(s.name)} title="Remove from staff list" style={{ position: 'absolute', top: 8, right: 8, background: '#fee2e2', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', color: '#dc2626', fontWeight: 800, fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          <div key={s.name} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 16, position: 'relative' }}>
+            <button onClick={() => removeStaff(s.name)} title="Remove from staff list" style={{ position: 'absolute', top: 8, right: 8, background: 'var(--red-bg)', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', color: '#dc2626', fontWeight: 800, fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
             <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>👤 {s.name}</div>
             <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>All time: {fmt(s.total)}</div>
-            <div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>This month: {fmt(s.paidThisMonth)}</div>
-            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>Last paid: {s.lastPaid || 'Never'}</div>
+            <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>This month: {fmt(s.paidThisMonth)}</div>
+            <div style={{ fontSize: 11, color: 'var(--faint)', marginTop: 3 }}>Last paid: {s.lastPaid || 'Never'}</div>
             <Btn small variant="primary" style={{ marginTop: 8 }} onClick={() => { setForm(f => ({ ...f, staff_name: s.name })); setModal(true); }}>+ Pay Now</Btn>
           </div>
         ))}
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Staff','Amount','Period','Date','Method','Notes','Action'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
@@ -1728,14 +1800,14 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
               <tr key={p.id}>
                 <TD style={{ fontWeight: 600 }}>👤 {p.staff_name}</TD>
                 <TD style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(p.amount)}</TD>
-                <TD style={{ color: '#6b7280' }}>{p.period || '—'}</TD>
+                <TD style={{ color: 'var(--muted)' }}>{p.period || '—'}</TD>
                 <TD>{p.date}</TD>
-                <TD><span style={{ background: '#f1f5f9', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{p.payment_method}</span></TD>
-                <TD style={{ color: '#6b7280', fontSize: 12 }}>{p.notes}</TD>
+                <TD><span style={{ background: 'var(--surface-2)', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{p.payment_method}</span></TD>
+                <TD style={{ color: 'var(--muted)', fontSize: 12 }}>{p.notes}</TD>
                 <TD><Btn variant="danger" small onClick={() => del(p.id)}>Del</Btn></TD>
               </tr>
             ))}
-            {payroll.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No payroll records yet</td></tr>}
+            {payroll.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--faint)' }}>No payroll records yet</td></tr>}
           </tbody>
         </table>
       </div>
@@ -1884,7 +1956,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
         <StatCard label="Total Borrowed" value={fmt(totalBorrowed)} accent="#dc2626" />
         <StatCard label="Total Lent Out" value={fmt(totalLent)}     accent="#f59e0b" />
-        <StatCard label="Active Loans"   value={loans.filter(l => l.paid < l.amount).length} accent="#2563eb" />
+        <StatCard label="Active Loans"   value={loans.filter(l => l.paid < l.amount).length} accent="var(--primary)" />
         <StatCard label="Today's Sales"  value={fmt(todaySales)} accent="#16a34a" sub="Available for repayment" />
       </div>
 
@@ -1901,7 +1973,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
               const alreadyRan = autoRanToday(l.id);
               const daysLeft = daily > 0 ? Math.ceil(balance / daily) : null;
               return (
-                <div key={l.id} style={{ background: '#fff', border: '2px solid #e5e7eb', borderRadius: 10, overflow: 'hidden' }}>
+                <div key={l.id} style={{ background: 'var(--surface)', border: '2px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
                   <div style={{ background: '#0f172a', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ color: '#fff', fontWeight: 800, fontSize: 15 }}>{l.name}</div>
@@ -1914,34 +1986,34 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
                     </div>
                   </div>
                   <div style={{ padding: '14px 18px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b7280', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>
                       <span>{fmt(l.paid)} paid of {fmt(l.amount)}</span>
-                      <span style={{ fontWeight: 800, color: '#2563eb' }}>{pct}%</span>
+                      <span style={{ fontWeight: 800, color: 'var(--primary)' }}>{pct}%</span>
                     </div>
-                    <div style={{ background: '#f1f5f9', borderRadius: 6, height: 12, marginBottom: 12, overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: 12, borderRadius: 6, background: 'linear-gradient(90deg, #2563eb, #16a34a)', transition: 'width 0.4s' }} />
+                    <div style={{ background: 'var(--surface-2)', borderRadius: 6, height: 12, marginBottom: 12, overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: 12, borderRadius: 6, background: 'linear-gradient(90deg, var(--primary), #16a34a)', transition: 'width 0.4s' }} />
                     </div>
                     {carryover > 0 && (
-                      <div style={{ background: '#fff3cd', border: '1px solid #fde68a', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 10, color: '#92400e', fontWeight: 600 }}>
+                      <div style={{ background: 'var(--amber-bg)', border: '1px solid #fde68a', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 10, color: '#92400e', fontWeight: 600 }}>
                         ⚠️ Carryover: <strong>{fmt(carryover)}</strong> — Due today: <strong>{fmt(dueToday)}</strong>
                       </div>
                     )}
                     {alreadyRan && (
-                      <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 10, color: '#15803d', fontWeight: 600 }}>
+                      <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 10, color: 'var(--green-ink)', fontWeight: 600 }}>
                         ✅ Daily deduction already done today
                       </div>
                     )}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       <button onClick={() => handleGetDaily(l)} disabled={alreadyRan || daily <= 0}
-                        style={{ background: alreadyRan ? '#f1f5f9' : daily > 0 ? '#2563eb' : '#e5e7eb', color: alreadyRan ? '#9ca3af' : daily > 0 ? '#fff' : '#6b7280', border: 'none', borderRadius: 8, padding: '12px 8px', cursor: alreadyRan || daily <= 0 ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        style={{ background: alreadyRan ? '#f1f5f9' : daily > 0 ? 'var(--primary)' : 'var(--line)', color: alreadyRan ? 'var(--faint)' : daily > 0 ? '#fff' : 'var(--muted)', border: 'none', borderRadius: 8, padding: '12px 8px', cursor: alreadyRan || daily <= 0 ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700 }}>
                         {alreadyRan ? '✅ Paid Today' : `💰 Deduct ${daily > 0 ? fmt(dueToday) : 'Daily'}`}
                       </button>
                       <button onClick={() => { setPayAnyModal(l); setPayAnyAmt(''); }}
-                        style={{ background: '#f0fdf4', color: '#16a34a', border: '2px solid #16a34a', borderRadius: 8, padding: '12px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        style={{ background: 'var(--green-bg)', color: '#16a34a', border: '2px solid #16a34a', borderRadius: 8, padding: '12px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
                         ✏️ Pay Any Amount
                       </button>
                       <button onClick={() => { setSetDailyModal(l); setNewDaily(String(daily || '')); }}
-                        style={{ background: '#eff6ff', color: '#2563eb', border: '2px solid #bfdbfe', borderRadius: 8, padding: '10px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700, gridColumn: '1/-1' }}>
+                        style={{ background: 'var(--blue-bg)', color: 'var(--primary)', border: '2px solid #bfdbfe', borderRadius: 8, padding: '10px 8px', cursor: 'pointer', fontSize: 12, fontWeight: 700, gridColumn: '1/-1' }}>
                         ⚙️ {daily > 0 ? `Change Daily Amount (${fmt(daily)}/day)` : 'Set Daily Repayment Amount'}
                       </button>
                     </div>
@@ -1953,7 +2025,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
         </div>
       )}
 
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, overflowX: 'auto' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Name','Type','Amount','Daily','Date','Due','Paid','Balance','Notes','Actions'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
@@ -1965,12 +2037,12 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
                   <TD style={{ fontWeight: 600 }}>{l.name}</TD>
                   <TD><span style={{ background: l.type === 'borrowed' ? '#fee2e2' : '#dcfce7', color: l.type === 'borrowed' ? '#dc2626' : '#16a34a', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{l.type === 'borrowed' ? 'Borrowed' : 'Lent'}</span></TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(l.amount)}</TD>
-                  <TD style={{ color: parseFloat(l.daily_repayment) > 0 ? '#2563eb' : '#9ca3af', fontWeight: 600 }}>{parseFloat(l.daily_repayment) > 0 ? fmt(parseFloat(l.daily_repayment)) : '—'}</TD>
+                  <TD style={{ color: parseFloat(l.daily_repayment) > 0 ? 'var(--primary)' : 'var(--faint)', fontWeight: 600 }}>{parseFloat(l.daily_repayment) > 0 ? fmt(parseFloat(l.daily_repayment)) : '—'}</TD>
                   <TD>{l.date}</TD>
-                  <TD style={{ color: overdue ? '#dc2626' : '#374151', fontWeight: overdue ? 700 : 400 }}>{l.due_date || '—'}{overdue ? ' ⚠️' : ''}</TD>
+                  <TD style={{ color: overdue ? '#dc2626' : 'var(--ink-2)', fontWeight: overdue ? 700 : 400 }}>{l.due_date || '—'}{overdue ? ' ⚠️' : ''}</TD>
                   <TD style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(l.paid)}</TD>
                   <TD style={{ fontWeight: 700, color: balance > 0 ? '#dc2626' : '#16a34a' }}>{balance > 0 ? fmt(balance) : '✓ Settled'}</TD>
-                  <TD style={{ color: '#6b7280', fontSize: 12 }}>{l.notes}</TD>
+                  <TD style={{ color: 'var(--muted)', fontSize: 12 }}>{l.notes}</TD>
                   <TD>
                     <div style={{ display: 'flex', gap: 3 }}>
                       {balance > 0 && <Btn variant="success" small onClick={() => { setPayAnyModal(l); setPayAnyAmt(''); }}>Pay</Btn>}
@@ -1981,7 +2053,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
                 </tr>
               );
             })}
-            {loans.length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: '#9ca3af' }}>No loans recorded</td></tr>}
+            {loans.length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', padding: 32, color: 'var(--faint)' }}>No loans recorded</td></tr>}
           </tbody>
         </table>
       </div>
@@ -1989,13 +2061,13 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
       {setDailyModal && (
         <Modal title={`⚙️ Set Daily Repayment — ${setDailyModal.name}`} onClose={() => { setSetDailyModal(null); setNewDaily(''); }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 14, fontSize: 13 }}>
+            <div style={{ background: 'var(--blue-bg)', border: '1px solid #bfdbfe', borderRadius: 8, padding: 14, fontSize: 13 }}>
               <div style={{ fontWeight: 700, color: '#1d4ed8' }}>Loan Balance: {fmt(setDailyModal.amount - setDailyModal.paid)}</div>
-              <div style={{ color: '#374151', marginTop: 4 }}>This amount will be deducted daily when you click "Deduct Daily".</div>
+              <div style={{ color: 'var(--ink-2)', marginTop: 4 }}>This amount will be deducted daily when you click "Deduct Daily".</div>
             </div>
             <Inp label="Daily Repayment Amount (GH₵)" type="number" value={newDaily} onChange={e => setNewDaily(e.target.value)} placeholder="e.g. 550" />
             {newDaily && parseFloat(newDaily) > 0 && (
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: 12, fontSize: 13, color: '#15803d', fontWeight: 700 }}>
+              <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: 12, fontSize: 13, color: 'var(--green-ink)', fontWeight: 700 }}>
                 At {fmt(parseFloat(newDaily))}/day → paid off in ~{Math.ceil((setDailyModal.amount - setDailyModal.paid) / parseFloat(newDaily))} days
               </div>
             )}
@@ -2010,8 +2082,8 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
       {payAnyModal && (
         <Modal title={`💳 Pay — ${payAnyModal.name}`} onClose={() => { setPayAnyModal(null); setPayAnyAmt(''); }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: 14 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>Remaining Balance: {fmt(payAnyModal.amount - payAnyModal.paid)}</div>
+            <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 8, padding: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green-ink)' }}>Remaining Balance: {fmt(payAnyModal.amount - payAnyModal.paid)}</div>
               {(pendingDebt[payAnyModal.id] || 0) > 0 && <div style={{ fontSize: 12, color: '#f59e0b', fontWeight: 700, marginTop: 4 }}>⚠️ Carryover amount: {fmt(pendingDebt[payAnyModal.id])}</div>}
             </div>
             <Inp label="Amount to Pay (GH₵)" type="number" value={payAnyAmt} onChange={e => setPayAnyAmt(e.target.value)} placeholder="Enter any amount" />
@@ -2042,8 +2114,8 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
             <div style={{ gridColumn: '1/-1' }}><Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
           </div>
           {form.amount && form.daily_repayment && parseFloat(form.daily_repayment) > 0 && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '10px 14px', marginTop: 12 }}>
-              <span style={{ fontSize: 13, color: '#15803d', fontWeight: 700 }}>
+            <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '10px 14px', marginTop: 12 }}>
+              <span style={{ fontSize: 13, color: 'var(--green-ink)', fontWeight: 700 }}>
                 At {fmt(parseFloat(form.daily_repayment))}/day → paid off in ~{Math.ceil((parseFloat(form.amount)||0)/(parseFloat(form.daily_repayment)||1))} days
               </span>
             </div>
@@ -2095,24 +2167,24 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>📈 Reports & Analytics</h2>
         <div style={{ display: 'flex', gap: 6 }}>
           {[['month','This Month'],['year','This Year'],['all','All Time']].map(([val, lbl]) => (
-            <button key={val} onClick={() => setPeriod(val)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: period === val ? '#2563eb' : '#fff', color: period === val ? '#fff' : '#6b7280', borderColor: period === val ? '#2563eb' : '#e5e7eb' }}>{lbl}</button>
+            <button key={val} onClick={() => setPeriod(val)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: period === val ? 'var(--primary)' : '#fff', color: period === val ? '#fff' : 'var(--muted)', borderColor: period === val ? 'var(--primary)' : 'var(--line)' }}>{lbl}</button>
           ))}
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 24 }}>
         <StatCard label="Revenue"         value={fmt(pSales)}     accent="#16a34a" />
         <StatCard label="Expenses"        value={fmt(pExpenses)}  accent="#dc2626" />
-        <StatCard label="Net Profit"      value={fmt(pProfit)}    accent={pProfit >= 0 ? '#2563eb' : '#dc2626'} />
+        <StatCard label="Net Profit"      value={fmt(pProfit)}    accent={pProfit >= 0 ? 'var(--primary)' : '#dc2626'} />
         <StatCard label="Jobs Created"    value={pJobs.length}    accent="#7c3aed" />
         <StatCard label="Completion Rate" value={`${completionRate}%`} accent="#f59e0b" />
         <StatCard label="Avg Job Value"   value={fmt(avgJobValue)} accent="#0891b2" />
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue vs Expenses — Last 6 Months</h3>
         <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
           <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>■ Revenue</span>
           <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>■ Expenses</span>
-          <span style={{ fontSize: 11, color: '#2563eb', fontWeight: 700 }}>■ Profit</span>
+          <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 700 }}>■ Profit</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 140 }}>
           {trend.map((t, i) => (
@@ -2120,34 +2192,34 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
               <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 110 }}>
                 <div style={{ flex: 1, background: '#16a34a', borderRadius: '2px 2px 0 0', height: `${Math.max(2,Math.round((t.rev/maxTrend)*110))}px` }} title={`Revenue: ${fmt(t.rev)}`} />
                 <div style={{ flex: 1, background: '#dc2626', borderRadius: '2px 2px 0 0', height: `${Math.max(2,Math.round((t.exp/maxTrend)*110))}px` }} title={`Expenses: ${fmt(t.exp)}`} />
-                <div style={{ flex: 1, background: t.profit >= 0 ? '#2563eb' : '#f59e0b', borderRadius: '2px 2px 0 0', height: `${Math.max(2,Math.round((Math.abs(t.profit)/maxTrend)*110))}px` }} title={`Profit: ${fmt(t.profit)}`} />
+                <div style={{ flex: 1, background: t.profit >= 0 ? 'var(--primary)' : '#f59e0b', borderRadius: '2px 2px 0 0', height: `${Math.max(2,Math.round((Math.abs(t.profit)/maxTrend)*110))}px` }} title={`Profit: ${fmt(t.profit)}`} />
               </div>
-              <span style={{ fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap' }}>{t.month}</span>
+              <span style={{ fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{t.month}</span>
             </div>
           ))}
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
           <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Revenue by Job Type</h3>
-          {byType.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>No data yet</p>}
+          {byType.length === 0 && <p style={{ color: 'var(--faint)', fontSize: 13 }}>No data yet</p>}
           {byType.map(({ type, count, revenue }) => {
             const total = byType.reduce((a,x)=>a+x.revenue,0);
             const pct   = total > 0 ? Math.round((revenue/total)*100) : 0;
             return (
               <div key={type} style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
-                  <span style={{ fontWeight: 600 }}>{type} <span style={{ color: '#9ca3af' }}>({count})</span></span>
-                  <span style={{ fontWeight: 700, color: '#2563eb' }}>{fmt(revenue)} — {pct}%</span>
+                  <span style={{ fontWeight: 600 }}>{type} <span style={{ color: 'var(--faint)' }}>({count})</span></span>
+                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{fmt(revenue)} — {pct}%</span>
                 </div>
-                <div style={{ background: '#f1f5f9', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: '#2563eb', height: 8, borderRadius: 4 }} /></div>
+                <div style={{ background: 'var(--surface-2)', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: 'var(--primary)', height: 8, borderRadius: 4 }} /></div>
               </div>
             );
           })}
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
           <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Expense Breakdown</h3>
-          {expByCategory.length === 0 && <p style={{ color: '#9ca3af', fontSize: 13 }}>No expenses in this period</p>}
+          {expByCategory.length === 0 && <p style={{ color: 'var(--faint)', fontSize: 13 }}>No expenses in this period</p>}
           {expByCategory.map(({ cat, total }) => {
             const grandTotal = expByCategory.reduce((a,x)=>a+x.total,0);
             const pct = grandTotal > 0 ? Math.round((total/grandTotal)*100) : 0;
@@ -2157,20 +2229,20 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
                   <span style={{ fontWeight: 600 }}>{cat}</span>
                   <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(total)} — {pct}%</span>
                 </div>
-                <div style={{ background: '#f1f5f9', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: '#dc2626', height: 8, borderRadius: 4 }} /></div>
+                <div style={{ background: 'var(--surface-2)', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: '#dc2626', height: 8, borderRadius: 4 }} /></div>
               </div>
             );
           })}
         </div>
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20, marginBottom: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>🏆 Top Customers</h3>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Rank','Customer','Jobs','Revenue'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
             {topCustomers.map((c, i) => (
               <tr key={c.name}>
-                <TD style={{ fontWeight: 800, color: i===0?'#f59e0b':i===1?'#9ca3af':i===2?'#b45309':'#374151' }}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</TD>
+                <TD style={{ fontWeight: 800, color: i===0?'#f59e0b':i===1?'var(--faint)':i===2?'#b45309':'var(--ink-2)' }}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</TD>
                 <TD style={{ fontWeight: 600 }}>{c.name}</TD>
                 <TD>{c.jobs}</TD>
                 <TD style={{ fontWeight: 700, color: '#16a34a' }}>{fmt(c.revenue)}</TD>
@@ -2179,7 +2251,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
           </tbody>
         </table>
       </div>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
         <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Job Status Summary</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 10 }}>
           {JOB_STATUSES.map(s => {
@@ -2268,106 +2340,106 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
         <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>📲 WhatsApp Notifications</h2>
         <div style={{ display: 'flex', gap: 8 }}>
           <div style={{ background: '#25D366', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>{custsWithPhone.length} customers with phone</div>
-          <div style={{ background: '#2563eb', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>{jobsWithPhone.length} jobs with WhatsApp</div>
+          <div style={{ background: 'var(--primary)', color: '#fff', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700 }}>{jobsWithPhone.length} jobs with WhatsApp</div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-        {sections.map(s => <button key={s.id} onClick={() => setActiveSection(s.id)} style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: activeSection === s.id ? '#25D366' : '#fff', color: activeSection === s.id ? '#fff' : '#6b7280', borderColor: activeSection === s.id ? '#25D366' : '#e5e7eb' }}>{s.label}</button>)}
+        {sections.map(s => <button key={s.id} onClick={() => setActiveSection(s.id)} style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: activeSection === s.id ? '#25D366' : '#fff', color: activeSection === s.id ? '#fff' : 'var(--muted)', borderColor: activeSection === s.id ? '#25D366' : 'var(--line)' }}>{s.label}</button>)}
       </div>
 
       {activeSection === 'broadcast' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700 }}>📣 Broadcast Message</h3>
-            <p style={{ margin: '0 0 14px', fontSize: 12, color: '#6b7280' }}>Send to all customers or select specific ones. Use <code style={{ background: '#f1f5f9', padding: '1px 4px', borderRadius: 3 }}>{'{name}'}</code> to personalise.</p>
+            <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--muted)' }}>Send to all customers or select specific ones. Use <code style={{ background: 'var(--surface-2)', padding: '1px 4px', borderRadius: 3 }}>{'{name}'}</code> to personalise.</p>
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message *</label>
-              <textarea value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} rows={6} placeholder="Type your message... Use {name} for customer name" style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Message *</label>
+              <textarea value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} rows={6} placeholder="Type your message... Use {name} for customer name" style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>🎉 Festive & Quick Templates</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-2)', marginBottom: 8 }}>🎉 Festive & Quick Templates</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                {FESTIVE_TEMPLATES.map(t => <button key={t.label} onClick={() => setBroadcastMsg(t.msg)} style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 6, padding: '7px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#374151', textAlign: 'left' }}>{t.label}</button>)}
+                {FESTIVE_TEMPLATES.map(t => <button key={t.label} onClick={() => setBroadcastMsg(t.msg)} style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 6, padding: '7px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', textAlign: 'left' }}>{t.label}</button>)}
               </div>
             </div>
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Recipients ({selectedCusts.length > 0 ? selectedCusts.length : custsWithPhone.length} selected)</label>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>Recipients ({selectedCusts.length > 0 ? selectedCusts.length : custsWithPhone.length} selected)</label>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setSelectedCusts(custsWithPhone.map(c=>c.id))} style={{ fontSize: 11, background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: 700 }}>All</button>
-                  <button onClick={() => setSelectedCusts([])} style={{ fontSize: 11, background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontWeight: 700 }}>Clear</button>
+                  <button onClick={() => setSelectedCusts(custsWithPhone.map(c=>c.id))} style={{ fontSize: 11, background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 700 }}>All</button>
+                  <button onClick={() => setSelectedCusts([])} style={{ fontSize: 11, background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontWeight: 700 }}>Clear</button>
                 </div>
               </div>
-              <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
+              <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 6 }}>
                 {custsWithPhone.map(c => (
-                  <div key={c.id} onClick={() => toggleCust(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selectedCusts.includes(c.id) ? '#f0fdf4' : '#fff' }}>
+                  <div key={c.id} onClick={() => toggleCust(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderBottom: '1px solid var(--line-soft)', cursor: 'pointer', background: selectedCusts.includes(c.id) ? '#f0fdf4' : '#fff' }}>
                     <input type="checkbox" checked={selectedCusts.includes(c.id)} onChange={() => {}} style={{ accentColor: '#25D366' }} />
                     <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{c.name}</span>
-                    <span style={{ fontSize: 11, color: '#6b7280' }}>{c.whatsapp || c.phone}</span>
+                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>{c.whatsapp || c.phone}</span>
                   </div>
                 ))}
-                {custsWithPhone.length === 0 && <p style={{ textAlign: 'center', padding: 16, color: '#9ca3af', fontSize: 13 }}>No customers with phone numbers</p>}
+                {custsWithPhone.length === 0 && <p style={{ textAlign: 'center', padding: 16, color: 'var(--faint)', fontSize: 13 }}>No customers with phone numbers</p>}
               </div>
             </div>
-            {sending && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#15803d', fontWeight: 700 }}>📲 Sending… {sentCount} / {selectedCusts.length || custsWithPhone.length}</div>}
-            <button onClick={sendBroadcast} disabled={sending || !broadcastMsg.trim()} style={{ width: '100%', background: sending ? '#9ca3af' : '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '12px', cursor: sending ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>
+            {sending && <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: 'var(--green-ink)', fontWeight: 700 }}>📲 Sending… {sentCount} / {selectedCusts.length || custsWithPhone.length}</div>}
+            <button onClick={sendBroadcast} disabled={sending || !broadcastMsg.trim()} style={{ width: '100%', background: sending ? 'var(--faint)' : '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '12px', cursor: sending ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>
               📲 Send to {selectedCusts.length > 0 ? selectedCusts.length : custsWithPhone.length} Customer{(selectedCusts.length || custsWithPhone.length) !== 1 ? 's' : ''}
             </button>
           </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Message Preview</h3>
-            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 120 }}>
+            <div style={{ background: '#dcf8c6', color: '#111', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 120 }}>
               {broadcastMsg
                 ? broadcastMsg.replace(/{name}/gi, custsWithPhone[0]?.name || 'Customer Name')
-                : <span style={{ color: '#9ca3af' }}>Type a message to preview it here…</span>}
+                : <span style={{ color: 'var(--faint)' }}>Type a message to preview it here…</span>}
             </div>
-            {broadcastMsg && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Preview shows first customer's name. Each recipient gets their own name.</p>}
-            {broadcastMsg && <button onClick={() => navigator.clipboard.writeText(broadcastMsg)} style={{ marginTop: 8, width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>📋 Copy Message</button>}
+            {broadcastMsg && <p style={{ fontSize: 11, color: 'var(--faint)', marginTop: 6 }}>Preview shows first customer's name. Each recipient gets their own name.</p>}
+            {broadcastMsg && <button onClick={() => navigator.clipboard.writeText(broadcastMsg)} style={{ marginTop: 8, width: '100%', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>📋 Copy Message</button>}
           </div>
         </div>
       )}
 
       {activeSection === 'notifications' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Select Template & Jobs</h3>
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Message Template</label>
-              <select value={notifTemplate} onChange={e => { setNotifTemplate(e.target.value); setPreviewMsg(''); }} style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%' }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 6 }}>Message Template</label>
+              <select value={notifTemplate} onChange={e => { setNotifTemplate(e.target.value); setPreviewMsg(''); }} style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '8px 10px', fontSize: 13, width: '100%' }}>
                 {JOB_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)} notification</option>)}
               </select>
             </div>
             <div style={{ marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Select Jobs</label>
-                <button onClick={() => setSelectedJobs(jobsWithPhone.map(j=>j.id))} style={{ fontSize: 11, background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: 700 }}>Select All</button>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)' }}>Select Jobs</label>
+                <button onClick={() => setSelectedJobs(jobsWithPhone.map(j=>j.id))} style={{ fontSize: 11, background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 700 }}>Select All</button>
               </div>
-              <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}>
+              <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 6 }}>
                 {jobsWithPhone.map(j => (
-                  <div key={j.id} onClick={() => { toggleJob(j.id); handlePreview(j.id); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selectedJobs.includes(j.id) ? '#f0fdf4' : '#fff' }}>
+                  <div key={j.id} onClick={() => { toggleJob(j.id); handlePreview(j.id); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderBottom: '1px solid var(--line-soft)', cursor: 'pointer', background: selectedJobs.includes(j.id) ? '#f0fdf4' : '#fff' }}>
                     <input type="checkbox" checked={selectedJobs.includes(j.id)} onChange={() => {}} style={{ accentColor: '#25D366' }} />
-                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{j.job_no} — {j.customer}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{j.whatsapp} · {j.status}</div></div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 700 }}>{j.job_no} — {j.customer}</div><div style={{ fontSize: 11, color: 'var(--muted)' }}>{j.whatsapp} · {j.status}</div></div>
                     <Badge text={j.status} />
                   </div>
                 ))}
-                {jobsWithPhone.length === 0 && <p style={{ textAlign: 'center', padding: 20, color: '#9ca3af', fontSize: 13 }}>No jobs with WhatsApp numbers yet. Add WhatsApp number when creating a job.</p>}
+                {jobsWithPhone.length === 0 && <p style={{ textAlign: 'center', padding: 20, color: 'var(--faint)', fontSize: 13 }}>No jobs with WhatsApp numbers yet. Add WhatsApp number when creating a job.</p>}
               </div>
             </div>
             <button onClick={sendBulk} style={{ width: '100%', background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '11px', cursor: 'pointer', fontSize: 14, fontWeight: 700, marginTop: 8 }}>
               📲 Send to {selectedJobs.length} Customer{selectedJobs.length !== 1 ? 's' : ''}
             </button>
           </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Message Preview</h3>
-            {previewMsg ? <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{previewMsg}</div> : <div style={{ background: '#f8fafc', border: '2px dashed #e5e7eb', borderRadius: 8, padding: 30, textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>Click a job to preview the message</div>}
-            {previewMsg && <button onClick={() => navigator.clipboard.writeText(previewMsg)} style={{ marginTop: 10, width: '100%', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>📋 Copy</button>}
+            {previewMsg ? <div style={{ background: '#dcf8c6', color: '#111', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{previewMsg}</div> : <div style={{ background: 'var(--bg)', border: '2px dashed var(--line)', borderRadius: 8, padding: 30, textAlign: 'center', color: 'var(--faint)', fontSize: 13 }}>Click a job to preview the message</div>}
+            {previewMsg && <button onClick={() => navigator.clipboard.writeText(previewMsg)} style={{ marginTop: 10, width: '100%', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '8px', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>📋 Copy</button>}
           </div>
         </div>
       )}
 
       {activeSection === 'summary' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Send Business Summary</h3>
             <Inp label="Send to (WhatsApp number)" value={summaryPhone} onChange={e => setSummaryPhone(e.target.value)} placeholder="+233..." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
@@ -2375,49 +2447,49 @@ function WhatsAppTab({ jobs, customers, sales, expenses, invoices, addNotif }) {
               <button onClick={() => openWhatsApp(summaryPhone, generateWeeklySummaryMsg(sales, expenses, jobs))} style={{ background: '#1a9e50', border: 'none', color: '#fff', borderRadius: 8, padding: '14px', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>📅 Send Weekly Summary</button>
             </div>
           </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Daily Summary Preview</h3>
-            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 12, lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: 400, overflowY: 'auto' }}>{generateDailySummaryMsg(sales, expenses, jobs, invoices)}</div>
+            <div style={{ background: '#dcf8c6', color: '#111', borderRadius: 10, padding: 16, fontSize: 12, lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: 400, overflowY: 'auto' }}>{generateDailySummaryMsg(sales, expenses, jobs, invoices)}</div>
           </div>
         </div>
       )}
 
       {activeSection === 'custom' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Send to Single Number</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Inp label="Phone Number" placeholder="+233..." value={customPhone} onChange={e => setCustomPhone(e.target.value)} />
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Message</label>
-                <textarea value={customMsg} onChange={e => setCustomMsg(e.target.value)} rows={8} placeholder="Type your message here..." style={{ border: '1px solid #d1d5db', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: 4 }}>Message</label>
+                <textarea value={customMsg} onChange={e => setCustomMsg(e.target.value)} rows={8} placeholder="Type your message here..." style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '10px', fontSize: 13, width: '100%', boxSizing: 'border-box', resize: 'vertical' }} />
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => navigator.clipboard.writeText(customMsg)} style={{ flex: 1, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
+                <button onClick={() => navigator.clipboard.writeText(customMsg)} style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>📋 Copy</button>
                 <button onClick={() => { if (customPhone && customMsg) openWhatsApp(customPhone, customMsg); else alert('Enter a phone number and message.'); }} style={{ flex: 2, background: '#25D366', border: 'none', color: '#fff', borderRadius: 6, padding: '9px', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>📲 Open in WhatsApp</button>
               </div>
             </div>
           </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Preview</h3>
-            <div style={{ background: '#dcf8c6', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 100 }}>{customMsg || <span style={{ color: '#9ca3af' }}>Your message will appear here…</span>}</div>
+            <div style={{ background: '#dcf8c6', color: '#111', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', minHeight: 100 }}>{customMsg || <span style={{ color: 'var(--faint)' }}>Your message will appear here…</span>}</div>
           </div>
         </div>
       )}
 
       {activeSection === 'missing' && (
-        <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: 20 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
           <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 700 }}>⚠️ Jobs Missing WhatsApp Numbers</h3>
-          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6b7280' }}>{jobsWithoutPhone.length} active job(s) don't have a WhatsApp number. Edit the job and add the customer's WhatsApp to enable notifications.</p>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--muted)' }}>{jobsWithoutPhone.length} active job(s) don't have a WhatsApp number. Edit the job and add the customer's WhatsApp to enable notifications.</p>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Job #','Customer','Status','Due Date','Price'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
             <tbody>
               {jobsWithoutPhone.map(j => (
                 <tr key={j.id}>
-                  <TD style={{ fontWeight: 700, color: '#2563eb' }}>{j.job_no}</TD>
+                  <TD style={{ fontWeight: 700, color: 'var(--primary)' }}>{j.job_no}</TD>
                   <TD>{j.customer}</TD>
                   <TD><Badge text={j.status} /></TD>
-                  <TD style={{ color: j.due_date < todayStr() ? '#dc2626' : '#374151' }}>{j.due_date || '—'}</TD>
+                  <TD style={{ color: j.due_date < todayStr() ? '#dc2626' : 'var(--ink-2)' }}>{j.due_date || '—'}</TD>
                   <TD style={{ fontWeight: 600 }}>{fmt(j.price)}</TD>
                 </tr>
               ))}
