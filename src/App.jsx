@@ -176,6 +176,16 @@ table{border-collapse:collapse}
 .d-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}.d-filters .fld{min-width:150px;flex:1}
 .d-tot td{font-weight:800;background:var(--surface-2)}
 @media print{.side,.top,.bottom,.d-noprint{display:none!important}.main{padding:0}}
+
+.sm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.sm-sec{font-weight:800;font-size:13px;margin:14px 0 8px;padding-top:12px;border-top:1px solid var(--line-soft)}
+.sm-item{display:grid;grid-template-columns:minmax(0,3fr) 70px 100px 100px 30px;gap:8px;align-items:center;margin-bottom:8px}
+.sm-item b{text-align:right;font-size:13px}.sm-head{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.sm-x{border:0;background:var(--surface-2);color:var(--muted);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:16px}.sm-x:hover{background:var(--red-bg);color:var(--red-ink)}
+.sm-sum{background:var(--surface-2);border-radius:12px;padding:10px 14px;margin-top:10px}
+.rcpt{background:var(--surface-2);border-radius:12px;padding:14px;font-size:13px}.rcpt hr{border:0;border-top:1px dashed var(--line);margin:8px 0}
+.rcpt-h{text-align:center;margin-bottom:10px;line-height:1.5}.rcpt-h b{font-size:16px}
+@media (max-width:640px){.sm-grid{grid-template-columns:minmax(0,1fr)}.sm-item{grid-template-columns:minmax(0,1fr) 56px 84px 30px}.sm-item b,.sm-head span:nth-child(4){display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -235,6 +245,7 @@ export default function PrintingPressSystem() {
   const [jobMaterials,      setJobMaterials]      = useState([]);
   const [notifs,            setNotifs]            = useState([]);
   const [monthlyGoal,       setMonthlyGoalState]  = useState(0);
+  const [branches,          setBranches]          = useState([]);
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('theme') || 'auto'; } catch { return 'auto'; } });
   const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => {
@@ -256,18 +267,20 @@ export default function PrintingPressSystem() {
 
   const loadAllData = useCallback(async (userId) => {
     setLoading(true);
-    const [c, j, inv, inv2, s, e, l, p, re, jm, goalRes] = await Promise.all([
+    const [c, j, inv, inv2, s, e, l, p, re, jm, goalRes, brRes] = await Promise.all([
       db.getCustomers(userId), db.getJobs(userId), db.getInventory(userId),
       db.getInvoices(userId), db.getSales(userId), db.getExpenses(userId),
       db.getLoans(userId), db.getPayroll(userId),
       db.getRecurringExpenses(userId), db.getJobMaterials(userId),
       db.getSetting(userId, 'monthly_goal'),
+      db.getSetting(userId, 'branches'),
     ]);
     setCustomers(c.data); setJobs(j.data); setInventory(inv.data);
     setInvoices((inv2.data||[]).map(i => ({ ...i, items: i.items ? (typeof i.items === 'string' ? JSON.parse(i.items) : i.items) : null }))); setSales(s.data); setExpenses(e.data);
     setLoans(l.data); setPayroll(p.data);
     setRecurringExpenses(re.data); setJobMaterials(jm.data);
     if (goalRes && goalRes.data) setMonthlyGoalState(parseFloat(goalRes.data.value) || 0);
+    if (brRes && brRes.data?.value) { try { setBranches(JSON.parse(brRes.data.value)); } catch {} }
     setLoading(false);
   }, []);
 
@@ -291,6 +304,7 @@ export default function PrintingPressSystem() {
   }, [currentUser]);
 
   const addNotif = (message, type = 'info') => setNotifs(n => [{ id: Date.now(), type, message, read: false }, ...n.slice(0, 19)]);
+  const saveBranches = async (list) => { setBranches(list); await db.setSetting(currentUser.id, 'branches', JSON.stringify(list)); };
   const saveGoal = async (val) => { setMonthlyGoalState(val); await db.setSetting(currentUser.id, 'monthly_goal', String(val)); };
 
   const handleLogin = async () => {
@@ -343,6 +357,7 @@ export default function PrintingPressSystem() {
     { id: 'inventory', label: '📦 Inventory' },
     { id: 'invoices',  label: '🧾 Invoices' },
     { id: 'finance',   label: '💰 Finance' },
+    { id: 'branches',  label: '🏬 Branches' },
     { id: 'payroll',   label: '👷 Payroll' },
     { id: 'loans',     label: '🏦 Loans' },
     { id: 'reports',   label: '📈 Reports' },
@@ -404,10 +419,11 @@ export default function PrintingPressSystem() {
         {activeTab === 'customers' && <CustomersTab customers={customers} setCustomers={setCustomers} jobs={jobs} invoices={invoices} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'inventory' && <InventoryTab inventory={inventory} setInventory={setInventory} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'invoices'  && <InvoicesTab invoices={invoices} setInvoices={setInvoices} jobs={jobs} customers={customers} setSales={setSales} addNotif={addNotif} userId={currentUser.id} />}
-        {activeTab === 'finance'   && <FinanceTab sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
+        {activeTab === 'finance'   && <FinanceTab customers={customers} branches={branches} sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
+        {activeTab === 'branches'  && <BranchesTab branches={branches} saveBranches={saveBranches} sales={sales} setSales={setSales} expenses={expenses} customers={customers} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'payroll'   && <PayrollTab payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} expenses={expenses} setExpenses={setExpenses} />}
         {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} sales={sales} expenses={expenses} setExpenses={setExpenses} />}
-        {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} loans={loans} payroll={payroll} />}
+        {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} loans={loans} payroll={payroll} branches={branches} />}
         {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
         </main>
       </div>
@@ -1663,9 +1679,168 @@ const BarList = ({ rows }) => rows.length === 0 ? <p className="muted" style={{ 
   <div key={r.label} className="d-bar"><span className="ellip">{r.label}</span><div><i style={{ width: `${r.pct}%`, background: r.color || 'var(--primary)' }} /></div><b>{r.right}</b></div>
 ));
 
-function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, recurringExpenses, setRecurringExpenses }) {
+/* ───────────── SALES: popup + receipt ───────────── */
+const PAY_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Credit', 'Partial Payment', 'Other'];
+const QUICK_ITEMS = ['Printing', 'Photocopy', 'Banner', 'T-shirt', 'Business cards', 'Flyers', 'Lamination', 'Binding'];
+const parseItems = (x) => { if (!x) return []; if (Array.isArray(x)) return x; try { return JSON.parse(x) || []; } catch { return []; } };
+const escHtml = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const printReceipt = (sale, branch) => {
+  const items = parseItems(sale.items);
+  const total = sale.total ?? sale.amount;
+  const lines = (items.length ? items : [{ desc: sale.description || 'Sale', qty: 1, price: total }])
+    .map(i => `<tr><td>${escHtml(i.desc)}<br><small>${i.qty} × ${fmt(i.price)}</small></td><td style="text-align:right">${fmt(i.qty * i.price)}</td></tr>`).join('');
+  const w = window.open('', '_blank', 'width=380,height=640');
+  if (!w) { alert('Please allow pop-ups to print the receipt.'); return; }
+  w.document.write(`<html><head><title>${escHtml(sale.receipt_no || 'Receipt')}</title><style>body{font:13px system-ui,sans-serif;padding:16px;max-width:320px;margin:auto}h3,p{margin:2px 0;text-align:center}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:5px 0;border-bottom:1px dashed #bbb}.t td{border:0;font-weight:700}small{color:#666}</style></head><body>
+<h3>Bigbiney Printing Press</h3><p>${escHtml(branch?.name || sale.branch || '')}</p>${branch?.address ? `<p>${escHtml(branch.address)}</p>` : ''}${branch?.phone ? `<p>Tel: ${escHtml(branch.phone)}</p>` : ''}
+<p style="margin-top:8px"><b>${escHtml(sale.receipt_no || '')}</b> · ${escHtml(sale.date)}</p><p>Customer: ${escHtml(sale.customer || 'Walk-in')}</p>
+<table>${lines}
+${sale.discount > 0 ? `<tr class="t"><td>Discount</td><td style="text-align:right">-${fmt(sale.discount)}</td></tr>` : ''}
+<tr class="t"><td>Total</td><td style="text-align:right">${fmt(total)}</td></tr>
+<tr class="t"><td>Paid (${escHtml(sale.payment_method || '')})</td><td style="text-align:right">${fmt(sale.amount)}</td></tr>
+${sale.balance > 0 ? `<tr class="t"><td>Balance due</td><td style="text-align:right">${fmt(sale.balance)}</td></tr>` : ''}</table>
+${sale.reference ? `<p>Ref: ${escHtml(sale.reference)}</p>` : ''}<p style="margin-top:12px">Thank you for your business!</p></body></html>`);
+  w.document.close(); w.focus(); setTimeout(() => w.print(), 300);
+};
+
+function SaleReceipt({ sale, branch, customers = [], onClose, onNew }) {
+  const items = parseItems(sale.items);
+  const total = sale.total ?? sale.amount;
+  const rows = items.length ? items : [{ desc: sale.description || 'Sale', qty: 1, price: total }];
+  const cx = customers.find(c => c.name === sale.customer);
+  const phone = cx?.whatsapp || cx?.phone;
+  const msg = `🧾 *Bigbiney Printing Press*${branch?.name ? ` — ${branch.name}` : ''}\nReceipt ${sale.receipt_no || ''} · ${sale.date}\n\n${rows.map(i => `• ${i.desc}: ${i.qty} × ${fmt(i.price)} = ${fmt(i.qty * i.price)}`).join('\n')}\n\nTotal: ${fmt(total)}\nPaid: ${fmt(sale.amount)}${sale.balance > 0 ? `\nBalance due: ${fmt(sale.balance)}` : ''}\n\nThank you! 🙏`;
+  return (
+    <Modal title={`🧾 Receipt ${sale.receipt_no || ''}`} onClose={onClose}>
+      <div className="rcpt">
+        <div className="rcpt-h"><b>Bigbiney Printing Press</b><div>{branch?.name || sale.branch}{branch?.address ? ` · ${branch.address}` : ''}</div>{branch?.phone && <div>☎ {branch.phone}</div>}</div>
+        <div className="ln-r"><span>Date</span><b>{sale.date}</b></div>
+        <div className="ln-r"><span>Customer</span><b>{sale.customer || 'Walk-in'}</b></div>
+        {sale.received_by && <div className="ln-r"><span>Served by</span><b>{sale.received_by}</b></div>}
+        <hr />
+        {rows.map((i, k) => <div key={k} className="ln-r"><span>{i.desc} <span className="muted">{i.qty} × {fmt(i.price)}</span></span><b>{fmt(i.qty * i.price)}</b></div>)}
+        <hr />
+        {sale.discount > 0 && <div className="ln-r"><span>Discount</span><b>−{fmt(sale.discount)}</b></div>}
+        <div className="ln-r"><span>Total</span><b>{fmt(total)}</b></div>
+        <div className="ln-r"><span>Paid ({sale.payment_method})</span><b style={{ color: 'var(--green-ink)' }}>{fmt(sale.amount)}</b></div>
+        {sale.balance > 0 && <div className="ln-r"><span>Balance due</span><b style={{ color: 'var(--red-ink)' }}>{fmt(sale.balance)}</b></div>}
+        {sale.reference && <div className="ln-r"><span>Reference</span><b>{sale.reference}</b></div>}
+        {sale.notes && <div className="muted" style={{ marginTop: 6 }}>📝 {sale.notes}</div>}
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+        <Btn onClick={() => printReceipt(sale, branch)}>🖨️ Print</Btn>
+        <Btn variant="success" disabled={!phone} onClick={() => openWhatsApp(phone, msg)}>{phone ? '📲 Send via WhatsApp' : '📲 No customer phone'}</Btn>
+        {onNew && <Btn variant="ghost" onClick={onNew}>+ New sale</Btn>}
+        <Btn variant="ghost" onClick={onClose}>Close</Btn>
+      </div>
+    </Modal>
+  );
+}
+
+function SaleModal({ onClose, customers = [], branches = [], defaultBranch, userId, sales, setSales, addNotif }) {
+  const brs = branches.length ? branches : [{ name: 'Main Branch' }];
+  const blank = { date: todayStr(), branch: defaultBranch || brs[0].name, customer: '', payment_method: 'Cash', reference: '', received_by: '', notes: '', discount: '' };
+  const [f, setF] = useState(blank);
+  const [items, setItems] = useState([{ desc: '', qty: 1, price: '' }]);
+  const [recv, setRecv] = useState('');
+  const [touched, setTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(null);
+
+  const subtotal = items.reduce((a, i) => a + (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0), 0);
+  const discount = Math.min(subtotal, parseFloat(f.discount) || 0);
+  const total    = subtotal - discount;
+  const received = Math.min(total, touched ? (parseFloat(recv) || 0) : total);
+  const balance  = Math.max(0, total - received);
+  const setItem  = (i, k, v) => setItems(items.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+  const addItem  = (desc = '') => setItems([...items.filter(x => x.desc || x.price), { desc, qty: 1, price: '' }]);
+  const reset = () => { setDone(null); setF({ ...blank, branch: f.branch, date: f.date }); setItems([{ desc: '', qty: 1, price: '' }]); setRecv(''); setTouched(false); };
+
+  const save = async () => {
+    const valid = items.filter(i => (parseFloat(i.price) || 0) > 0).map(i => ({ desc: i.desc.trim() || 'Sale', qty: parseFloat(i.qty) || 1, price: parseFloat(i.price) }));
+    if (!valid.length || total <= 0) { addNotif('Add at least one item with a price', 'warning'); return; }
+    setSaving(true);
+    const n = sales.filter(s => s.date === f.date).length + 1;
+    const payload = {
+      date: f.date, amount: received, job_id: null,
+      payment_method: received === 0 ? 'Credit' : f.payment_method,
+      branch: f.branch, customer: f.customer.trim() || 'Walk-in',
+      description: valid.map(i => `${i.desc} ×${i.qty}`).join(', '), items: JSON.stringify(valid),
+      discount, total, balance, reference: f.reference, received_by: f.received_by, notes: f.notes,
+      receipt_no: `RC-${f.date.replace(/-/g, '')}-${String(n).padStart(3, '0')}`,
+    };
+    const { data, error, degraded } = await db.addSale(userId, payload);
+    setSaving(false);
+    if (error) { addNotif('Could not save sale: ' + (error.message || error), 'warning'); return; }
+    if (data) setSales(prev => (prev.some(s => s.id === data.id) ? prev : [...prev, data]));
+    addNotif(`Sale of ${fmt(received)} recorded${balance > 0 ? ` (${fmt(balance)} still owed)` : ''}`, 'success');
+    if (degraded) addNotif('Saved, but branch/receipt details need the database update (run branches_setup.sql in Supabase)', 'warning');
+    setDone({ ...payload, ...(data || {}) });
+  };
+
+  if (done) return <SaleReceipt sale={done} branch={brs.find(b => b.name === done.branch)} customers={customers} onClose={onClose} onNew={reset} />;
+
+  return (
+    <Modal title="💰 Record Sale" onClose={onClose} wide>
+      <datalist id="sm-cx">{customers.slice(0, 2000).map(c => <option key={c.id} value={c.name} />)}</datalist>
+      <div className="sm-grid">
+        <Inp label="Date" type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} />
+        <Sel label="Branch" value={f.branch} onChange={e => setF({ ...f, branch: e.target.value })}>{brs.map(b => <option key={b.name}>{b.name}</option>)}</Sel>
+        <Inp label="Customer (empty = walk-in)" list="sm-cx" value={f.customer} onChange={e => setF({ ...f, customer: e.target.value })} placeholder="Walk-in customer" />
+        <Sel label="Served by" value={f.received_by} onChange={e => setF({ ...f, received_by: e.target.value })}><option value="">—</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</Sel>
+      </div>
+
+      <div className="sm-sec">Items / services</div>
+      <div className="d-chips" style={{ marginBottom: 8 }}>{QUICK_ITEMS.map(q => <button key={q} type="button" className="d-act" style={{ padding: '4px 10px', fontSize: 12, boxShadow: 'none' }} onClick={() => addItem(q)}>+ {q}</button>)}</div>
+      <div className="sm-item sm-head"><span>Description</span><span>Qty</span><span>Unit price</span><span>Total</span><span /></div>
+      {items.map((it, i) => (
+        <div key={i} className="sm-item">
+          <input placeholder="e.g. A3 colour print" value={it.desc} onChange={e => setItem(i, 'desc', e.target.value)} />
+          <input type="number" min="0" placeholder="Qty" value={it.qty} onChange={e => setItem(i, 'qty', e.target.value)} />
+          <input type="number" min="0" placeholder="0.00" value={it.price} onChange={e => setItem(i, 'price', e.target.value)} />
+          <b>{fmt((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0))}</b>
+          <button className="sm-x" aria-label="Remove item" onClick={() => setItems(items.length > 1 ? items.filter((_, j) => j !== i) : [{ desc: '', qty: 1, price: '' }])}>×</button>
+        </div>
+      ))}
+      <button className="d-link" onClick={() => addItem('')}>+ Add another item</button>
+
+      <div className="sm-sec">Payment</div>
+      <div className="sm-grid">
+        <Inp label="Discount (GH₵)" type="number" value={f.discount} onChange={e => setF({ ...f, discount: e.target.value })} />
+        <Sel label="Payment method" value={f.payment_method} onChange={e => setF({ ...f, payment_method: e.target.value })}>{PAY_METHODS.map(m => <option key={m}>{m}</option>)}</Sel>
+        <Inp label="Reference / MoMo transaction ID" value={f.reference} onChange={e => setF({ ...f, reference: e.target.value })} />
+        <div className="fld"><label>Amount received (GH₵)</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input type="number" value={touched ? recv : (total ? String(total) : '')} onChange={e => { setTouched(true); setRecv(e.target.value); }} />
+            <Btn small variant="ghost" onClick={() => { setTouched(false); setRecv(''); }}>Full</Btn>
+            <Btn small variant="ghost" onClick={() => { setTouched(true); setRecv('0'); }}>None</Btn>
+          </div>
+        </div>
+      </div>
+      <Inp label="Notes" value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Optional" />
+
+      <div className="sm-sum">
+        <div className="ln-r"><span>Subtotal</span><b>{fmt(subtotal)}</b></div>
+        {discount > 0 && <div className="ln-r"><span>Discount</span><b>−{fmt(discount)}</b></div>}
+        <div className="ln-r" style={{ fontSize: 16 }}><span>Total</span><b>{fmt(total)}</b></div>
+        <div className="ln-r"><span>Received now</span><b style={{ color: 'var(--green-ink)' }}>{fmt(received)}</b></div>
+        <div className="ln-r"><span>Balance owed by customer</span><b style={{ color: balance > 0 ? 'var(--red-ink)' : 'var(--muted)' }}>{fmt(balance)}</b></div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+        <Btn variant="success" disabled={saving} onClick={save}>{saving ? 'Saving…' : '✔ Save sale & get receipt'}</Btn>
+      </div>
+    </Modal>
+  );
+}
+
+function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, recurringExpenses, setRecurringExpenses, customers = [], branches = [] }) {
+  const [viewSale, setViewSale] = useState(null);
+  const [fBranch, setFBranch]   = useState('all');
+  const firstBranch = branches[0]?.name;
   const [sf, setSf]         = useState({ date: todayStr(), amount: '', payment_method: 'Cash' });
-  const [ef, setEf]         = useState({ date: todayStr(), category: 'Paper', description: '', amount: '' });
+  const [ef, setEf]         = useState({ date: todayStr(), category: 'Paper', description: '', amount: '', branch: branches[0]?.name || '' });
   const [showSF, setShowSF] = useState(false);
   const [showEF, setShowEF] = useState(false);
   const [showRE, setShowRE] = useState(false);
@@ -1692,8 +1867,8 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
   };
   const addExp = async () => {
     if (!ef.date || !ef.amount) return;
-    const { data, error } = await db.addExpense(userId, { date: ef.date, category: ef.category, description: ef.description, amount: parseFloat(ef.amount) });
-    if (!error) { setExpenses([...expenses, data]); setEf({ date: todayStr(), category: 'Paper', description: '', amount: '' }); setShowEF(false); addNotif(`Expense of ${fmt(ef.amount)} recorded`, 'info'); }
+    const { data, error } = await db.addExpense(userId, { date: ef.date, category: ef.category, description: ef.description, amount: parseFloat(ef.amount), branch: ef.branch || null });
+    if (!error) { setExpenses([...expenses, data]); setEf({ date: todayStr(), category: 'Paper', description: '', amount: '', branch: ef.branch }); setShowEF(false); addNotif(`Expense of ${fmt(ef.amount)} recorded`, 'info'); }
   };
   const addRecurring = async () => {
     if (!reForm.description || !reForm.amount) return;
@@ -1727,9 +1902,9 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
   const expectedCash = sales.filter(s => s.date === todayStr() && (s.payment_method || 'Cash') === 'Cash').reduce((a, s) => a + s.amount, 0);
   const monthOpts = [...new Set([...sales, ...expenses].map(x => (x.date || '').slice(0, 7)).filter(Boolean))].sort().reverse().slice(0, 24);
   const ql = q.trim().toLowerCase();
-  const fSales = sales.filter(s => (fMonth === 'all' || s.date?.startsWith(fMonth)) && (!ql || `${s.date} ${s.payment_method || 'Cash'} ${s.amount}`.toLowerCase().includes(ql)));
-  const fExp   = expenses.filter(x => (fMonth === 'all' || x.date?.startsWith(fMonth)) && (!ql || `${x.date} ${x.category} ${x.description || ''} ${x.amount}`.toLowerCase().includes(ql)));
-  const exportLedger = () => downloadCSV(`finance-${fMonth}.csv`, [['Type', 'Date', 'Category/Method', 'Description', 'Amount'], ...fSales.map(s => ['Income', s.date, s.payment_method || 'Cash', '', s.amount]), ...fExp.map(x => ['Expense', x.date, x.category, x.description, x.amount])]);
+  const fSales = sales.filter(s => (fMonth === 'all' || s.date?.startsWith(fMonth)) && (fBranch === 'all' || (s.branch || firstBranch) === fBranch) && (!ql || `${s.date} ${s.payment_method || 'Cash'} ${s.amount} ${s.customer || ''} ${s.receipt_no || ''}`.toLowerCase().includes(ql)));
+  const fExp   = expenses.filter(x => (fMonth === 'all' || x.date?.startsWith(fMonth)) && (fBranch === 'all' || (x.branch || firstBranch) === fBranch) && (!ql || `${x.date} ${x.category} ${x.description || ''} ${x.amount}`.toLowerCase().includes(ql)));
+  const exportLedger = () => downloadCSV(`finance-${fMonth}.csv`, [['Type', 'Date', 'Branch', 'Receipt', 'Customer', 'Category/Method', 'Description', 'Total', 'Amount', 'Balance'], ...fSales.map(s => ['Income', s.date, s.branch || firstBranch || '', s.receipt_no || '', s.customer || '', s.payment_method || 'Cash', s.description || '', s.total ?? s.amount, s.amount, s.balance || 0]), ...fExp.map(x => ['Expense', x.date, x.branch || firstBranch || '', '', '', x.category, x.description, x.amount, x.amount, 0])]);
 
   return (
     <div>
@@ -1823,20 +1998,8 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
         </div>
       )}
 
-      {showSF && (
-        <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 700, color: 'var(--green-ink)' }}>Record Sale</h4>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <Inp label="Date" type="date" value={sf.date} onChange={e => setSf({ ...sf, date: e.target.value })} />
-            <Inp label="Amount (GH₵)" type="number" value={sf.amount} onChange={e => setSf({ ...sf, amount: e.target.value })} />
-            <Sel label="Payment Method" value={sf.payment_method} onChange={e => setSf({ ...sf, payment_method: e.target.value })}>
-              {['Cash','Mobile Money','Bank Transfer','Credit','Partial Payment','Other'].map(m => <option key={m}>{m}</option>)}
-            </Sel>
-            <Btn variant="success" onClick={addSale}>Record</Btn>
-            <Btn variant="ghost" onClick={() => setShowSF(false)}>Cancel</Btn>
-          </div>
-        </div>
-      )}
+      {showSF && <SaleModal onClose={() => setShowSF(false)} customers={customers} branches={branches} userId={userId} sales={sales} setSales={setSales} addNotif={addNotif} />}
+      {viewSale && <SaleReceipt sale={viewSale} branch={branches.find(b => b.name === (viewSale.branch || firstBranch))} customers={customers} onClose={() => setViewSale(null)} />}
 
       {showEF && (
         <div style={{ background: 'var(--red-bg)', border: '1px solid var(--red-line)', borderRadius: 8, padding: 16, marginBottom: 16 }}>
@@ -1846,6 +2009,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
             <Sel label="Category" value={ef.category} onChange={e => setEf({ ...ef, category: e.target.value })}>
               {['Paper','Ink & Toner','Maintenance','Salaries','Utilities','Other'].map(c => <option key={c}>{c}</option>)}
             </Sel>
+            {branches.length > 0 && <Sel label="Branch" value={ef.branch} onChange={e => setEf({ ...ef, branch: e.target.value })}>{branches.map(b => <option key={b.name}>{b.name}</option>)}</Sel>}
             <Inp label="Description" value={ef.description} onChange={e => setEf({ ...ef, description: e.target.value })} />
             <Inp label="Amount (GH₵)" type="number" value={ef.amount} onChange={e => setEf({ ...ef, amount: e.target.value })} />
             <Btn variant="warning" onClick={addExp}>Record</Btn>
@@ -1883,6 +2047,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       <div className="d-card" style={{ marginBottom: 14 }}>
         <div className="d-filters">
           <Sel label="Month" value={fMonth} onChange={e => setFMonth(e.target.value)}><option value="all">All time</option>{monthOpts.map(m => <option key={m} value={m}>{m}</option>)}</Sel>
+          {branches.length > 1 && <Sel label="Branch" value={fBranch} onChange={e => setFBranch(e.target.value)}><option value="all">All branches</option>{branches.map(b => <option key={b.name}>{b.name}</option>)}</Sel>}
           <Inp label="Search" value={q} onChange={e => setQ(e.target.value)} placeholder="Category, description, method, amount…" />
           <Btn variant="ghost" onClick={exportLedger}>⬇️ Export CSV</Btn>
         </div>
@@ -1901,9 +2066,14 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {[...fSales].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(s => (
               <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f9fafb', gap: 6 }}>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>{s.date}</span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>{s.date}{s.receipt_no ? ` · ${s.receipt_no}` : ''}</div>
+                  {(s.customer || s.branch) && <div className="ellip" style={{ fontSize: 11 }}>{s.customer || 'Walk-in'}{s.branch ? ` · ${s.branch}` : ''}</div>}
+                </div>
+                {s.balance > 0 && <span className="d-tag hot">Owes {fmt(s.balance)}</span>}
                 {s.payment_method && <span style={{ fontSize: 10, background: 'var(--surface-2)', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{s.payment_method}</span>}
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#16a34a' }}>{fmt(s.amount)}</span>
+                <button onClick={() => setViewSale(s)} title="View receipt" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>🧾</button>
                 <button onClick={() => delSale(s.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--faint)', fontSize: 16 }}>×</button>
               </div>
             ))}
@@ -2417,8 +2587,143 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
     </div>
   );
 }
-function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices, loans = [], payroll = [] }) {
+/* ───────────── BRANCHES PAGE ───────────── */
+const EMPTY_BR = { name: '', address: '', phone: '', manager: '' };
+
+function BranchesTab({ branches, saveBranches, sales, setSales, expenses, customers, addNotif, userId }) {
+  const list = branches.length ? branches : [{ ...EMPTY_BR, name: 'Main Branch' }];
+  const first = list[0].name;
   const [period, setPeriod] = useState('month');
+  const [sel, setSel]       = useState(first);
+  const [modal, setModal]   = useState(null);
+  const [saleFor, setSaleFor] = useState(null);
+  const [view, setView]     = useState(null);
+  const month = getCurrentMonth(), today = todayStr();
+  const bOf = (x) => x.branch || first;
+  const inP = (d) => (period === 'all' ? true : period === 'today' ? d === today : (d || '').startsWith(month));
+  const sum = (arr) => arr.reduce((a, x) => a + Number(x.amount || 0), 0);
+
+  const stats = list.map(b => {
+    const s = sales.filter(x => bOf(x) === b.name), e = expenses.filter(x => bOf(x) === b.name);
+    const ps = s.filter(x => inP(x.date)), pe = e.filter(x => inP(x.date));
+    return { b, rev: sum(ps), exp: sum(pe), profit: sum(ps) - sum(pe), today: sum(s.filter(x => x.date === today)), count: ps.length, avg: ps.length ? sum(ps) / ps.length : 0, owed: s.reduce((a, x) => a + (x.balance || 0), 0) };
+  });
+  const totalRev = stats.reduce((a, s) => a + s.rev, 0);
+  const cur = list.find(b => b.name === sel) || list[0];
+  const selSales = sales.filter(x => bOf(x) === cur.name), selExp = expenses.filter(x => bOf(x) === cur.name);
+  const m6 = Array.from({ length: 6 }, (_, i) => { const d = new Date(new Date().getFullYear(), new Date().getMonth() - (5 - i), 1), k = monthKey(d); return { label: d.toLocaleString('en', { month: 'short' }), inc: sumAmt(selSales, s => s.date?.startsWith(k)), exp: sumAmt(selExp, x => x.date?.startsWith(k)) }; });
+  const recent = [...selSales].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 15);
+  const catRows = EXP_CATS.map(c => ({ label: c, v: sum(selExp.filter(x => x.category === c && inP(x.date))) })).filter(x => x.v > 0);
+  const catTotal = catRows.reduce((a, x) => a + x.v, 0);
+
+  const saveBranch = async () => {
+    const name = modal.name.trim();
+    if (!name) return;
+    if (!modal.isEdit && list.some(b => b.name.toLowerCase() === name.toLowerCase())) { addNotif('A branch with that name already exists', 'warning'); return; }
+    const rec = { name, address: modal.address, phone: modal.phone, manager: modal.manager };
+    await saveBranches(modal.isEdit ? list.map(b => (b.name === name ? rec : b)) : [...list, rec]);
+    addNotif(modal.isEdit ? 'Branch updated' : 'Branch added', 'success'); setModal(null);
+  };
+  const delBranch = async (b) => {
+    if (list.length < 2) return;
+    if (!window.confirm(`Remove "${b.name}"? Its sales and expenses are kept, but will be shown under ${list.find(x => x.name !== b.name).name} until reassigned.`)) return;
+    await saveBranches(list.filter(x => x.name !== b.name));
+    if (sel === b.name) setSel(first);
+  };
+
+  return (
+    <div>
+      <div className="d-hero">
+        <div><h2>🏬 Branches</h2><p>{list.length} branch{list.length > 1 ? 'es' : ''} · compare performance and record sales per branch</p></div>
+        <div className="d-actions">
+          <div className="d-seg">{[['today', 'Today'], ['month', 'This month'], ['all', 'All time']].map(([k, l]) => <button key={k} className={period === k ? 'on' : ''} onClick={() => setPeriod(k)}>{l}</button>)}</div>
+          <button className="d-act p" onClick={() => setModal({ ...EMPTY_BR })}>+ Add branch</button>
+        </div>
+      </div>
+
+      <div className="d-grid g-2">
+        {stats.map(({ b, rev, exp, profit, today: t, count, avg, owed }) => (
+          <div key={b.name} className="d-card" style={sel === b.name ? { borderColor: 'var(--primary)' } : undefined}>
+            <div className="d-head">
+              <div style={{ minWidth: 0 }}><h3 style={{ fontSize: 16 }}>🏬 {b.name} {b.name === first && <span className="d-tag">Main</span>}</h3>
+                <div className="muted" style={{ fontSize: 12 }}>{[b.address, b.phone, b.manager && `Manager: ${b.manager}`].filter(Boolean).join(' · ') || 'No details yet — click Edit'}</div></div>
+              <span className="d-tag">{totalRev > 0 ? Math.round((rev / totalRev) * 100) : 0}% of sales</span>
+            </div>
+            <div className="ln-tiles" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+              <div><b style={{ color: 'var(--green-ink)' }}>{fmt(rev)}</b><span>Sales</span></div>
+              <div><b style={{ color: 'var(--red-ink)' }}>{fmt(exp)}</b><span>Expenses</span></div>
+              <div><b style={{ color: profit >= 0 ? 'var(--primary)' : 'var(--red-ink)' }}>{fmt(profit)}</b><span>Profit</span></div>
+              <div><b>{fmt(t)}</b><span>Today</span></div>
+              <div><b>{count}</b><span>Transactions</span></div>
+              <div><b style={{ color: owed > 0 ? 'var(--red-ink)' : undefined }}>{fmt(owed)}</b><span>Owed to you</span></div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Btn variant="success" small onClick={() => setSaleFor(b.name)}>💰 Record sale</Btn>
+              <Btn variant="ghost" small onClick={() => setSel(b.name)}>📊 View details</Btn>
+              <Btn variant="ghost" small onClick={() => setModal({ ...EMPTY_BR, ...b, isEdit: true })}>Edit</Btn>
+              {list.length > 1 && <Btn variant="danger" small onClick={() => delBranch(b)}>Remove</Btn>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {list.length > 1 && (
+        <div className="d-card" style={{ marginBottom: 14 }}>
+          <div className="d-head"><h3>Branch comparison — sales</h3><span className="muted">{fmt(totalRev)} total</span></div>
+          <BarList rows={stats.map(s => ({ label: s.b.name, pct: totalRev > 0 ? Math.round((s.rev / totalRev) * 100) : 0, right: `${fmt(s.rev)} · ${totalRev > 0 ? Math.round((s.rev / totalRev) * 100) : 0}%` }))} />
+        </div>
+      )}
+
+      <div className="d-card" style={{ marginBottom: 14 }}>
+        <div className="d-head"><h3>📊 {cur.name} — details</h3>
+          <select value={cur.name} onChange={e => setSel(e.target.value)} style={{ width: 'auto' }}>{list.map(b => <option key={b.name}>{b.name}</option>)}</select></div>
+        <div className="d-grid g-2-1" style={{ marginBottom: 0 }}>
+          <div><div className="muted" style={{ marginBottom: 6 }}>Income vs expenses — last 6 months</div><FlowChart series={m6} /></div>
+          <div><div className="muted" style={{ marginBottom: 6 }}>Expenses by category</div><BarList rows={catRows.map(c => ({ label: c.label, pct: catTotal > 0 ? Math.round((c.v / catTotal) * 100) : 0, color: 'var(--red-ink)', right: fmt(c.v) }))} /></div>
+        </div>
+      </div>
+
+      <div className="d-card">
+        <div className="d-head"><h3>Recent sales — {cur.name}</h3><Btn small variant="success" onClick={() => setSaleFor(cur.name)}>+ Record sale</Btn></div>
+        {recent.length === 0 ? <p className="muted" style={{ margin: 0 }}>No sales recorded for this branch yet.</p> : (
+          <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Receipt', 'Date', 'Customer', 'Items', 'Method', 'Paid', 'Balance', ''].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>{recent.map(s => (
+              <tr key={s.id}>
+                <TD>{s.receipt_no || '—'}</TD><TD>{s.date}</TD><TD>{s.customer || 'Walk-in'}</TD>
+                <TD style={{ maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.description || '—'}</TD>
+                <TD>{s.payment_method || 'Cash'}</TD><TD style={{ fontWeight: 700, color: 'var(--green-ink)' }}>{fmt(s.amount)}</TD>
+                <TD style={{ color: s.balance > 0 ? 'var(--red-ink)' : 'var(--muted)', fontWeight: 600 }}>{s.balance > 0 ? fmt(s.balance) : '—'}</TD>
+                <TD><button className="d-link" onClick={() => setView(s)}>🧾 Receipt</button></TD>
+              </tr>))}</tbody>
+          </table></div>
+        )}
+      </div>
+
+      {saleFor && <SaleModal onClose={() => setSaleFor(null)} customers={customers} branches={list} defaultBranch={saleFor} userId={userId} sales={sales} setSales={setSales} addNotif={addNotif} />}
+      {view && <SaleReceipt sale={view} branch={list.find(b => b.name === bOf(view))} customers={customers} onClose={() => setView(null)} />}
+      {modal && (
+        <Modal title={modal.isEdit ? `Edit ${modal.name}` : 'Add branch'} onClose={() => setModal(null)}>
+          <div className="sm-grid">
+            <Inp label="Branch name" value={modal.name} disabled={modal.isEdit} onChange={e => setModal({ ...modal, name: e.target.value })} placeholder="e.g. Kumasi Branch" />
+            <Inp label="Manager" value={modal.manager} onChange={e => setModal({ ...modal, manager: e.target.value })} />
+            <Inp label="Phone" value={modal.phone} onChange={e => setModal({ ...modal, phone: e.target.value })} />
+            <Inp label="Address / location" value={modal.address} onChange={e => setModal({ ...modal, address: e.target.value })} />
+          </div>
+          {modal.isEdit && <p className="muted" style={{ fontSize: 12 }}>The branch name can't be changed because existing sales are linked to it.</p>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}><Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn><Btn onClick={saveBranch}>Save branch</Btn></div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function ReportsTab({ jobs, sales: allSales, expenses: allExpenses, customers, inventory, invoices, loans = [], payroll = [], branches = [] }) {
+  const [period, setPeriod] = useState('month');
+  const [branch, setBranch] = useState('all');
+  const firstB = branches[0]?.name;
+  const sales = branch === 'all' ? allSales : allSales.filter(s => (s.branch || firstB) === branch);
+  const expenses = branch === 'all' ? allExpenses : allExpenses.filter(x => (x.branch || firstB) === branch);
   const now = new Date();
   const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const today = ymd(now), Y = now.getFullYear();
@@ -2466,6 +2771,8 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices, loa
   const methods = ['Cash', 'Mobile Money', 'Bank Transfer', 'Credit', 'Partial Payment', 'Other'].map(m => ({ label: m, v: pS.filter(s => (s.payment_method || 'Cash') === m).reduce((a, s) => a + s.amount, 0) })).filter(x => x.v > 0);
   const cats = EXP_CATS.map(c => { const l = pE.filter(x => x.category === c); return { label: c, v: l.reduce((a, x) => a + x.amount, 0), n: l.length }; }).filter(x => x.v > 0);
   const biggest = [...pE].sort((a, b) => b.amount - a.amount).slice(0, 5);
+  const brRows = branches.map(b => ({ label: b.name, rev: allSales.filter(s => (s.branch || firstB) === b.name && inR(s.date, cfg.r)).reduce((a, s) => a + s.amount, 0), exp: allExpenses.filter(x => (x.branch || firstB) === b.name && inR(x.date, cfg.r)).reduce((a, x) => a + x.amount, 0) }));
+  const brTotal = brRows.reduce((a, r) => a + r.rev, 0);
 
   const group = (arr, keyFn) => { const m = {}; arr.forEach(j => { const k = keyFn(j) || 'Unassigned'; (m[k] = m[k] || { n: 0, rev: 0, cost: 0, done: 0 }); m[k].n++; m[k].rev += j.price || 0; m[k].cost += j.cost || 0; if (j.status === 'completed') m[k].done++; }); return Object.entries(m).sort((a, b) => b[1].rev - a[1].rev); };
   const byType = group(pJ, j => j.type), byStaff = group(pJ, j => j.assigned_to), byMachine = group(pJ, j => j.machine);
@@ -2497,6 +2804,7 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices, loa
       <div className="d-hero">
         <div><h2>📈 Reports & Analytics</h2><p>{cfg.label} · {period === 'all' ? 'every record' : `${cfg.r[0]} → ${cfg.r[1]}`}</p></div>
         <div className="d-actions d-noprint">
+          {branches.length > 1 && <select value={branch} onChange={e => setBranch(e.target.value)} style={{ width: 'auto' }}><option value="all">All branches</option>{branches.map(b => <option key={b.name}>{b.name}</option>)}</select>}
           <div className="d-seg">{Object.entries(RANGES).map(([k, v]) => <button key={k} className={period === k ? 'on' : ''} onClick={() => setPeriod(k)}>{v.label}</button>)}</div>
           <button className="d-act" onClick={exportPL}>⬇️ Export P&L</button>
           <button className="d-act p" onClick={() => window.print()}>🖨️ Print</button>
@@ -2522,6 +2830,15 @@ function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices, loa
         <div className="d-card"><div className="d-head"><h3>Income vs expenses</h3></div><FlowChart series={series} /></div>
         <div className="d-card"><div className="d-head"><h3>Income by payment method</h3></div><BarList rows={methods.map(m => ({ label: m.label, pct: pct(m.v, rev), right: `${fmt(m.v)} · ${pct(m.v, rev)}%` }))} /></div>
       </div>
+
+      {branch === 'all' && branches.length > 1 && (
+        <div className="d-card" style={{ marginBottom: 14 }}>
+          <div className="d-head"><h3>🏬 Performance by branch</h3></div>
+          <Tbl heads={['Branch', 'Sales', 'Expenses', 'Profit', 'Share of sales']}>
+            {brRows.map(r => <tr key={r.label}><TD style={{ fontWeight: 600 }}>{r.label}</TD><TD>{fmt(r.rev)}</TD><TD>{fmt(r.exp)}</TD><TD style={{ fontWeight: 700, color: r.rev >= r.exp ? 'var(--green-ink)' : 'var(--red-ink)' }}>{fmt(r.rev - r.exp)}</TD><TD>{pct(r.rev, brTotal)}%</TD></tr>)}
+          </Tbl>
+        </div>
+      )}
 
       <div className="d-grid g-2">
         <div className="d-card"><div className="d-head"><h3>Expense breakdown</h3><span className="muted">{pE.length} entries</span></div>
