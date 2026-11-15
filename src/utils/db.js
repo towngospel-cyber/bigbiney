@@ -6,6 +6,23 @@ const SUPABASE_ANON_KEY = 'sb_publishable_WI4VCEqJbyu_B94BhvXfcw_S9G8Yzyt';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Columns added for branches / detailed sales (see branches_setup.sql).
+// If the database doesn't have them yet, the insert is retried without them so nothing is lost.
+const EXTRA_COLS = {
+  sales:    ['branch', 'customer', 'description', 'items', 'discount', 'total', 'balance', 'reference', 'received_by', 'notes', 'receipt_no'],
+  expenses: ['branch'],
+};
+async function insertWithFallback(table, row) {
+  const first = await supabase.from(table).insert([row]).select();
+  if (first.error && /column|schema cache/i.test(first.error.message || '')) {
+    const base = { ...row };
+    EXTRA_COLS[table].forEach(k => delete base[k]);
+    const retry = await supabase.from(table).insert([base]).select();
+    return { data: retry.data?.[0], error: retry.error, degraded: !retry.error };
+  }
+  return { data: first.data?.[0], error: first.error };
+}
+
 const db = {
   async signup(email, password, name, role = 'user') {
     const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
@@ -120,11 +137,11 @@ async addJob(userId, job) {
   async deleteInvoice(id) { const { error } = await supabase.from('invoices').delete().eq('id', id); return { error }; },
 
   async getSales(userId) { const { data, error } = await supabase.from('sales').select('*').eq('user_id', userId).order('date', { ascending: false }); return { data: data || [], error }; },
-  async addSale(userId, sale) { const { data, error } = await supabase.from('sales').insert([{ ...sale, user_id: userId }]).select(); return { data: data?.[0], error }; },
+  async addSale(userId, sale) { return insertWithFallback('sales', { ...sale, user_id: userId }); },
   async deleteSale(id) { const { error } = await supabase.from('sales').delete().eq('id', id); return { error }; },
 
   async getExpenses(userId) { const { data, error } = await supabase.from('expenses').select('*').eq('user_id', userId).order('date', { ascending: false }); return { data: data || [], error }; },
-  async addExpense(userId, expense) { const { data, error } = await supabase.from('expenses').insert([{ ...expense, user_id: userId }]).select(); return { data: data?.[0], error }; },
+  async addExpense(userId, expense) { return insertWithFallback('expenses', { ...expense, user_id: userId }); },
   async deleteExpense(id) { const { error } = await supabase.from('expenses').delete().eq('id', id); return { error }; },
 
   // ─── PAYROLL ────────────────────────────────────────────────────────────────
