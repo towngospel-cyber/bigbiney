@@ -165,6 +165,17 @@ table{border-collapse:collapse}
 .d-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:13px}.d-row:last-child{border-bottom:0}
 .d-bar{display:grid;grid-template-columns:minmax(80px,1.1fr) 1.4fr auto;align-items:center;gap:10px;font-size:12px;margin-bottom:9px}
 .d-bar>div{background:var(--surface-2);border-radius:999px;height:8px;overflow:hidden}.d-bar>div i{display:block;height:100%;border-radius:999px;background:var(--blue-ink);transition:width .5s ease}.d-bar b{min-width:20px;text-align:right}
+
+.ln-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.ln-tiles div{background:var(--surface-2);border-radius:10px;padding:8px 6px;text-align:center}.ln-tiles b{display:block;font-size:18px}.ln-tiles span{font-size:10px;color:var(--muted);font-weight:600}
+.ln-month{background:var(--blue-bg);border:1px solid var(--blue-line);border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:12px}
+.ln-mh{display:flex;justify-content:space-between;margin-bottom:6px;color:var(--blue-ink)}.ln-mh span{color:var(--muted)}
+.ln-r{display:flex;justify-content:space-between;gap:8px;padding:2px 0}.ln-r span{color:var(--ink-2)}
+.ln-bar{height:8px;background:var(--surface);border-radius:999px;overflow:hidden;margin:6px 0}.ln-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),#16a34a);border-radius:999px}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}@media (max-width:1100px){.g-2{grid-template-columns:minmax(0,1fr)}}
+.d-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}.d-filters .fld{min-width:150px;flex:1}
+.d-tot td{font-weight:800;background:var(--surface-2)}
+@media print{.side,.top,.bottom,.d-noprint{display:none!important}.main{padding:0}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -396,7 +407,7 @@ export default function PrintingPressSystem() {
         {activeTab === 'finance'   && <FinanceTab sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
         {activeTab === 'payroll'   && <PayrollTab payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} expenses={expenses} setExpenses={setExpenses} />}
         {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} sales={sales} expenses={expenses} setExpenses={setExpenses} />}
-        {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} />}
+        {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} loans={loans} payroll={payroll} />}
         {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
         </main>
       </div>
@@ -1642,6 +1653,16 @@ function InvoicesTab({ invoices, setInvoices, jobs, customers, setSales, addNoti
   );
 }
 
+const EXP_CATS = ['Paper', 'Ink & Toner', 'Maintenance', 'Salaries', 'Utilities', 'Other'];
+const downloadCSV = (name, rows) => {
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const blob = new Blob([rows.map(r => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+};
+const BarList = ({ rows }) => rows.length === 0 ? <p className="muted" style={{ margin: 0 }}>No data for this period.</p> : rows.map(r => (
+  <div key={r.label} className="d-bar"><span className="ellip">{r.label}</span><div><i style={{ width: `${r.pct}%`, background: r.color || 'var(--primary)' }} /></div><b>{r.right}</b></div>
+));
+
 function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, recurringExpenses, setRecurringExpenses }) {
   const [sf, setSf]         = useState({ date: todayStr(), amount: '', payment_method: 'Cash' });
   const [ef, setEf]         = useState({ date: todayStr(), category: 'Paper', description: '', amount: '' });
@@ -1649,6 +1670,16 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
   const [showEF, setShowEF] = useState(false);
   const [showRE, setShowRE] = useState(false);
   const [reForm, setReForm] = useState({ description: '', category: 'Salaries', amount: '', day_of_month: '1' });
+
+  const [budgets, setBudgets]       = useState({});
+  const [editBud, setEditBud]       = useState(false);
+  const [fMonth, setFMonth]         = useState('all');
+  const [q, setQ]                   = useState('');
+  const [counted, setCounted]       = useState('');
+  useEffect(() => {
+    db.getSetting(userId, 'expense_budgets').then(({ data }) => { if (data?.value) { try { setBudgets(JSON.parse(data.value)); } catch {} } });
+  }, [userId]);
+  const saveBudgets = async (b) => { setBudgets(b); await db.setSetting(userId, 'expense_budgets', JSON.stringify(b)); };
 
   const month  = getCurrentMonth();
   const mSales = sales.filter(s => s.date?.startsWith(month)).reduce((a, s) => a + s.amount, 0);
@@ -1682,7 +1713,23 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
 
   const pmBreakdown  = ['Cash','Mobile Money','Bank Transfer','Credit','Other'].map(m => ({ method: m, total: sales.filter(s => (s.payment_method||'Cash') === m).reduce((a,s)=>a+s.amount,0) })).filter(x => x.total > 0);
   const todaySales   = sales.filter(s => s.date === todayStr()).reduce((a,s)=>a+s.amount,0);
-  const dueRecurring = recurringExpenses.filter(re => re.active && re.day_of_month <= new Date().getDate());
+  const dueRecurring = recurringExpenses.filter(re => re.active && re.day_of_month <= new Date().getDate() && !expenses.some(e => (e.date || '').startsWith(month) && e.description === re.description));
+
+  const nowD = new Date(), dom = nowD.getDate(), dim = new Date(nowD.getFullYear(), nowD.getMonth() + 1, 0).getDate();
+  const prevD = new Date(nowD.getFullYear(), nowD.getMonth() - 1, 1), prevKey = monthKey(prevD);
+  const pSales = sumAmt(sales, s => s.date?.startsWith(prevKey)), pExp = sumAmt(expenses, e => e.date?.startsWith(prevKey));
+  const m6 = Array.from({ length: 6 }, (_, i) => { const d = new Date(nowD.getFullYear(), nowD.getMonth() - (5 - i), 1), k = monthKey(d); return { label: d.toLocaleString('en', { month: 'short' }), inc: sumAmt(sales, s => s.date?.startsWith(k)), exp: sumAmt(expenses, x => x.date?.startsWith(k)) }; });
+  const projInc = (mSales / dom) * dim, projExp = (mExp / dom) * dim;
+  const byDay = {}; sales.filter(s => s.date?.startsWith(month)).forEach(s => { byDay[s.date] = (byDay[s.date] || 0) + s.amount; });
+  const bestDay = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+  const margin = mSales > 0 ? ((mSales - mExp) / mSales) * 100 : 0;
+  const catSpent = EXP_CATS.map(c => ({ c, spent: sumAmt(expenses, e => e.category === c && e.date?.startsWith(month)) }));
+  const expectedCash = sales.filter(s => s.date === todayStr() && (s.payment_method || 'Cash') === 'Cash').reduce((a, s) => a + s.amount, 0);
+  const monthOpts = [...new Set([...sales, ...expenses].map(x => (x.date || '').slice(0, 7)).filter(Boolean))].sort().reverse().slice(0, 24);
+  const ql = q.trim().toLowerCase();
+  const fSales = sales.filter(s => (fMonth === 'all' || s.date?.startsWith(fMonth)) && (!ql || `${s.date} ${s.payment_method || 'Cash'} ${s.amount}`.toLowerCase().includes(ql)));
+  const fExp   = expenses.filter(x => (fMonth === 'all' || x.date?.startsWith(fMonth)) && (!ql || `${x.date} ${x.category} ${x.description || ''} ${x.amount}`.toLowerCase().includes(ql)));
+  const exportLedger = () => downloadCSV(`finance-${fMonth}.csv`, [['Type', 'Date', 'Category/Method', 'Description', 'Amount'], ...fSales.map(s => ['Income', s.date, s.payment_method || 'Cash', '', s.amount]), ...fExp.map(x => ['Expense', x.date, x.category, x.description, x.amount])]);
 
   return (
     <div>
@@ -1695,11 +1742,42 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Monthly Income"   value={fmt(mSales)} accent="#16a34a" />
-        <StatCard label="Monthly Expenses" value={fmt(mExp)}   accent="#dc2626" />
-        <StatCard label="Monthly Profit"   value={fmt(mSales - mExp)} accent={mSales >= mExp ? 'var(--primary)' : '#dc2626'} />
-        <StatCard label="All-Time Revenue" value={fmt(sales.reduce((a,s)=>a+s.amount,0))} accent="#7c3aed" />
+      <div className="d-kpis">
+        <Kpi label="Monthly income" value={fmt(mSales)} icon="💵" color="var(--green-ink)" delta={pctChange(mSales, pSales)} spark={m6.map(m => m.inc)} />
+        <Kpi label="Monthly expenses" value={fmt(mExp)} icon="💸" color="var(--red-ink)" delta={pctChange(mExp, pExp)} invert spark={m6.map(m => m.exp)} />
+        <Kpi label="Monthly profit" value={fmt(mSales - mExp)} icon="📈" color="var(--primary)" delta={pctChange(mSales - mExp, pSales - pExp)} spark={m6.map(m => Math.max(0, m.inc - m.exp))} />
+        <Kpi label="All-time revenue" value={fmt(sales.reduce((a, s) => a + s.amount, 0))} icon="🏦" color="var(--amber-ink)" delta={null} sub={`${sales.length} sales recorded`} />
+      </div>
+
+      <div className="d-grid g-2-1">
+        <div className="d-card"><div className="d-head"><h3>Cash flow — last 6 months</h3></div><FlowChart series={m6} /></div>
+        <div className="d-card">
+          <div className="d-head"><h3>💡 This month's insights</h3></div>
+          {[['Profit margin', `${Math.round(margin)}%`, margin >= 25 ? 'var(--green-ink)' : margin >= 10 ? 'var(--amber-ink)' : 'var(--red-ink)'],
+            ['Avg daily income', fmt(mSales / dom)], ['Avg daily expense', fmt(mExp / dom)],
+            ['Projected income', fmt(projInc)], ['Projected expenses', fmt(projExp)],
+            ['Projected profit', fmt(projInc - projExp), projInc >= projExp ? 'var(--green-ink)' : 'var(--red-ink)'],
+            ['Best sales day', bestDay ? `${bestDay[0].slice(5)} · ${fmt(bestDay[1])}` : '—']].map(([l, v, c]) => (
+            <div key={l} className="d-row"><span className="muted">{l}</span><b style={{ color: c }}>{v}</b></div>
+          ))}
+        </div>
+      </div>
+
+      <div className="d-card" style={{ marginBottom: 14 }}>
+        <div className="d-head"><h3>🎯 Monthly budgets — spent vs. limit</h3><button className="d-link" onClick={() => setEditBud(v => !v)}>{editBud ? 'Done' : 'Set budgets'}</button></div>
+        <div className="d-grid g-3" style={{ marginBottom: 0 }}>
+          {catSpent.map(({ c, spent }) => {
+            const b = parseFloat(budgets[c]) || 0, pct = b > 0 ? Math.round((spent / b) * 100) : 0;
+            return (
+              <div key={c}>
+                <div className="ln-r"><b>{c}</b><span>{fmt(spent)}{b > 0 ? ` / ${fmt(b)}` : ''}</span></div>
+                {editBud ? <Inp type="number" placeholder="Budget (GH₵)" value={budgets[c] || ''} onChange={e => saveBudgets({ ...budgets, [c]: e.target.value })} />
+                  : <><div className="ln-bar"><i style={{ width: `${Math.min(100, pct)}%`, background: pct > 100 ? 'var(--red-ink)' : pct > 80 ? 'var(--amber-ink)' : undefined }} /></div>
+                    <div className="muted" style={{ fontSize: 11 }}>{b <= 0 ? 'No budget set' : pct > 100 ? `⚠️ Over by ${fmt(spent - b)}` : `${fmt(b - spent)} left (${pct}% used)`}</div></>}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 16, marginBottom: 20 }}>
@@ -1715,6 +1793,10 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
             <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>Today Total</div>
           </div>
           {todaySales === 0 && <span style={{ fontSize: 13, color: 'var(--faint)' }}>No sales recorded today yet</span>}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <Inp label="Cash counted in drawer" type="number" value={counted} onChange={e => setCounted(e.target.value)} placeholder="GH₵" />
+            {counted !== '' && <div style={{ fontWeight: 800, fontSize: 13, paddingBottom: 10, color: parseFloat(counted) === expectedCash ? 'var(--green-ink)' : 'var(--red-ink)' }}>{parseFloat(counted) === expectedCash ? '✅ Balanced' : `${parseFloat(counted) > expectedCash ? 'Over' : 'Short'} by ${fmt(Math.abs(parseFloat(counted) - expectedCash))}`}</div>}
+          </div>
         </div>
       </div>
 
@@ -1798,13 +1880,26 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
         </div>
       )}
 
+      <div className="d-card" style={{ marginBottom: 14 }}>
+        <div className="d-filters">
+          <Sel label="Month" value={fMonth} onChange={e => setFMonth(e.target.value)}><option value="all">All time</option>{monthOpts.map(m => <option key={m} value={m}>{m}</option>)}</Sel>
+          <Inp label="Search" value={q} onChange={e => setQ(e.target.value)} placeholder="Category, description, method, amount…" />
+          <Btn variant="ghost" onClick={exportLedger}>⬇️ Export CSV</Btn>
+        </div>
+        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
+          <span>Income: <b style={{ color: 'var(--green-ink)' }}>{fmt(fSales.reduce((a, s) => a + s.amount, 0))}</b></span>
+          <span>Expenses: <b style={{ color: 'var(--red-ink)' }}>{fmt(fExp.reduce((a, x) => a + x.amount, 0))}</b></span>
+          <span>Net: <b>{fmt(fSales.reduce((a, s) => a + s.amount, 0) - fExp.reduce((a, x) => a + x.amount, 0))}</b></span>
+        </div>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: 'var(--green-bg)', borderBottom: '1px solid var(--green-line)' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--green-ink)' }}>💚 Income ({sales.length})</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--green-ink)' }}>💚 Income ({fSales.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-            {[...sales].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(s => (
+            {[...fSales].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(s => (
               <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f9fafb', gap: 6 }}>
                 <span style={{ fontSize: 12, color: 'var(--muted)' }}>{s.date}</span>
                 {s.payment_method && <span style={{ fontSize: 10, background: 'var(--surface-2)', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>{s.payment_method}</span>}
@@ -1816,10 +1911,10 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
         </div>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', background: 'var(--red-bg)', borderBottom: '1px solid var(--red-line)' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>❤️ Expenses ({expenses.length})</h3>
+            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#b91c1c' }}>❤️ Expenses ({fExp.length})</h3>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-            {[...expenses].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(e => (
+            {[...fExp].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(e => (
               <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #f9fafb', gap: 8 }}>
                 <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{e.date}</span>
                 <span style={{ fontSize: 11, background: 'var(--surface-2)', borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>{e.category}</span>
@@ -2005,6 +2100,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
   const [newDaily,      setNewDaily]      = useState('');
   const [pendingDebt,   setPendingDebt]   = useState({});
   const [lastAutoDate,  setLastAutoDate]  = useState({});
+  const [histOpen,     setHistOpen]     = useState(null);
 
   useEffect(() => {
     db.getSetting(userId, 'loan_carryover').then(({ data }) => {
@@ -2023,6 +2119,12 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
   const todaySales     = (sales||[]).filter(s => s.date === todayStr()).reduce((a, s) => a + s.amount, 0);
   const activeBorrowed = loans.filter(l => l.type === 'borrowed' && l.paid < l.amount);
   const autoRanToday   = (id) => lastAutoDate[id] === todayStr();
+  const nowD = new Date();
+  const daysIn = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const dim = daysIn(nowD), daysRemain = dim - nowD.getDate();
+  const monthPaid = (l, key) => (expenses || []).filter(e => /^loan/i.test(e.description || '') && (e.description || '').includes(l.name) && (e.date || '').startsWith(key)).reduce((a, e) => a + Number(e.amount || 0), 0);
+  const totMonthTarget = activeBorrowed.reduce((a, l) => a + (parseFloat(l.daily_repayment) || 0) * dim, 0);
+  const totMonthPaid   = activeBorrowed.reduce((a, l) => a + monthPaid(l, getCurrentMonth()), 0);
 
   const save = async () => {
     if (!form.name || !form.amount) return;
@@ -2116,6 +2218,8 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
         <StatCard label="Total Lent Out" value={fmt(totalLent)}     accent="#f59e0b" />
         <StatCard label="Active Loans"   value={loans.filter(l => l.paid < l.amount).length} accent="var(--primary)" />
         <StatCard label="Today's Sales"  value={fmt(todaySales)} accent="#16a34a" sub="Available for repayment" />
+        <StatCard label="Paid This Month" value={fmt(totMonthPaid)} accent="#0891b2" sub={`of ${fmt(totMonthTarget)} target`} />
+        <StatCard label="Left This Month" value={fmt(Math.max(0, totMonthTarget - totMonthPaid))} accent="#7c3aed" sub={`${daysRemain} day(s) remaining`} />
       </div>
 
       {activeBorrowed.length > 0 && (
@@ -2130,6 +2234,12 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
               const dueToday = daily + carryover;
               const alreadyRan = autoRanToday(l.id);
               const daysLeft = daily > 0 ? Math.ceil(balance / daily) : null;
+              const monthRate  = daily * 30;
+              const monthsPaid = monthRate > 0 ? l.paid / monthRate : null;
+              const monthsLeft = monthRate > 0 ? balance / monthRate : null;
+              const mTarget = daily * dim, mPaid = monthPaid(l, getCurrentMonth()), mLeft = Math.max(0, mTarget - mPaid);
+              const mPct = mTarget > 0 ? Math.min(100, Math.round((mPaid / mTarget) * 100)) : 0;
+              const hist = Array.from({ length: 6 }, (_, i) => { const d = new Date(nowD.getFullYear(), nowD.getMonth() - i, 1); const k = monthKey(d); return { label: d.toLocaleString('en', { month: 'short', year: '2-digit' }), paid: monthPaid(l, k), target: daily * daysIn(d) }; });
               return (
                 <div key={l.id} style={{ background: 'var(--surface)', border: '2px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
                   <div style={{ background: '#0f172a', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2151,6 +2261,26 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
                     <div style={{ background: 'var(--surface-2)', borderRadius: 6, height: 12, marginBottom: 12, overflow: 'hidden' }}>
                       <div style={{ width: `${pct}%`, height: 12, borderRadius: 6, background: 'linear-gradient(90deg, var(--primary), #16a34a)', transition: 'width 0.4s' }} />
                     </div>
+                    <div className="ln-tiles">
+                      <div><b>{monthsPaid === null ? '—' : monthsPaid.toFixed(1)}</b><span>Months paid</span></div>
+                      <div><b>{monthsLeft === null ? '—' : monthsLeft.toFixed(1)}</b><span>Months left</span></div>
+                      <div><b>{monthRate > 0 ? (l.amount / monthRate).toFixed(1) : '—'}</b><span>Total term (mo)</span></div>
+                    </div>
+                    <div className="ln-month">
+                      <div className="ln-mh"><b>📅 {nowD.toLocaleString('en', { month: 'long', year: 'numeric' })}</b><span>{daysRemain} day(s) left</span></div>
+                      <div className="ln-r"><span>Paid this month</span><b style={{ color: 'var(--green-ink)' }}>{fmt(mPaid)}</b></div>
+                      <div className="ln-r"><span>Month target ({dim} days × {fmt(daily)})</span><b>{fmt(mTarget)}</b></div>
+                      <div className="ln-bar"><i style={{ width: `${mPct}%` }} /></div>
+                      <div className="ln-r"><span>Balance left for month</span><b style={{ color: mLeft > 0 ? 'var(--red-ink)' : 'var(--green-ink)' }}>{mTarget <= 0 ? 'Set daily amount' : mLeft > 0 ? fmt(mLeft) : '✅ Target met'}</b></div>
+                      {mLeft > 0 && daysRemain > 0 && <div className="muted" style={{ fontSize: 11, marginTop: 2 }}>≈ {fmt(mLeft / daysRemain)} per remaining day to hit target</div>}
+                    </div>
+                    <button className="d-link" style={{ marginBottom: 10 }} onClick={() => setHistOpen(histOpen === l.id ? null : l.id)}>{histOpen === l.id ? '▲ Hide' : '▼ Show'} monthly history</button>
+                    {histOpen === l.id && (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12 }}>
+                        <thead><tr>{['Month', 'Paid', 'Target', 'Difference'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+                        <tbody>{hist.map(h => <tr key={h.label}><TD>{h.label}</TD><TD style={{ fontWeight: 700 }}>{fmt(h.paid)}</TD><TD>{fmt(h.target)}</TD><TD style={{ fontWeight: 700, color: h.paid >= h.target ? 'var(--green-ink)' : 'var(--red-ink)' }}>{h.target <= 0 ? '—' : h.paid >= h.target ? '+' + fmt(h.paid - h.target) : '−' + fmt(h.target - h.paid)}</TD></tr>)}</tbody>
+                      </table>
+                    )}
                     {carryover > 0 && (
                       <div style={{ background: 'var(--amber-bg)', border: '1px solid #fde68a', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 10, color: '#92400e', fontWeight: 600 }}>
                         ⚠️ Carryover: <strong>{fmt(carryover)}</strong> — Due today: <strong>{fmt(dueToday)}</strong>
@@ -2287,141 +2417,149 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
     </div>
   );
 }
-function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices }) {
+function ReportsTab({ jobs, sales, expenses, customers, inventory, invoices, loans = [], payroll = [] }) {
   const [period, setPeriod] = useState('month');
-  const now   = new Date();
-  const month = getCurrentMonth();
-  const year  = String(now.getFullYear());
-
-  const filterByPeriod = (arr, dateKey) => {
-    if (period === 'month') return arr.filter(x => (x[dateKey]||'').startsWith(month));
-    if (period === 'year')  return arr.filter(x => (x[dateKey]||'').startsWith(year));
-    return arr;
+  const now = new Date();
+  const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const today = ymd(now), Y = now.getFullYear();
+  const dAgo = (n) => ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() - n));
+  const mS = (o) => ymd(new Date(Y, now.getMonth() + o, 1)), mE = (o) => ymd(new Date(Y, now.getMonth() + o + 1, 0));
+  const RANGES = {
+    week:  { label: 'Last 7 days', r: [dAgo(6), today], prev: [dAgo(13), dAgo(7)] },
+    month: { label: 'This month',  r: [mS(0), mE(0)],   prev: [mS(-1), mE(-1)] },
+    last:  { label: 'Last month',  r: [mS(-1), mE(-1)], prev: [mS(-2), mE(-2)] },
+    year:  { label: 'This year',   r: [`${Y}-01-01`, `${Y}-12-31`], prev: [`${Y - 1}-01-01`, `${Y - 1}-12-31`] },
+    all:   { label: 'All time',    r: ['0000-01-01', '9999-12-31'], prev: null },
   };
+  const cfg = RANGES[period];
+  const inR = (d, r) => { const x = (d || '').slice(0, 10); return !!x && x >= r[0] && x <= r[1]; };
+  const jobDate = (j) => j.start_date || j.due_date || j.created_at;
+  const isLoan = (x) => /^loan/i.test(x.description || '');
 
-  const pSales       = filterByPeriod(sales, 'date').reduce((a, s) => a + s.amount, 0);
-  const pExpenses    = filterByPeriod(expenses, 'date').reduce((a, e) => a + e.amount, 0);
-  const pProfit      = pSales - pExpenses;
-  const pJobs        = filterByPeriod(jobs, 'start_date');
-  const byType       = JOB_TYPES.map(t => ({ type: t, count: jobs.filter(j=>j.type===t).length, revenue: jobs.filter(j=>j.type===t).reduce((a,j)=>a+(j.price||0),0) })).filter(x=>x.count>0);
-  const topCustomers = customers.map(c => ({ name: c.name, jobs: jobs.filter(j=>j.customer_id===c.id).length, revenue: invoices.filter(i=>i.customer_id===c.id).reduce((a,i)=>a+(i.paid||0),0) })).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
-  const expByCategory= ['Paper','Ink & Toner','Maintenance','Salaries','Utilities','Other'].map(cat => ({ cat, total: filterByPeriod(expenses,'date').filter(e=>e.category===cat).reduce((a,e)=>a+e.amount,0) })).filter(x=>x.total>0);
+  const pS = sales.filter(s => inR(s.date, cfg.r)), pE = expenses.filter(x => inR(x.date, cfg.r)), pJ = jobs.filter(j => inR(jobDate(j), cfg.r));
+  const rev = pS.reduce((a, s) => a + s.amount, 0), exp = pE.reduce((a, x) => a + x.amount, 0), profit = rev - exp;
+  const prevRev = cfg.prev ? sumAmt(sales, s => inR(s.date, cfg.prev)) : null, prevExp = cfg.prev ? sumAmt(expenses, x => inR(x.date, cfg.prev)) : null;
+  const margin = rev > 0 ? (profit / rev) * 100 : 0;
+  const loanPay = pE.filter(isLoan).reduce((a, x) => a + x.amount, 0);
+  const payrollPaid = payroll.filter(p => inR(p.date, cfg.r)).reduce((a, p) => a + (p.amount || 0), 0);
+  const completed = jobs.filter(j => j.status === 'completed').length;
+  const unpaid = invoices.filter(i => i.status !== 'paid');
+  const outstanding = unpaid.reduce((a, i) => a + (i.amount - i.paid), 0);
+  const stockValue = inventory.reduce((a, i) => a + (i.quantity || 0) * (i.unit_cost || 0), 0);
+  const avgJob = pJ.length > 0 ? pJ.reduce((a, j) => a + (j.price || 0), 0) / pJ.length : 0;
 
-  const trend = Array.from({ length: 6 }, (_, i) => {
-    const d  = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-    const ms = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const rev = sales.filter(s=>(s.date||'').startsWith(ms)).reduce((a,s)=>a+s.amount,0);
-    const exp = expenses.filter(e=>(e.date||'').startsWith(ms)).reduce((a,e)=>a+e.amount,0);
-    return { month: ms.slice(5)+'/'+ms.slice(2,4), rev, exp, profit: rev-exp };
+  const monthSeries = (n) => Array.from({ length: n }, (_, i) => {
+    const d = new Date(Y, now.getMonth() - (n - 1 - i), 1), k = monthKey(d);
+    const r = sumAmt(sales, s => s.date?.startsWith(k)), x = sumAmt(expenses, e => e.date?.startsWith(k));
+    return { label: d.toLocaleString('en', { month: 'short', year: '2-digit' }), inc: r, exp: x, jobs: jobs.filter(j => (jobDate(j) || '').startsWith(k)).length };
   });
-  const maxTrend       = Math.max(...trend.map(t=>Math.max(t.rev,t.exp)),1);
-  const completedJobs  = jobs.filter(j=>j.status==='completed').length;
-  const completionRate = jobs.length > 0 ? Math.round((completedJobs/jobs.length)*100) : 0;
-  const avgJobValue    = jobs.length > 0 ? jobs.reduce((a,j)=>a+(j.price||0),0)/jobs.length : 0;
+  const pl12 = monthSeries(12);
+  let series;
+  if (period === 'year' || period === 'all') series = period === 'year' ? Array.from({ length: 12 }, (_, i) => { const k = `${Y}-${String(i + 1).padStart(2, '0')}`; return { label: new Date(Y, i, 1).toLocaleString('en', { month: 'short' }), inc: sumAmt(sales, s => s.date?.startsWith(k)), exp: sumAmt(expenses, x => x.date?.startsWith(k)) }; }) : pl12;
+  else {
+    const start = new Date(cfg.r[0] + 'T00:00:00'), end = new Date(Math.min(new Date(cfg.r[1] + 'T00:00:00'), new Date(today + 'T00:00:00')));
+    const n = Math.max(1, Math.round((end - start) / 86400000) + 1);
+    series = Array.from({ length: n }, (_, i) => { const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), ds = ymd(d); return { label: `${d.getDate()}/${d.getMonth() + 1}`, inc: sumAmt(sales, s => s.date === ds), exp: sumAmt(expenses, x => x.date === ds) }; });
+  }
+
+  const pct = (v, t) => (t > 0 ? Math.round((v / t) * 100) : 0);
+  const methods = ['Cash', 'Mobile Money', 'Bank Transfer', 'Credit', 'Partial Payment', 'Other'].map(m => ({ label: m, v: pS.filter(s => (s.payment_method || 'Cash') === m).reduce((a, s) => a + s.amount, 0) })).filter(x => x.v > 0);
+  const cats = EXP_CATS.map(c => { const l = pE.filter(x => x.category === c); return { label: c, v: l.reduce((a, x) => a + x.amount, 0), n: l.length }; }).filter(x => x.v > 0);
+  const biggest = [...pE].sort((a, b) => b.amount - a.amount).slice(0, 5);
+
+  const group = (arr, keyFn) => { const m = {}; arr.forEach(j => { const k = keyFn(j) || 'Unassigned'; (m[k] = m[k] || { n: 0, rev: 0, cost: 0, done: 0 }); m[k].n++; m[k].rev += j.price || 0; m[k].cost += j.cost || 0; if (j.status === 'completed') m[k].done++; }); return Object.entries(m).sort((a, b) => b[1].rev - a[1].rev); };
+  const byType = group(pJ, j => j.type), byStaff = group(pJ, j => j.assigned_to), byMachine = group(pJ, j => j.machine);
+
+  const invPaid = {}, invOut = {};
+  invoices.forEach(i => { const k = i.customer_id || i.customer; invPaid[k] = (invPaid[k] || 0) + (i.paid || 0); invOut[k] = (invOut[k] || 0) + Math.max(0, (i.amount || 0) - (i.paid || 0)); });
+  const cx = {};
+  pJ.filter(j => j.status !== 'cancelled').forEach(j => { const k = j.customer_id || j.customer; if (!k) return; cx[k] = cx[k] || { name: j.customer, jobs: 0, billed: 0, k }; cx[k].jobs++; cx[k].billed += j.price || 0; });
+  const topCust = Object.values(cx).sort((a, b) => b.billed - a.billed).slice(0, 10);
+
+  const aging = [['0–30 days', 0, 30], ['31–60 days', 31, 60], ['61–90 days', 61, 90], ['90+ days', 91, 99999]].map(([l, lo, hi]) => ({ l, v: unpaid.filter(i => { const a = Math.round((new Date(today) - new Date(i.date || today)) / 86400000); return a >= lo && a <= hi; }).reduce((s, i) => s + (i.amount - i.paid), 0) }));
+  const borrowedBal = loans.filter(l => l.type === 'borrowed').reduce((a, l) => a + (l.amount - l.paid), 0);
+
+  const exportPL = () => downloadCSV('monthly-profit-loss.csv', [['Month', 'Revenue', 'Expenses', 'Profit', 'Margin %', 'Jobs'], ...pl12.map(m => [m.label, m.inc, m.exp, m.inc - m.exp, pct(m.inc - m.exp, m.inc), m.jobs])]);
+  const Tbl = ({ heads, children }) => <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}><thead><tr>{heads.map(h => <TH key={h}>{h}</TH>)}</tr></thead><tbody>{children}</tbody></table></div>;
+  const GroupTbl = ({ rows, title }) => (
+    <div className="d-card"><div className="d-head"><h3>{title}</h3></div>
+      {rows.length === 0 ? <p className="muted" style={{ margin: 0 }}>No jobs in this period.</p> : (
+        <Tbl heads={[title.split(' ').pop(), 'Jobs', 'Revenue', 'Cost', 'Profit', 'Done']}>
+          {rows.map(([k, v]) => <tr key={k}><TD style={{ fontWeight: 600 }}>{k}</TD><TD>{v.n}</TD><TD>{fmt(v.rev)}</TD><TD>{fmt(v.cost)}</TD><TD style={{ fontWeight: 700, color: v.rev - v.cost >= 0 ? 'var(--green-ink)' : 'var(--red-ink)' }}>{fmt(v.rev - v.cost)}</TD><TD>{v.done}/{v.n}</TD></tr>)}
+        </Tbl>
+      )}
+    </div>
+  );
+  const totP = pl12.reduce((a, m) => ({ inc: a.inc + m.inc, exp: a.exp + m.exp, jobs: a.jobs + m.jobs }), { inc: 0, exp: 0, jobs: 0 });
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>📈 Reports & Analytics</h2>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {[['month','This Month'],['year','This Year'],['all','All Time']].map(([val, lbl]) => (
-            <button key={val} onClick={() => setPeriod(val)} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', background: period === val ? 'var(--primary)' : '#fff', color: period === val ? '#fff' : 'var(--muted)', borderColor: period === val ? 'var(--primary)' : 'var(--line)' }}>{lbl}</button>
-          ))}
+      <div className="d-hero">
+        <div><h2>📈 Reports & Analytics</h2><p>{cfg.label} · {period === 'all' ? 'every record' : `${cfg.r[0]} → ${cfg.r[1]}`}</p></div>
+        <div className="d-actions d-noprint">
+          <div className="d-seg">{Object.entries(RANGES).map(([k, v]) => <button key={k} className={period === k ? 'on' : ''} onClick={() => setPeriod(k)}>{v.label}</button>)}</div>
+          <button className="d-act" onClick={exportPL}>⬇️ Export P&L</button>
+          <button className="d-act p" onClick={() => window.print()}>🖨️ Print</button>
         </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 24 }}>
-        <StatCard label="Revenue"         value={fmt(pSales)}     accent="#16a34a" />
-        <StatCard label="Expenses"        value={fmt(pExpenses)}  accent="#dc2626" />
-        <StatCard label="Net Profit"      value={fmt(pProfit)}    accent={pProfit >= 0 ? 'var(--primary)' : '#dc2626'} />
-        <StatCard label="Jobs Created"    value={pJobs.length}    accent="#7c3aed" />
-        <StatCard label="Completion Rate" value={`${completionRate}%`} accent="#f59e0b" />
-        <StatCard label="Avg Job Value"   value={fmt(avgJobValue)} accent="#0891b2" />
+
+      <div className="d-kpis">
+        <Kpi label="Revenue" value={fmt(rev)} icon="💵" color="var(--green-ink)" delta={prevRev === null ? null : pctChange(rev, prevRev)} sub="All records" />
+        <Kpi label="Expenses" value={fmt(exp)} icon="💸" color="var(--red-ink)" delta={prevExp === null ? null : pctChange(exp, prevExp)} invert sub="All records" />
+        <Kpi label="Net profit" value={fmt(profit)} icon="📈" color="var(--primary)" delta={prevRev === null ? null : pctChange(profit, prevRev - prevExp)} sub="All records" />
+        <Kpi label="Profit margin" value={`${Math.round(margin)}%`} icon="🎯" color="var(--amber-ink)" delta={null} sub={margin >= 25 ? 'Healthy' : margin >= 10 ? 'Watch costs' : 'Low margin'} />
       </div>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700 }}>Revenue vs Expenses — Last 6 Months</h3>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
-          <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>■ Revenue</span>
-          <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>■ Expenses</span>
-          <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 700 }}>■ Profit</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, height: 140 }}>
-          {trend.map((t, i) => (
-            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-              <div style={{ width: '100%', display: 'flex', gap: 2, alignItems: 'flex-end', height: 110 }}>
-                <div style={{ flex: 1, background: '#16a34a', borderRadius: '2px 2px 0 0', height: `${Math.max(2,Math.round((t.rev/maxTrend)*110))}px` }} title={`Revenue: ${fmt(t.rev)}`} />
-                <div style={{ flex: 1, background: '#dc2626', borderRadius: '2px 2px 0 0', height: `${Math.max(2,Math.round((t.exp/maxTrend)*110))}px` }} title={`Expenses: ${fmt(t.exp)}`} />
-                <div style={{ flex: 1, background: t.profit >= 0 ? 'var(--primary)' : '#f59e0b', borderRadius: '2px 2px 0 0', height: `${Math.max(2,Math.round((Math.abs(t.profit)/maxTrend)*110))}px` }} title={`Profit: ${fmt(t.profit)}`} />
-              </div>
-              <span style={{ fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{t.month}</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 14 }}>
+        <StatCard label="Jobs in period" value={pJ.length} accent="#7c3aed" sub={`${pct(completed, jobs.length)}% all-time completion`} />
+        <StatCard label="Avg job value" value={fmt(avgJob)} accent="#0891b2" />
+        <StatCard label="Outstanding invoices" value={fmt(outstanding)} accent="#f59e0b" sub={`${unpaid.length} unpaid`} />
+        <StatCard label="Loan repayments" value={fmt(loanPay)} accent="#dc2626" sub={`Loan balance ${fmt(borrowedBal)}`} />
+        <StatCard label="Payroll paid" value={fmt(payrollPaid)} accent="#16a34a" />
+        <StatCard label="Stock value" value={fmt(stockValue)} accent="var(--primary)" sub={`${inventory.filter(i => i.quantity <= i.reorder_point).length} low-stock`} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Revenue by Job Type</h3>
-          {byType.length === 0 && <p style={{ color: 'var(--faint)', fontSize: 13 }}>No data yet</p>}
-          {byType.map(({ type, count, revenue }) => {
-            const total = byType.reduce((a,x)=>a+x.revenue,0);
-            const pct   = total > 0 ? Math.round((revenue/total)*100) : 0;
-            return (
-              <div key={type} style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
-                  <span style={{ fontWeight: 600 }}>{type} <span style={{ color: 'var(--faint)' }}>({count})</span></span>
-                  <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{fmt(revenue)} — {pct}%</span>
-                </div>
-                <div style={{ background: 'var(--surface-2)', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: 'var(--primary)', height: 8, borderRadius: 4 }} /></div>
-              </div>
-            );
-          })}
+
+      <div className="d-grid g-2-1">
+        <div className="d-card"><div className="d-head"><h3>Income vs expenses</h3></div><FlowChart series={series} /></div>
+        <div className="d-card"><div className="d-head"><h3>Income by payment method</h3></div><BarList rows={methods.map(m => ({ label: m.label, pct: pct(m.v, rev), right: `${fmt(m.v)} · ${pct(m.v, rev)}%` }))} /></div>
+      </div>
+
+      <div className="d-grid g-2">
+        <div className="d-card"><div className="d-head"><h3>Expense breakdown</h3><span className="muted">{pE.length} entries</span></div>
+          <BarList rows={cats.map(c => ({ label: `${c.label} (${c.n})`, pct: pct(c.v, exp), color: 'var(--red-ink)', right: `${fmt(c.v)} · ${pct(c.v, exp)}%` }))} />
         </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
-          <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Expense Breakdown</h3>
-          {expByCategory.length === 0 && <p style={{ color: 'var(--faint)', fontSize: 13 }}>No expenses in this period</p>}
-          {expByCategory.map(({ cat, total }) => {
-            const grandTotal = expByCategory.reduce((a,x)=>a+x.total,0);
-            const pct = grandTotal > 0 ? Math.round((total/grandTotal)*100) : 0;
-            return (
-              <div key={cat} style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
-                  <span style={{ fontWeight: 600 }}>{cat}</span>
-                  <span style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(total)} — {pct}%</span>
-                </div>
-                <div style={{ background: 'var(--surface-2)', borderRadius: 4, height: 8 }}><div style={{ width: `${pct}%`, background: '#dc2626', height: 8, borderRadius: 4 }} /></div>
-              </div>
-            );
-          })}
+        <div className="d-card"><div className="d-head"><h3>Biggest expenses</h3></div>
+          {biggest.length === 0 ? <p className="muted" style={{ margin: 0 }}>No expenses in this period.</p> : biggest.map(x => <div key={x.id} className="d-row"><div style={{ minWidth: 0 }}><b className="ellip" style={{ display: 'block' }}>{x.description || x.category}</b><span className="muted">{x.date} · {x.category}</span></div><b style={{ color: 'var(--red-ink)' }}>{fmt(x.amount)}</b></div>)}
         </div>
       </div>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>🏆 Top Customers</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>{['Rank','Customer','Jobs','Revenue'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
-          <tbody>
-            {topCustomers.map((c, i) => (
-              <tr key={c.name}>
-                <TD style={{ fontWeight: 800, color: i===0?'#f59e0b':i===1?'var(--faint)':i===2?'#b45309':'var(--ink-2)' }}>{i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`}</TD>
-                <TD style={{ fontWeight: 600 }}>{c.name}</TD>
-                <TD>{c.jobs}</TD>
-                <TD style={{ fontWeight: 700, color: '#16a34a' }}>{fmt(c.revenue)}</TD>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      <div className="d-card" style={{ marginBottom: 14 }}>
+        <div className="d-head"><h3>📒 Monthly profit & loss — last 12 months</h3></div>
+        <Tbl heads={['Month', 'Revenue', 'Expenses', 'Profit', 'Margin', 'Jobs']}>
+          {pl12.map(m => <tr key={m.label}><TD style={{ fontWeight: 600 }}>{m.label}</TD><TD>{fmt(m.inc)}</TD><TD>{fmt(m.exp)}</TD><TD style={{ fontWeight: 700, color: m.inc >= m.exp ? 'var(--green-ink)' : 'var(--red-ink)' }}>{fmt(m.inc - m.exp)}</TD><TD>{m.inc > 0 ? `${pct(m.inc - m.exp, m.inc)}%` : '—'}</TD><TD>{m.jobs}</TD></tr>)}
+          <tr className="d-tot"><td className="td">Total</td><td className="td">{fmt(totP.inc)}</td><td className="td">{fmt(totP.exp)}</td><td className="td">{fmt(totP.inc - totP.exp)}</td><td className="td">{totP.inc > 0 ? `${pct(totP.inc - totP.exp, totP.inc)}%` : '—'}</td><td className="td">{totP.jobs}</td></tr>
+        </Tbl>
       </div>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 20 }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700 }}>Job Status Summary</h3>
+
+      <div className="d-grid g-2"><GroupTbl rows={byType} title="Profitability by Job Type" /><GroupTbl rows={byMachine} title="Output by Machine" /></div>
+      <div className="d-grid g-2"><GroupTbl rows={byStaff} title="Performance by Staff" />
+        <div className="d-card"><div className="d-head"><h3>🧾 Receivables aging</h3><span className="muted">{fmt(outstanding)} owed</span></div>
+          <BarList rows={aging.map((a, i) => ({ label: a.l, pct: pct(a.v, outstanding), color: i >= 2 ? 'var(--red-ink)' : i === 1 ? 'var(--amber-ink)' : 'var(--green-ink)', right: fmt(a.v) }))} />
+        </div>
+      </div>
+
+      <div className="d-card" style={{ marginBottom: 14 }}>
+        <div className="d-head"><h3>🏆 Top customers in period</h3></div>
+        {topCust.length === 0 ? <p className="muted" style={{ margin: 0 }}>No jobs in this period.</p> : (
+          <Tbl heads={['#', 'Customer', 'Jobs', 'Billed', 'Paid (invoices)', 'Outstanding']}>
+            {topCust.map((c, i) => <tr key={c.k}><TD>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</TD><TD style={{ fontWeight: 600 }}>{c.name}</TD><TD>{c.jobs}</TD><TD style={{ fontWeight: 700 }}>{fmt(c.billed)}</TD><TD style={{ color: 'var(--green-ink)', fontWeight: 600 }}>{fmt(invPaid[c.k] || 0)}</TD><TD style={{ color: (invOut[c.k] || 0) > 0 ? 'var(--red-ink)' : 'var(--muted)', fontWeight: 600 }}>{fmt(invOut[c.k] || 0)}</TD></tr>)}
+          </Tbl>
+        )}
+      </div>
+
+      <div className="d-card">
+        <div className="d-head"><h3>Job status summary</h3><span className="muted">all jobs</span></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 10 }}>
-          {JOB_STATUSES.map(s => {
-            const count = jobs.filter(j=>j.status===s).length;
-            const sc    = STATUS_COLORS[s] || {};
-            return (
-              <div key={s} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: sc.color }}>{count}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: sc.color, marginTop: 2 }}>{s}</div>
-              </div>
-            );
-          })}
+          {JOB_STATUSES.map(s => { const sc = STATUS_COLORS[s] || {}; return <div key={s} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 12, padding: '12px 14px', textAlign: 'center' }}><div style={{ fontSize: 22, fontWeight: 800, color: sc.color }}>{jobs.filter(j => j.status === s).length}</div><div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: sc.color, marginTop: 2 }}>{s}</div></div>; })}
         </div>
       </div>
     </div>
