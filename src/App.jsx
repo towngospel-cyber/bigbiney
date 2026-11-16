@@ -117,8 +117,14 @@ table{border-collapse:collapse}
 .link{background:none;border:0;color:var(--muted);cursor:pointer;font-size:12px}
 .main{padding:24px;max-width:1400px;margin:0 auto}
 .bottom,.sheet-back{display:none}
+.menu-btn,.side-out,.side-x,.scrim{display:none}
 @media (max-width:860px){
-  .side{display:none}.top{padding:8px 14px}.page-title{font-size:17px}.hide-sm{display:none}.main{padding:14px 12px 96px}
+  .app{display:block}.content{width:100%;max-width:100vw}
+  .side{position:fixed;left:0;top:0;bottom:0;height:auto;z-index:400;width:min(290px,84vw);transform:translateX(-104%);transition:transform .25s ease;padding-top:max(14px,env(safe-area-inset-top))}
+  .side.open{transform:none;box-shadow:0 0 44px rgba(0,0,0,.4)}
+  .scrim{display:block;position:fixed;inset:0;z-index:390;background:rgba(8,12,20,.5)}
+  .menu-btn{display:inline-grid;place-items:center}.side-out{display:flex;justify-content:center;margin:8px 4px 4px}.side-x{display:grid;place-items:center}
+  .top{padding:8px 12px;gap:8px}.top .chip{display:none}.page-title{font-size:17px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.hide-sm{display:none}.main{padding:12px 12px 32px}
   .bottom{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
   .bottom button{flex:1;position:relative;background:none;border:0;padding:8px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:11px;color:var(--muted);cursor:pointer}
   .bottom button.on{color:var(--primary);font-weight:700}.bottom .ico{font-size:19px}.sm-dot{position:absolute;top:6px;right:calc(50% - 20px);width:9px;height:9px;min-width:0;padding:0;border-radius:50%;background:#dc2626}
@@ -186,6 +192,14 @@ table{border-collapse:collapse}
 .rcpt{background:var(--surface-2);border-radius:12px;padding:14px;font-size:13px}.rcpt hr{border:0;border-top:1px dashed var(--line);margin:8px 0}
 .rcpt-h{text-align:center;margin-bottom:10px;line-height:1.5}.rcpt-h b{font-size:16px}
 @media (max-width:640px){.sm-grid{grid-template-columns:minmax(0,1fr)}.sm-item{grid-template-columns:minmax(0,1fr) 56px 84px 30px}.sm-item b,.sm-head span:nth-child(4){display:none}}
+
+.pr-staff{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:14px}
+.pr-av{width:42px;height:42px;border-radius:50%;background:color-mix(in srgb,var(--primary) 16%,transparent);color:var(--primary);display:grid;place-items:center;font-weight:800;flex:none}
+@media (max-width:860px){
+  .d-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.d-kpi{padding:12px}.d-kpi-v{font-size:18px}.d-kpi-top svg{width:58px}.d-ico{width:30px;height:30px;font-size:15px}
+  .d-hero h2{font-size:21px}.d-card{padding:14px}.d-seg{max-width:100%;overflow-x:auto}.d-act{padding:7px 11px;font-size:13px}.d-readout{gap:10px}
+  .pr-staff{grid-template-columns:minmax(0,1fr)}.d-filters .fld{min-width:100%}.d-hero{align-items:flex-start}.d-actions{width:100%}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -248,6 +262,7 @@ export default function PrintingPressSystem() {
   const [branches,          setBranches]          = useState([]);
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('theme') || 'auto'; } catch { return 'auto'; } });
   const [moreOpen, setMoreOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => {
     const r = document.documentElement;
     if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
@@ -358,6 +373,7 @@ export default function PrintingPressSystem() {
     { id: 'invoices',  label: '🧾 Invoices' },
     { id: 'finance',   label: '💰 Finance' },
     { id: 'branches',  label: '🏬 Branches' },
+    { id: 'receipts',  label: '🧾 Receipts' },
     { id: 'payroll',   label: '👷 Payroll' },
     { id: 'loans',     label: '🏦 Loans' },
     { id: 'reports',   label: '📈 Reports' },
@@ -365,7 +381,7 @@ export default function PrintingPressSystem() {
   ];
   const MAIN_TABS = ['dashboard', 'jobs', 'customers', 'finance'];
   const parts = (t) => { const i = t.label.indexOf(' '); return [t.label.slice(0, i), t.label.slice(i + 1)]; };
-  const go = (id) => { setActiveTab(id); setMoreOpen(false); setShowNotif(false); window.scrollTo({ top: 0 }); };
+  const go = (id) => { setActiveTab(id); setMoreOpen(false); setMenuOpen(false); setShowNotif(false); window.scrollTo({ top: 0 }); };
   const [curIcon, curName] = parts(TABS.find(t => t.id === activeTab));
   const themeNext = { auto: 'light', light: 'dark', dark: 'auto' }[theme];
   const themeIcon = { auto: '🌓', light: '☀️', dark: '🌙' }[theme];
@@ -374,8 +390,9 @@ export default function PrintingPressSystem() {
   return (
     <div className="app">
       <style>{GLOBAL_CSS}</style>
-      <aside className="side">
-        <div className="brand">🖨️ <span>Bigbiney<br /><small>Printing Press</small></span></div>
+      {menuOpen && <div className="scrim" onClick={() => setMenuOpen(false)} />}
+      <aside className={`side${menuOpen ? ' open' : ''}`}>
+        <div className="brand">🖨️ <span>Bigbiney<br /><small>Printing Press</small></span><button className="iconbtn side-x" style={{ marginLeft: 'auto' }} onClick={() => setMenuOpen(false)} aria-label="Close menu">✕</button></div>
         {TABS.map(t => { const [ic, nm] = parts(t); return (
           <button key={t.id} className={`nav${activeTab === t.id ? ' on' : ''}`} onClick={() => go(t.id)} aria-current={activeTab === t.id ? 'page' : undefined}>
             <span className="ico">{ic}</span><span>{nm}</span>{badgeFor(t.id) > 0 && <b className="pill">{badgeFor(t.id)}</b>}
@@ -383,11 +400,13 @@ export default function PrintingPressSystem() {
         ); })}
         <div className="grow" />
         <span className="who">👤 {currentUser.email}</span>
+        <button className="btn btn-ghost side-out" onClick={handleLogout}>Logout</button>
       </aside>
 
       <div className="content">
         <header className="top">
-          <h1 className="page-title"><span>{curIcon}</span> {curName}</h1>
+          <button className="iconbtn menu-btn" onClick={() => setMenuOpen(v => !v)} aria-label="Open menu" aria-expanded={menuOpen}>☰</button>
+          <h1 className="page-title" style={{ marginRight: 'auto' }}><span>{curIcon}</span> {curName}</h1>
           <div className="top-actions">
             {lowStock.length > 0 && <button className="chip bad" onClick={() => go('inventory')}>{lowStock.length} low stock</button>}
             {overdueJobs.length > 0 && <button className="chip warn" onClick={() => go('jobs')}>{overdueJobs.length} overdue</button>}
@@ -421,36 +440,14 @@ export default function PrintingPressSystem() {
         {activeTab === 'invoices'  && <InvoicesTab invoices={invoices} setInvoices={setInvoices} jobs={jobs} customers={customers} setSales={setSales} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'finance'   && <FinanceTab customers={customers} branches={branches} sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
         {activeTab === 'branches'  && <BranchesTab branches={branches} saveBranches={saveBranches} sales={sales} setSales={setSales} expenses={expenses} customers={customers} addNotif={addNotif} userId={currentUser.id} />}
-        {activeTab === 'payroll'   && <PayrollTab payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} expenses={expenses} setExpenses={setExpenses} />}
+        {activeTab === 'payroll'   && <PayrollTab branches={branches} payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} expenses={expenses} setExpenses={setExpenses} />}
         {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} sales={sales} expenses={expenses} setExpenses={setExpenses} />}
+        {activeTab === 'receipts'  && <ReceiptsTab branches={branches} customers={customers} userId={currentUser.id} addNotif={addNotif} setSales={setSales} />}
         {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} loans={loans} payroll={payroll} branches={branches} />}
         {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
         </main>
       </div>
 
-      <nav className="bottom" aria-label="Main">
-        {MAIN_TABS.map(id => { const t = TABS.find(x => x.id === id); const [ic, nm] = parts(t); return (
-          <button key={id} className={activeTab === id ? 'on' : ''} onClick={() => go(id)}><span className="ico">{ic}</span><span>{nm}</span></button>
-        ); })}
-        <button className={!MAIN_TABS.includes(activeTab) ? 'on' : ''} onClick={() => setMoreOpen(true)}>
-          <span className="ico">☰</span><span>More</span>{(lowStock.length + overdueJobs.length) > 0 && <i className="dot sm-dot" />}
-        </button>
-      </nav>
-
-      {moreOpen && (
-        <div className="sheet-back" onClick={() => setMoreOpen(false)}>
-          <div className="sheet" onClick={e => e.stopPropagation()} role="dialog" aria-label="More">
-            <div className="sheet-grid">
-              {TABS.filter(t => !MAIN_TABS.includes(t.id)).map(t => { const [ic, nm] = parts(t); return (
-                <button key={t.id} className={`tile${activeTab === t.id ? ' on' : ''}`} onClick={() => go(t.id)}>
-                  <span className="ico">{ic}</span>{nm}{badgeFor(t.id) > 0 && <b className="pill">{badgeFor(t.id)}</b>}
-                </button>
-              ); })}
-            </div>
-            <div className="sheet-f"><span className="muted">👤 {currentUser.email}</span><Btn variant="ghost" small onClick={handleLogout}>Logout</Btn></div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1680,6 +1677,29 @@ const BarList = ({ rows }) => rows.length === 0 ? <p className="muted" style={{ 
 ));
 
 /* ───────────── SALES: popup + receipt ───────────── */
+const SQL_SETUP = `-- Run once in Supabase → SQL Editor. Safe to re-run.
+alter table public.sales
+  add column if not exists branch text, add column if not exists customer text,
+  add column if not exists description text, add column if not exists items text,
+  add column if not exists discount numeric default 0, add column if not exists total numeric,
+  add column if not exists balance numeric default 0, add column if not exists reference text,
+  add column if not exists received_by text, add column if not exists notes text,
+  add column if not exists receipt_no text;
+alter table public.expenses add column if not exists branch text;
+alter table public.payroll
+  add column if not exists basic numeric, add column if not exists allowance numeric default 0,
+  add column if not exists deductions numeric default 0, add column if not exists reference text,
+  add column if not exists branch text;
+notify pgrst, 'reload schema';
+`;
+const branchColReady = (sales) => sales.length === 0 || Object.prototype.hasOwnProperty.call(sales[0], 'branch');
+const DbWarn = () => (
+  <div className="d-alert" style={{ marginBottom: 12 }}><span style={{ fontSize: 18 }}>⚠️</span>
+    <div style={{ flex: 1, minWidth: 0 }}><b>Database update needed for branches</b><div style={{ fontSize: 12 }}>Run the setup SQL once in Supabase → SQL Editor. Until then every sale is saved under the main branch.</div></div>
+    <button className="d-wa" style={{ background: 'var(--primary)' }} onClick={() => { try { navigator.clipboard.writeText(SQL_SETUP); } catch {} alert('SQL copied. Open Supabase → SQL Editor, paste it and press Run. Then refresh this page.'); }}>📋 Copy SQL</button>
+  </div>
+);
+
 const PAY_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Credit', 'Partial Payment', 'Other'];
 const QUICK_ITEMS = ['Printing', 'Photocopy', 'Banner', 'T-shirt', 'Business cards', 'Flyers', 'Lamination', 'Binding'];
 const parseItems = (x) => { if (!x) return []; if (Array.isArray(x)) return x; try { return JSON.parse(x) || []; } catch { return []; } };
@@ -1729,7 +1749,8 @@ function SaleReceipt({ sale, branch, customers = [], onClose, onNew }) {
         {sale.notes && <div className="muted" style={{ marginTop: 6 }}>📝 {sale.notes}</div>}
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
-        <Btn onClick={() => printReceipt(sale, branch)}>🖨️ Print</Btn>
+        <Btn onClick={() => printReceipt(sale, branch)}>🖨️ Print slip</Btn>
+        <Btn variant="purple" onClick={() => printOfficialReceipt({ no: sale.receipt_no, date: sale.date, received_from: sale.customer || 'Walk-in', amount: sale.amount, words: amountInWords(sale.amount), being: sale.description, mode: ['Cash', 'Mobile Money', 'Bank Transfer'].includes(sale.payment_method) ? sale.payment_method : 'Cash', cheque_no: sale.reference, balance: sale.balance > 0 ? sale.balance : '', received_by: sale.received_by }, branch)}>🧾 Official receipt</Btn>
         <Btn variant="success" disabled={!phone} onClick={() => openWhatsApp(phone, msg)}>{phone ? '📲 Send via WhatsApp' : '📲 No customer phone'}</Btn>
         {onNew && <Btn variant="ghost" onClick={onNew}>+ New sale</Btn>}
         <Btn variant="ghost" onClick={onClose}>Close</Btn>
@@ -1747,6 +1768,9 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(null);
+  const [errMsg, setErrMsg] = useState('');
+  const ready = branchColReady(sales);
+  const blocked = !ready && f.branch !== brs[0].name;
 
   const subtotal = items.reduce((a, i) => a + (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0), 0);
   const discount = Math.min(subtotal, parseFloat(f.discount) || 0);
@@ -1760,7 +1784,7 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
   const save = async () => {
     const valid = items.filter(i => (parseFloat(i.price) || 0) > 0).map(i => ({ desc: i.desc.trim() || 'Sale', qty: parseFloat(i.qty) || 1, price: parseFloat(i.price) }));
     if (!valid.length || total <= 0) { addNotif('Add at least one item with a price', 'warning'); return; }
-    setSaving(true);
+    setSaving(true); setErrMsg('');
     const n = sales.filter(s => s.date === f.date).length + 1;
     const payload = {
       date: f.date, amount: received, job_id: null,
@@ -1772,7 +1796,7 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
     };
     const { data, error, degraded } = await db.addSale(userId, payload);
     setSaving(false);
-    if (error) { addNotif('Could not save sale: ' + (error.message || error), 'warning'); return; }
+    if (error) { const m = 'Could not save sale: ' + (error.message || error); setErrMsg(m); addNotif(m, 'warning'); return; }
     if (data) setSales(prev => (prev.some(s => s.id === data.id) ? prev : [...prev, data]));
     addNotif(`Sale of ${fmt(received)} recorded${balance > 0 ? ` (${fmt(balance)} still owed)` : ''}`, 'success');
     if (degraded) addNotif('Saved, but branch/receipt details need the database update (run branches_setup.sql in Supabase)', 'warning');
@@ -1784,6 +1808,9 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
   return (
     <Modal title="💰 Record Sale" onClose={onClose} wide>
       <datalist id="sm-cx">{customers.slice(0, 2000).map(c => <option key={c.id} value={c.name} />)}</datalist>
+      {!ready && <DbWarn />}
+      {errMsg && <p className="err">{errMsg}</p>}
+      {blocked && <p className="err">Saving to “{f.branch}” isn't possible until the database update is run — the sale would be recorded under {brs[0].name} instead.</p>}
       <div className="sm-grid">
         <Inp label="Date" type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} />
         <Sel label="Branch" value={f.branch} onChange={e => setF({ ...f, branch: e.target.value })}>{brs.map(b => <option key={b.name}>{b.name}</option>)}</Sel>
@@ -1829,9 +1856,170 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
         <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-        <Btn variant="success" disabled={saving} onClick={save}>{saving ? 'Saving…' : '✔ Save sale & get receipt'}</Btn>
+        <Btn variant="success" disabled={saving || blocked} onClick={save}>{saving ? 'Saving…' : '✔ Save sale & get receipt'}</Btn>
       </div>
     </Modal>
+  );
+}
+
+/* ───────────── OFFICIAL RECEIPTS ───────────── */
+const ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENSW = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const below1000 = (n) => {
+  let s = '';
+  if (n >= 100) { s += ONES[Math.floor(n / 100)] + ' hundred'; n %= 100; if (n) s += ' and '; }
+  if (n >= 20) s += TENSW[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : ''); else if (n > 0) s += ONES[n];
+  return s;
+};
+const numToWords = (n) => {
+  if (n === 0) return 'zero';
+  const out = [];
+  [[1e9, 'billion'], [1e6, 'million'], [1e3, 'thousand']].forEach(([v, nm]) => { if (n >= v) { out.push(below1000(Math.floor(n / v)) + ' ' + nm); n %= v; } });
+  if (n > 0) out.push((out.length && n < 100 ? 'and ' : '') + below1000(n));
+  return out.join(' ');
+};
+const amountInWords = (amt) => {
+  const a = Math.round((Number(amt) || 0) * 100), c = Math.floor(a / 100), p = a % 100;
+  if (a === 0) return 'Zero Ghana cedis only';
+  let s = '';
+  if (c > 0) s += `${numToWords(c)} Ghana ${c === 1 ? 'cedi' : 'cedis'}`;
+  if (p > 0) s += `${c > 0 ? ' and ' : ''}${numToWords(p)} ${p === 1 ? 'pesewa' : 'pesewas'}`;
+  return s.charAt(0).toUpperCase() + s.slice(1) + ' only';
+};
+const num2 = (n) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const officialReceiptHTML = (r, branch, autoPrint = false) => {
+  const b = branch || {};
+  const mode = r.mode || 'Cash';
+  const cb = (m) => `<span class="cb">${mode === m ? '✕' : ''}</span>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Receipt ${escHtml(r.no || '')}</title><style>
+@page{size:A5 landscape;margin:7mm}*{box-sizing:border-box}
+html{font-size:min(calc(100vw / 52),15px)}body{margin:0;padding:.4em;font-family:Georgia,'Times New Roman',serif;color:#111;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.r{max-width:190mm;margin:0 auto;border:.16em solid #0a7fc2;border-radius:.9em;padding:1em 1.5em 1.1em}
+.hd{display:flex;align-items:center;gap:.9em}.logo{width:3.2em;height:3.2em;border-radius:.8em;background:#0a7fc2;color:#fff;display:grid;place-items:center;font-size:1.5em;flex:none}
+.org{flex:1;text-align:center;line-height:1.35}.nm{font:800 1.9em/1.1 Arial,sans-serif;color:#0a7fc2;letter-spacing:.02em}.nm span{color:#e8710a}.ct{font:.78em Arial,sans-serif;color:#333}
+.no{font:.95em Arial,sans-serif;color:#c00;white-space:nowrap}.no b{font-size:1.25em}
+.ttl{text-align:center;margin:.7em 0 .8em}.ttl span{display:inline-block;background:#111;color:#fff;border-radius:2em;padding:.25em 1.6em;font:700 1.15em Georgia,serif}
+.row{display:flex;align-items:flex-end;gap:.5em;margin:.62em 0;font-size:1.02em}.row label{white-space:nowrap;font-weight:700}
+.ln{flex:1;min-height:1.5em;border-bottom:.1em dotted #222;padding:0 .4em;font:600 1em Georgia,serif;overflow-wrap:anywhere}
+.pay{align-items:center;flex-wrap:wrap;gap:.5em .8em}.pay>span.t{font-weight:700}
+.cb{display:inline-block;width:1.25em;height:1.25em;border:.1em solid #111;text-align:center;line-height:1.1em;font:700 .9em Arial;vertical-align:middle;margin-left:.25em}
+.bx{display:inline-block;min-width:7em;min-height:1.7em;border:.1em solid #111;border-radius:.3em;padding:.15em .5em;font:700 .95em Arial,sans-serif}
+.ft{display:flex;justify-content:space-between;align-items:flex-end;margin-top:1.1em;gap:1.5em}
+.amt{display:flex;align-items:center;gap:.5em;font:800 1.5em Arial}.amt .bx{min-width:9em;font-size:.8em;border-width:.12em;border-radius:.4em}
+.sig{flex:1;max-width:18em;text-align:center}.sig .ln{flex:none;height:2.2em}.sig small{font:.78em Arial,sans-serif;color:#333}
+</style></head><body><div class="r">
+<div class="hd"><div class="logo">🖨️</div><div class="org"><div class="nm">BIGBINEY <span>PRINTING PRESS</span></div>
+<div class="ct">${escHtml([b.name, b.address].filter(Boolean).join(' · '))}</div>${b.phone ? `<div class="ct">Tel: ${escHtml(b.phone)}</div>` : ''}</div>
+<div class="no">No. <b>${escHtml(r.no || '')}</b></div></div>
+<div class="ttl"><span>Official Receipt</span></div>
+<div class="row"><label>Date</label><div class="ln">${escHtml(r.date)}</div></div>
+<div class="row"><label>Received from</label><div class="ln">${escHtml(r.received_from)}</div></div>
+<div class="row"><label>The sum of</label><div class="ln">${escHtml(r.words || amountInWords(r.amount))}</div></div>
+<div class="row"><label>Being</label><div class="ln">${escHtml(r.being)}</div></div>
+<div class="row pay"><span class="t">Cash</span>${cb('Cash')}<span class="t">Cheque</span>${cb('Cheque')}<span class="t">MoMo</span>${cb('Mobile Money')}<span class="t">Bank</span>${cb('Bank Transfer')}
+<label>Cheque / Ref. No.</label><span class="bx">${escHtml(r.cheque_no)}</span><label>Balance</label><span class="bx">${r.balance === '' || r.balance == null ? '' : num2(r.balance)}</span></div>
+<div class="ft"><div class="amt">GH₵ <span class="bx">${num2(r.amount)}</span></div>
+<div class="sig"><div class="ln"></div><small>Signature${r.received_by ? ` — ${escHtml(r.received_by)}` : ''}</small></div></div>
+</div>${autoPrint ? '<script>window.onload=function(){setTimeout(function(){window.print()},300)}</script>' : ''}</body></html>`;
+};
+const printOfficialReceipt = (r, branch) => {
+  const w = window.open('', '_blank', 'width=900,height=650');
+  if (!w) { alert('Please allow pop-ups to print the receipt.'); return; }
+  w.document.write(officialReceiptHTML(r, branch, true)); w.document.close();
+};
+
+function ReceiptsTab({ branches = [], customers = [], userId, addNotif, setSales }) {
+  const list = branches.length ? branches : [{ name: 'Main Branch' }];
+  const [rcpts, setRcpts] = useState([]);
+  const blank = () => ({ date: todayStr(), branch: list[0].name, received_from: '', amount: '', words: '', being: '', mode: 'Cash', cheque_no: '', balance: '', received_by: '', also_income: false });
+  const [f, setF] = useState(blank());
+  const [wordsEdited, setWordsEdited] = useState(false);
+  const [q, setQ] = useState('');
+  const [preview, setPreview] = useState(null);
+  useEffect(() => { db.getSetting(userId, 'official_receipts').then(({ data }) => { if (data?.value) { try { setRcpts(JSON.parse(data.value)); } catch {} } }); }, [userId]);
+  const persist = async (next) => { setRcpts(next); await db.setSetting(userId, 'official_receipts', JSON.stringify(next.slice(0, 1000))); };
+
+  const maxNo = rcpts.reduce((a, r) => Math.max(a, parseInt(String(r.no || '').replace(/\D/g, ''), 10) || 0), 0);
+  const nextNo = `OR-${String(maxNo + 1).padStart(4, '0')}`;
+  const amt = parseFloat(f.amount) || 0;
+  const draft = { ...f, no: nextNo, amount: amt, words: wordsEdited ? f.words : (amt ? amountInWords(amt) : ''), balance: f.balance === '' ? '' : parseFloat(f.balance) || 0 };
+  const branchOf = (name) => list.find(b => b.name === name);
+  const html = officialReceiptHTML(preview || draft, branchOf((preview || draft).branch));
+
+  const issue = async (print) => {
+    if (!amt || !f.received_from.trim()) { addNotif('Enter who paid and the amount', 'warning'); return; }
+    const rec = { ...draft, id: Date.now(), created_at: new Date().toISOString() };
+    delete rec.also_income;
+    await persist([rec, ...rcpts]);
+    if (f.also_income) {
+      const { data } = await db.addSale(userId, { date: f.date, amount: amt, job_id: null, payment_method: f.mode === 'Cheque' ? 'Bank Transfer' : f.mode, branch: f.branch, customer: f.received_from, description: f.being, receipt_no: rec.no, reference: f.cheque_no, total: amt, balance: 0, received_by: f.received_by });
+      if (data && setSales) setSales(p => (p.some(s => s.id === data.id) ? p : [...p, data]));
+    }
+    addNotif(`Receipt ${rec.no} issued${f.also_income ? ' and recorded as income' : ''}`, 'success');
+    if (print) printOfficialReceipt(rec, branchOf(rec.branch));
+    setF({ ...blank(), branch: f.branch, date: f.date }); setWordsEdited(false); setPreview(null);
+  };
+  const del = async (r) => { if (window.confirm(`Delete receipt ${r.no}?`)) { await persist(rcpts.filter(x => x.id !== r.id)); if (preview?.id === r.id) setPreview(null); } };
+  const shown = rcpts.filter(r => !q.trim() || `${r.no} ${r.received_from} ${r.being} ${r.date}`.toLowerCase().includes(q.trim().toLowerCase()));
+
+  return (
+    <div>
+      <div className="d-hero">
+        <div><h2>🧾 Official Receipts</h2><p>Issue and print receipts like your paper receipt book · {rcpts.length} issued</p></div>
+        <div className="d-actions"><button className="d-act" onClick={() => { setF(blank()); setWordsEdited(false); setPreview(null); }}>↺ New receipt</button></div>
+      </div>
+      <datalist id="rc-cx">{customers.slice(0, 2000).map(c => <option key={c.id} value={c.name} />)}</datalist>
+      <div className="d-grid g-2">
+        <div className="d-card">
+          <div className="d-head"><h3>Receipt details</h3><span className="d-tag">{nextNo}</span></div>
+          <div className="sm-grid">
+            <Inp label="Date" type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} />
+            <Sel label="Branch" value={f.branch} onChange={e => setF({ ...f, branch: e.target.value })}>{list.map(b => <option key={b.name}>{b.name}</option>)}</Sel>
+          </div>
+          <Inp label="Received from *" list="rc-cx" value={f.received_from} onChange={e => setF({ ...f, received_from: e.target.value })} placeholder="Customer / payer name" />
+          <div className="sm-grid" style={{ marginTop: 10 }}>
+            <Inp label="Amount (GH₵) *" type="number" value={f.amount} onChange={e => { setF({ ...f, amount: e.target.value }); }} />
+            <Inp label="Balance remaining (GH₵)" type="number" value={f.balance} onChange={e => setF({ ...f, balance: e.target.value })} />
+          </div>
+          <div className="fld" style={{ margin: '10px 0' }}><label>The sum of (auto-written, editable)</label>
+            <textarea rows={2} value={draft.words} onChange={e => { setWordsEdited(true); setF({ ...f, words: e.target.value }); }} /></div>
+          <Inp label="Being (payment for)" value={f.being} onChange={e => setF({ ...f, being: e.target.value })} placeholder="e.g. Printing of 500 flyers (deposit)" />
+          <div className="sm-grid" style={{ marginTop: 10 }}>
+            <Sel label="Payment mode" value={f.mode} onChange={e => setF({ ...f, mode: e.target.value })}>{['Cash', 'Cheque', 'Mobile Money', 'Bank Transfer'].map(m => <option key={m}>{m}</option>)}</Sel>
+            <Inp label="Cheque no. / reference" value={f.cheque_no} onChange={e => setF({ ...f, cheque_no: e.target.value })} />
+          </div>
+          <Sel label="Received by (signature name)" value={f.received_by} onChange={e => setF({ ...f, received_by: e.target.value })}><option value="">—</option>{STAFF_LIST.map(s => <option key={s}>{s}</option>)}</Sel>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '12px 0', fontSize: 13 }}><input type="checkbox" style={{ width: 'auto' }} checked={f.also_income} onChange={e => setF({ ...f, also_income: e.target.checked })} />Also record this payment as income in Finance</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Btn onClick={() => issue(true)}>🖨️ Issue & print</Btn>
+            <Btn variant="ghost" onClick={() => issue(false)}>Save only</Btn>
+          </div>
+        </div>
+        <div className="d-card">
+          <div className="d-head"><h3>{preview ? `Preview — ${preview.no}` : 'Live preview'}</h3>{preview && <button className="d-link" onClick={() => setPreview(null)}>Back to draft</button>}</div>
+          <iframe title="Receipt preview" srcDoc={html} style={{ width: '100%', aspectRatio: '210 / 150', border: '1px solid var(--line)', borderRadius: 12, background: '#fff' }} />
+          {preview && <div style={{ marginTop: 10 }}><Btn onClick={() => printOfficialReceipt(preview, branchOf(preview.branch))}>🖨️ Print this receipt</Btn></div>}
+          <p className="muted" style={{ fontSize: 12, marginBottom: 0 }}>Prints on A5 landscape. In the print dialog choose "Save as PDF" to send it digitally.</p>
+        </div>
+      </div>
+
+      <div className="d-card">
+        <div className="d-head"><h3>Issued receipts</h3><div style={{ minWidth: 200 }}><Inp placeholder="Search no., name, details…" value={q} onChange={e => setQ(e.target.value)} /></div></div>
+        {shown.length === 0 ? <p className="muted" style={{ margin: 0 }}>No receipts issued yet.</p> : (
+          <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['No.', 'Date', 'Received from', 'Being', 'Mode', 'Amount', 'Balance', ''].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>{shown.slice(0, 100).map(r => (
+              <tr key={r.id}>
+                <TD style={{ fontWeight: 700, color: 'var(--primary)' }}>{r.no}</TD><TD>{r.date}</TD><TD style={{ fontWeight: 600 }}>{r.received_from}</TD>
+                <TD style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.being || '—'}</TD><TD>{r.mode}</TD>
+                <TD style={{ fontWeight: 700, color: 'var(--green-ink)' }}>{fmt(r.amount)}</TD><TD>{r.balance === '' || r.balance == null ? '—' : fmt(r.balance)}</TD>
+                <TD style={{ whiteSpace: 'nowrap' }}><button className="d-link" onClick={() => { setPreview(r); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>👁 View</button>{' '}<button className="d-link" onClick={() => printOfficialReceipt(r, branchOf(r.branch))}>🖨️ Print</button>{' '}<button className="d-link" style={{ color: 'var(--red-ink)' }} onClick={() => del(r)}>Delete</button></TD>
+              </tr>))}</tbody>
+          </table></div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -2100,159 +2288,220 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
   );
 }
 
-function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpenses }) {
-  const [modal,       setModal]       = useState(false);
-  const [form,        setForm]        = useState({ staff_name: '', amount: '', period: '', date: todayStr(), payment_method: 'Cash', notes: '' });
-  const [saving,      setSaving]      = useState(false);
-  const [staffList,   setStaffList]   = useState(STAFF_LIST);
-  const [addingStaff, setAddingStaff] = useState(false);
-  const [newStaff,    setNewStaff]    = useState('');
-  const [staffLoaded, setStaffLoaded] = useState(false);
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const initials = (n) => (n || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-  // Load staff list from Supabase on mount
+const printPayslip = (p, pr = {}, branch) => {
+  const basic = p.basic ?? p.amount, allow = p.allowance || 0, ded = p.deductions || 0;
+  const w = window.open('', '_blank', 'width=720,height=820');
+  if (!w) { alert('Please allow pop-ups to print the payslip.'); return; }
+  w.document.write(`<html><head><title>Payslip ${escHtml(p.staff_name)}</title><style>body{font:14px system-ui,sans-serif;max-width:640px;margin:24px auto;padding:0 16px;color:#111}h2,h3,p{margin:2px 0;text-align:center}table{width:100%;border-collapse:collapse;margin:14px 0}td{padding:7px 4px;border-bottom:1px solid #ddd}.r{text-align:right}.n td{font-weight:800;font-size:16px;border-top:2px solid #111;border-bottom:0}.sg{display:flex;justify-content:space-between;margin-top:56px}.sg div{width:44%;border-top:1px solid #111;text-align:center;padding-top:4px;font-size:12px}small{color:#555}</style></head><body>
+<h2>Bigbiney Printing Press</h2><p>${escHtml([branch?.name, branch?.address].filter(Boolean).join(' · '))}</p><h3 style="margin-top:10px;letter-spacing:.1em">PAYSLIP</h3><p><small>${escHtml(p.period || '')}</small></p>
+<table><tr><td>Employee</td><td class="r"><b>${escHtml(p.staff_name)}</b></td></tr><tr><td>Role</td><td class="r">${escHtml(pr.role || '—')}</td></tr><tr><td>Payment date</td><td class="r">${escHtml(p.date)}</td></tr><tr><td>Method</td><td class="r">${escHtml(p.payment_method)}${p.reference ? ' · ' + escHtml(p.reference) : ''}</td></tr></table>
+<table><tr><td>Basic salary</td><td class="r">${fmt(basic)}</td></tr>${allow ? `<tr><td>Allowance / bonus</td><td class="r">${fmt(allow)}</td></tr>` : ''}${ded ? `<tr><td>Deductions</td><td class="r">−${fmt(ded)}</td></tr>` : ''}<tr class="n"><td>NET PAY</td><td class="r">${fmt(p.amount)}</td></tr></table>
+<p><small>${escHtml(amountInWords(p.amount))}</small></p>${p.notes ? `<p><small>Note: ${escHtml(p.notes)}</small></p>` : ''}
+<div class="sg"><div>Employee signature</div><div>Authorised by</div></div><script>window.onload=function(){setTimeout(function(){window.print()},300)}</script></body></html>`);
+  w.document.close();
+};
+
+function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpenses, branches = [] }) {
+  const [pay, setPay]             = useState(null);
+  const [staffModal, setStaffModal] = useState(null);
+  const [saving, setSaving]       = useState(false);
+  const [done, setDone]           = useState(null);
+  const [staffList, setStaffList] = useState(STAFF_LIST);
+  const [profiles, setProfiles]   = useState({});
+  const [fMonth, setFMonth]       = useState('all');
+  const [fStaff, setFStaff]       = useState('all');
+  const [q, setQ]                 = useState('');
+
   useEffect(() => {
-    db.getSetting(userId, 'staff_list').then(({ data }) => {
-      if (data && data.value) {
-        try { setStaffList(JSON.parse(data.value)); } catch { setStaffList(STAFF_LIST); }
-      }
-      setStaffLoaded(true);
+    Promise.all([db.getSetting(userId, 'staff_list'), db.getSetting(userId, 'staff_profiles')]).then(([a, b]) => {
+      if (a.data?.value) { try { setStaffList(JSON.parse(a.data.value)); } catch {} }
+      if (b.data?.value) { try { setProfiles(JSON.parse(b.data.value)); } catch {} }
     });
   }, [userId]);
+  const persist = async (list, prof) => { setStaffList(list); setProfiles(prof); await db.setSetting(userId, 'staff_list', JSON.stringify(list)); await db.setSetting(userId, 'staff_profiles', JSON.stringify(prof)); };
 
-  // Save staff list to Supabase whenever it changes (after initial load)
-  useEffect(() => {
-    if (!staffLoaded) return;
-    db.setSetting(userId, 'staff_list', JSON.stringify(staffList));
-  }, [staffList, staffLoaded, userId]);
+  const now = new Date(), cm = getCurrentMonth(), pm = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  const sumP = (pred) => payroll.filter(pred).reduce((a, p) => a + (p.amount || 0), 0);
+  const names = [...new Set([...staffList, ...payroll.map(p => p.staff_name).filter(Boolean)])].filter(n => !profiles[n]?.archived);
+  const staffRows = names.map(name => {
+    const pr = profiles[name] || {}, rows = payroll.filter(p => p.staff_name === name), salary = parseFloat(pr.salary) || 0;
+    const mPaid = rows.filter(p => (p.date || '').startsWith(cm)).reduce((a, p) => a + (p.amount || 0), 0);
+    return { name, pr, salary, mPaid, balance: Math.max(0, salary - mPaid), total: rows.reduce((a, p) => a + (p.amount || 0), 0), count: rows.length, last: [...rows].sort((a, b) => (b.date || '').localeCompare(a.date || ''))[0] };
+  });
+  const budget = staffRows.reduce((a, s) => a + s.salary, 0), owing = staffRows.reduce((a, s) => a + s.balance, 0);
+  const pending = staffRows.filter(s => s.salary > 0 && s.balance > 0).length;
+  const m6 = Array.from({ length: 6 }, (_, i) => { const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1), k = monthKey(d); return { label: d.toLocaleString('en', { month: 'short' }), v: sumP(p => (p.date || '').startsWith(k)) }; });
+  const m6max = Math.max(...m6.map(m => m.v), 1);
+  const yearTot = sumP(p => (p.date || '').startsWith(String(now.getFullYear())));
 
-  const totalPaid = payroll.reduce((a, p) => a + (p.amount||0), 0);
-  const thisMonth = getCurrentMonth();
-  const monthPaid = payroll.filter(p => (p.date||'').startsWith(thisMonth)).reduce((a, p) => a + (p.amount||0), 0);
-  const byStaff   = staffList.map(name => ({
-    name,
-    total:         payroll.filter(p => p.staff_name === name).reduce((a, p) => a + (p.amount||0), 0),
-    lastPaid:      payroll.filter(p => p.staff_name === name).sort((a,b) => (b.date||'').localeCompare(a.date||''))[0]?.date || null,
-    paidThisMonth: payroll.filter(p => p.staff_name === name && (p.date||'').startsWith(thisMonth)).reduce((a,p)=>a+(p.amount||0),0),
-  }));
+  const openPay = (name = '') => {
+    const s = staffRows.find(x => x.name === name);
+    setPay({ staff_name: name, month: MONTH_NAMES[now.getMonth()], year: String(now.getFullYear()), basic: s?.salary ? String(s.balance > 0 ? s.balance : s.salary) : '', allowance: '', deductions: '', date: todayStr(), payment_method: 'Cash', reference: '', notes: '' });
+  };
+  const net = pay ? (parseFloat(pay.basic) || 0) + (parseFloat(pay.allowance) || 0) - (parseFloat(pay.deductions) || 0) : 0;
 
   const save = async () => {
-    if (!form.staff_name || !form.amount) return;
+    if (!pay.staff_name || net <= 0) { addNotif('Choose a staff member and enter an amount', 'warning'); return; }
     setSaving(true);
-    const amt = parseFloat(form.amount)||0;
-    const { data, error } = await db.addPayroll(userId, { ...form, amount: amt });
-    if (!error) {
-      setPayroll([data, ...payroll]);
-      // Auto-record as Salaries expense so it deducts from monthly income
-      const { data: expData } = await db.addExpense(userId, {
-        date: form.date, category: 'Salaries',
-        description: `Salary — ${form.staff_name}${form.period ? ' ('+form.period+')' : ''}`,
-        amount: amt,
-      });
-      if (expData && setExpenses) setExpenses(prev => [expData, ...prev]);
-      addNotif(`${form.staff_name} paid ${fmt(amt)} — recorded as expense`, 'success');
-      setModal(false);
-      setForm({ staff_name: '', amount: '', period: '', date: todayStr(), payment_method: 'Cash', notes: '' });
-    } else addNotif('Error saving payroll record', 'warning');
-    setSaving(false);
+    const basic = parseFloat(pay.basic) || 0, allowance = parseFloat(pay.allowance) || 0, deductions = parseFloat(pay.deductions) || 0, pr = profiles[pay.staff_name] || {};
+    const breakdown = (allowance || deductions) ? `(Basic ${fmt(basic)}${allowance ? ` + Allowance ${fmt(allowance)}` : ''}${deductions ? ` − Deductions ${fmt(deductions)}` : ''})` : '';
+    const payload = { staff_name: pay.staff_name, amount: net, period: `${pay.month} ${pay.year}`, date: pay.date, payment_method: pay.payment_method, notes: [pay.notes, breakdown].filter(Boolean).join(' '), basic, allowance, deductions, reference: pay.reference, branch: pr.branch || '' };
+    const { data, error, degraded } = await db.addPayroll(userId, payload);
+    if (error) { addNotif('Error saving payroll record', 'warning'); setSaving(false); return; }
+    if (data) setPayroll(prev => [data, ...prev.filter(x => x.id !== data.id)]);
+    const { data: expData } = await db.addExpense(userId, { date: pay.date, category: 'Salaries', description: `Salary — ${pay.staff_name} (${payload.period})`, amount: net, branch: pr.branch || null });
+    if (expData && setExpenses) setExpenses(prev => [expData, ...prev.filter(x => x.id !== expData.id)]);
+    addNotif(`${pay.staff_name} paid ${fmt(net)} — recorded as expense`, 'success');
+    if (degraded) addNotif('Saved. Run the setup SQL to store allowance/deduction fields separately.', 'warning');
+    setDone({ ...payload, ...(data || {}) }); setPay(null); setSaving(false);
   };
-
   const del = async (id) => {
-    if (!window.confirm('Delete this payroll record?')) return;
+    if (!window.confirm('Delete this payroll record? (The matching expense stays in Finance.)')) return;
     const { error } = await db.deletePayroll(id);
-    if (!error) {
-      setPayroll(prev => prev.filter(p => p.id !== id));
-      addNotif('Payroll record deleted', 'success');
-    } else addNotif('Error deleting record', 'warning');
+    if (!error) { setPayroll(prev => prev.filter(p => p.id !== id)); addNotif('Payroll record deleted', 'success'); } else addNotif('Error deleting record', 'warning');
   };
+  const saveStaff = async () => {
+    const n = staffModal.name.trim(); if (!n) return;
+    if (!staffModal.isEdit && names.some(x => x.toLowerCase() === n.toLowerCase())) { addNotif('Staff member already exists', 'warning'); return; }
+    const { isEdit, name, ...rest } = staffModal;
+    await persist(staffList.includes(n) ? staffList : [...staffList, n], { ...profiles, [n]: { ...rest, archived: false } });
+    addNotif(isEdit ? 'Staff updated' : `${n} added to staff`, 'success'); setStaffModal(null);
+  };
+  const archive = async (n) => { if (window.confirm(`Remove ${n} from the active staff list? Their payment history stays.`)) await persist(staffList, { ...profiles, [n]: { ...(profiles[n] || {}), archived: true } }); };
 
-  const removeStaff = (name) => {
-    if (!window.confirm(`Remove ${name} from staff list? Their payroll history stays.`)) return;
-    setStaffList(prev => prev.filter(s => s !== name));
-  };
-
-  const addStaffMember = () => {
-    const n = newStaff.trim();
-    if (!n) return;
-    if (staffList.includes(n)) { alert('Staff member already exists'); return; }
-    setStaffList(prev => [...prev, n]);
-    setNewStaff(''); setAddingStaff(false);
-    addNotif(`${n} added to staff`, 'success');
-  };
+  const monthOpts = [...new Set(payroll.map(p => (p.date || '').slice(0, 7)).filter(Boolean))].sort().reverse();
+  const rows = [...payroll].filter(p => (fMonth === 'all' || (p.date || '').startsWith(fMonth)) && (fStaff === 'all' || p.staff_name === fStaff) && (!q.trim() || `${p.staff_name} ${p.period} ${p.notes} ${p.reference || ''}`.toLowerCase().includes(q.trim().toLowerCase()))).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const rowsTot = rows.reduce((a, p) => a + (p.amount || 0), 0);
+  const exportCSV = () => downloadCSV('payroll.csv', [['Date', 'Staff', 'Period', 'Basic', 'Allowance', 'Deductions', 'Net paid', 'Method', 'Reference', 'Notes'], ...rows.map(p => [p.date, p.staff_name, p.period, p.basic ?? p.amount, p.allowance || 0, p.deductions || 0, p.amount, p.payment_method, p.reference || '', p.notes || ''])]);
+  const brOf = (n) => branches.find(b => b.name === (profiles[n]?.branch || branches[0]?.name));
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>👷 Staff Payroll</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Btn variant="ghost" onClick={() => setAddingStaff(v => !v)}>+ Add Staff</Btn>
-          <Btn onClick={() => setModal(true)}>+ Record Payment</Btn>
+      <div className="d-hero">
+        <div><h2>👷 Staff Payroll</h2><p>{names.length} staff · salary payments are recorded as expenses automatically</p></div>
+        <div className="d-actions">
+          <button className="d-act" onClick={() => setStaffModal({ name: '', role: '', salary: '', phone: '', branch: branches[0]?.name || '', start_date: '' })}>+ Add staff</button>
+          <button className="d-act p" onClick={() => openPay('')}>💸 Record payment</button>
         </div>
       </div>
-      {addingStaff && (
-        <div style={{ background: 'var(--sky-bg)', border: '1px solid #bae6fd', borderRadius: 8, padding: 14, marginBottom: 16, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <Inp label="New Staff Name" value={newStaff} onChange={e => setNewStaff(e.target.value)} placeholder="e.g. Kojo" />
-          <Btn onClick={addStaffMember}>Add</Btn>
-          <Btn variant="ghost" onClick={() => { setAddingStaff(false); setNewStaff(''); }}>Cancel</Btn>
+
+      <div className="d-kpis">
+        <Kpi label="Paid this month" value={fmt(sumP(p => (p.date || '').startsWith(cm)))} icon="💸" color="var(--primary)" delta={pctChange(sumP(p => (p.date || '').startsWith(cm)), sumP(p => (p.date || '').startsWith(pm)))} invert spark={m6.map(m => m.v)} />
+        <Kpi label="Monthly payroll budget" value={fmt(budget)} icon="📋" color="var(--amber-ink)" delta={null} sub={budget ? `${fmt(owing)} still to pay` : 'Set salaries on staff cards'} />
+        <Kpi label="Paid this year" value={fmt(yearTot)} icon="📅" color="var(--green-ink)" delta={null} sub={`All time ${fmt(sumP(() => true))}`} />
+        <Kpi label="Staff members" value={String(names.length)} icon="👥" color="#7c3aed" delta={null} sub={pending ? `${pending} not fully paid this month` : 'All paid up ✅'} />
+      </div>
+
+      <div className="d-grid g-2-1">
+        <div className="d-card">
+          <div className="d-head"><h3>Payroll — last 6 months</h3><span className="muted">{fmt(m6.reduce((a, m) => a + m.v, 0))}</span></div>
+          <BarList rows={m6.map(m => ({ label: m.label, pct: Math.round((m.v / m6max) * 100), right: fmt(m.v) }))} />
         </div>
-      )}
-      <div style={{ background: 'var(--green-bg)', border: '1px solid var(--green-line)', borderRadius: 6, padding: '8px 14px', marginBottom: 16, fontSize: 12, color: 'var(--green-ink)' }}>
-        💡 Salary payments are <strong>automatically recorded as expenses</strong> and deducted from monthly income.
+        <div className="d-card">
+          <div className="d-head"><h3>This month by staff</h3></div>
+          <BarList rows={staffRows.filter(s => s.mPaid > 0).map(s => ({ label: s.name, pct: Math.round((s.mPaid / Math.max(...staffRows.map(x => x.mPaid), 1)) * 100), color: 'var(--green-ink)', right: fmt(s.mPaid) }))} />
+        </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 20 }}>
-        <StatCard label="Total Paid (All Time)" value={fmt(totalPaid)} accent="var(--primary)" />
-        <StatCard label="Paid This Month"       value={fmt(monthPaid)} accent="#16a34a" />
-        <StatCard label="Staff Members"         value={staffList.length} accent="#7c3aed" />
+
+      <div className="pr-staff">
+        {staffRows.map(s => {
+          const pct = s.salary > 0 ? Math.min(100, Math.round((s.mPaid / s.salary) * 100)) : 0;
+          return (
+            <div key={s.name} className="d-card">
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+                <div className="pr-av">{initials(s.name)}</div>
+                <div style={{ minWidth: 0, flex: 1 }}><b className="ellip" style={{ display: 'block' }}>{s.name}</b><span className="muted ellip" style={{ display: 'block', fontSize: 12 }}>{[s.pr.role, s.pr.branch].filter(Boolean).join(' · ') || 'No role set'}</span></div>
+                <button className="d-link" onClick={() => setStaffModal({ ...s.pr, name: s.name, isEdit: true })}>Edit</button>
+              </div>
+              {s.salary > 0 ? (<>
+                <div className="ln-r"><span>This month</span><b>{fmt(s.mPaid)} / {fmt(s.salary)}</b></div>
+                <div className="ln-bar"><i style={{ width: `${pct}%` }} /></div>
+                <div className="ln-r" style={{ fontSize: 12 }}><span className="muted">{s.balance > 0 ? 'Balance due' : ''}</span><b style={{ color: s.balance > 0 ? 'var(--red-ink)' : 'var(--green-ink)' }}>{s.balance > 0 ? fmt(s.balance) : '✅ Fully paid'}</b></div>
+              </>) : <div className="muted" style={{ fontSize: 12 }}>No monthly salary set — click Edit.</div>}
+              <div className="muted" style={{ fontSize: 11, margin: '8px 0' }}>All time {fmt(s.total)} · {s.count} payment{s.count === 1 ? '' : 's'} · Last paid {s.last?.date || 'never'}</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <Btn small onClick={() => openPay(s.name)}>+ Pay now</Btn>
+                {s.last && <Btn small variant="ghost" onClick={() => printPayslip(s.last, s.pr, brOf(s.name))}>🧾 Last payslip</Btn>}
+                <Btn small variant="ghost" onClick={() => setFStaff(s.name)}>History</Btn>
+                <Btn small variant="ghost" onClick={() => archive(s.name)}>×</Btn>
+              </div>
+            </div>
+          );
+        })}
+        {staffRows.length === 0 && <div className="d-card muted">No staff yet — click “+ Add staff”.</div>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, marginBottom: 24 }}>
-        {byStaff.map(s => (
-          <div key={s.name} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: 16, position: 'relative' }}>
-            <button onClick={() => removeStaff(s.name)} title="Remove from staff list" style={{ position: 'absolute', top: 8, right: 8, background: 'var(--red-bg)', border: 'none', borderRadius: 4, width: 22, height: 22, cursor: 'pointer', color: '#dc2626', fontWeight: 800, fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>👤 {s.name}</div>
-            <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>All time: {fmt(s.total)}</div>
-            <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>This month: {fmt(s.paidThisMonth)}</div>
-            <div style={{ fontSize: 11, color: 'var(--faint)', marginTop: 3 }}>Last paid: {s.lastPaid || 'Never'}</div>
-            <Btn small variant="primary" style={{ marginTop: 8 }} onClick={() => { setForm(f => ({ ...f, staff_name: s.name })); setModal(true); }}>+ Pay Now</Btn>
-          </div>
-        ))}
-      </div>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr>{['Staff','Amount','Period','Date','Method','Notes','Action'].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+
+      <div className="d-card">
+        <div className="d-head"><h3>Payment history</h3><button className="d-link" onClick={exportCSV}>⬇️ Export CSV</button></div>
+        <div className="d-filters">
+          <Sel label="Month" value={fMonth} onChange={e => setFMonth(e.target.value)}><option value="all">All time</option>{monthOpts.map(m => <option key={m}>{m}</option>)}</Sel>
+          <Sel label="Staff" value={fStaff} onChange={e => setFStaff(e.target.value)}><option value="all">All staff</option>{[...new Set([...names, ...payroll.map(p => p.staff_name)])].filter(Boolean).map(n => <option key={n}>{n}</option>)}</Sel>
+          <Inp label="Search" value={q} onChange={e => setQ(e.target.value)} placeholder="Period, notes, reference…" />
+        </div>
+        <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead><tr>{['Date', 'Staff', 'Period', 'Basic', 'Allow.', 'Deduct.', 'Net paid', 'Method', 'Notes', ''].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
           <tbody>
-            {[...payroll].sort((a,b) => (b.date||'').localeCompare(a.date||'')).map(p => (
+            {rows.map(p => (
               <tr key={p.id}>
-                <TD style={{ fontWeight: 600 }}>👤 {p.staff_name}</TD>
-                <TD style={{ fontWeight: 700, color: '#dc2626' }}>{fmt(p.amount)}</TD>
-                <TD style={{ color: 'var(--muted)' }}>{p.period || '—'}</TD>
-                <TD>{p.date}</TD>
-                <TD><span style={{ background: 'var(--surface-2)', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{p.payment_method}</span></TD>
-                <TD style={{ color: 'var(--muted)', fontSize: 12 }}>{p.notes}</TD>
-                <TD><Btn variant="danger" small onClick={() => del(p.id)}>Del</Btn></TD>
+                <TD>{p.date}</TD><TD style={{ fontWeight: 600 }}>{p.staff_name}</TD><TD>{p.period || '—'}</TD>
+                <TD>{p.basic != null ? fmt(p.basic) : '—'}</TD><TD style={{ color: 'var(--green-ink)' }}>{p.allowance ? fmt(p.allowance) : '—'}</TD><TD style={{ color: 'var(--red-ink)' }}>{p.deductions ? fmt(p.deductions) : '—'}</TD>
+                <TD style={{ fontWeight: 800 }}>{fmt(p.amount)}</TD><TD><span className="d-tag">{p.payment_method}</span></TD>
+                <TD style={{ color: 'var(--muted)', fontSize: 12, maxWidth: 200 }}>{p.reference ? `Ref ${p.reference}. ` : ''}{p.notes}</TD>
+                <TD style={{ whiteSpace: 'nowrap' }}><button className="d-link" onClick={() => printPayslip(p, profiles[p.staff_name], brOf(p.staff_name))}>🧾 Payslip</button>{' '}<button className="d-link" style={{ color: 'var(--red-ink)' }} onClick={() => del(p.id)}>Delete</button></TD>
               </tr>
             ))}
-            {payroll.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--faint)' }}>No payroll records yet</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={10} style={{ textAlign: 'center', padding: 28, color: 'var(--faint)' }}>No payments match.</td></tr>}
+            {rows.length > 0 && <tr className="d-tot"><td className="td" colSpan={6}>Total ({rows.length})</td><td className="td">{fmt(rowsTot)}</td><td className="td" colSpan={3} /></tr>}
           </tbody>
-        </table>
+        </table></div>
       </div>
-      {modal && (
-        <Modal title="Record Salary Payment" onClose={() => setModal(false)}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Sel label="Staff Member *" value={form.staff_name} onChange={e => setForm({ ...form, staff_name: e.target.value })}>
-              <option value="">— Select Staff —</option>
-              {staffList.map(s => <option key={s}>{s}</option>)}
-            </Sel>
-            <Inp label="Amount (GH₵) *" type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
-            <Inp label="Period (e.g. May 2026)" value={form.period} onChange={e => setForm({ ...form, period: e.target.value })} />
-            <Inp label="Date" type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-            <Sel label="Payment Method" value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })}>
-              {['Cash','Mobile Money','Bank Transfer'].map(m => <option key={m}>{m}</option>)}
-            </Sel>
-            <Inp label="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+
+      {pay && (
+        <Modal title="💸 Record salary payment" onClose={() => setPay(null)} wide>
+          <div className="sm-grid">
+            <Sel label="Staff member *" value={pay.staff_name} onChange={e => { const s = staffRows.find(x => x.name === e.target.value); setPay({ ...pay, staff_name: e.target.value, basic: s?.salary ? String(s.balance > 0 ? s.balance : s.salary) : pay.basic }); }}><option value="">— Select —</option>{names.map(n => <option key={n}>{n}</option>)}</Sel>
+            <Inp label="Payment date" type="date" value={pay.date} onChange={e => setPay({ ...pay, date: e.target.value })} />
+            <Sel label="Pay period — month" value={pay.month} onChange={e => setPay({ ...pay, month: e.target.value })}>{MONTH_NAMES.map(m => <option key={m}>{m}</option>)}</Sel>
+            <Sel label="Year" value={pay.year} onChange={e => setPay({ ...pay, year: e.target.value })}>{[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => <option key={y}>{y}</option>)}</Sel>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 18, justifyContent: 'flex-end' }}>
-            <Btn variant="ghost" onClick={() => setModal(false)}>Cancel</Btn>
-            <Btn onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Record Payment'}</Btn>
+          <div className="sm-sec">Pay breakdown</div>
+          <div className="sm-grid">
+            <Inp label="Basic / amount (GH₵) *" type="number" value={pay.basic} onChange={e => setPay({ ...pay, basic: e.target.value })} />
+            <Inp label="Allowance / bonus (GH₵)" type="number" value={pay.allowance} onChange={e => setPay({ ...pay, allowance: e.target.value })} />
+            <Inp label="Deductions / advance (GH₵)" type="number" value={pay.deductions} onChange={e => setPay({ ...pay, deductions: e.target.value })} />
+            <Sel label="Payment method" value={pay.payment_method} onChange={e => setPay({ ...pay, payment_method: e.target.value })}>{['Cash', 'Mobile Money', 'Bank Transfer'].map(m => <option key={m}>{m}</option>)}</Sel>
+            <Inp label="Reference / MoMo ID" value={pay.reference} onChange={e => setPay({ ...pay, reference: e.target.value })} />
+            <Inp label="Notes" value={pay.notes} onChange={e => setPay({ ...pay, notes: e.target.value })} />
           </div>
+          <div className="sm-sum">
+            <div className="ln-r"><span>Basic</span><b>{fmt(parseFloat(pay.basic) || 0)}</b></div>
+            {parseFloat(pay.allowance) > 0 && <div className="ln-r"><span>+ Allowance</span><b>{fmt(parseFloat(pay.allowance))}</b></div>}
+            {parseFloat(pay.deductions) > 0 && <div className="ln-r"><span>− Deductions</span><b>−{fmt(parseFloat(pay.deductions))}</b></div>}
+            <div className="ln-r" style={{ fontSize: 16 }}><span>Net pay</span><b style={{ color: 'var(--primary)' }}>{fmt(net)}</b></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}><Btn variant="ghost" onClick={() => setPay(null)}>Cancel</Btn><Btn disabled={saving} onClick={save}>{saving ? 'Saving…' : '✔ Record payment'}</Btn></div>
+        </Modal>
+      )}
+      {done && (
+        <Modal title="✅ Payment recorded" onClose={() => setDone(null)}>
+          <p style={{ marginTop: 0 }}><b>{done.staff_name}</b> was paid <b>{fmt(done.amount)}</b> for {done.period}.</p>
+          <div style={{ display: 'flex', gap: 8 }}><Btn onClick={() => printPayslip(done, profiles[done.staff_name], brOf(done.staff_name))}>🧾 Print payslip</Btn><Btn variant="ghost" onClick={() => setDone(null)}>Close</Btn></div>
+        </Modal>
+      )}
+      {staffModal && (
+        <Modal title={staffModal.isEdit ? `Edit ${staffModal.name}` : 'Add staff member'} onClose={() => setStaffModal(null)}>
+          <div className="sm-grid">
+            <Inp label="Full name *" value={staffModal.name} disabled={staffModal.isEdit} onChange={e => setStaffModal({ ...staffModal, name: e.target.value })} />
+            <Inp label="Role / position" value={staffModal.role || ''} onChange={e => setStaffModal({ ...staffModal, role: e.target.value })} placeholder="e.g. Press operator" />
+            <Inp label="Monthly salary (GH₵)" type="number" value={staffModal.salary || ''} onChange={e => setStaffModal({ ...staffModal, salary: e.target.value })} />
+            <Inp label="Phone" value={staffModal.phone || ''} onChange={e => setStaffModal({ ...staffModal, phone: e.target.value })} />
+            {branches.length > 0 && <Sel label="Branch" value={staffModal.branch || ''} onChange={e => setStaffModal({ ...staffModal, branch: e.target.value })}>{branches.map(b => <option key={b.name}>{b.name}</option>)}</Sel>}
+            <Inp label="Start date" type="date" value={staffModal.start_date || ''} onChange={e => setStaffModal({ ...staffModal, start_date: e.target.value })} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}><Btn variant="ghost" onClick={() => setStaffModal(null)}>Cancel</Btn><Btn onClick={saveStaff}>Save</Btn></div>
         </Modal>
       )}
     </div>
@@ -2641,6 +2890,7 @@ function BranchesTab({ branches, saveBranches, sales, setSales, expenses, custom
         </div>
       </div>
 
+      {!branchColReady(sales) && <DbWarn />}
       <div className="d-grid g-2">
         {stats.map(({ b, rev, exp, profit, today: t, count, avg, owed }) => (
           <div key={b.name} className="d-card" style={sel === b.name ? { borderColor: 'var(--primary)' } : undefined}>
