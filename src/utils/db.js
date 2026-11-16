@@ -11,6 +11,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const EXTRA_COLS = {
   sales:    ['branch', 'customer', 'description', 'items', 'discount', 'total', 'balance', 'reference', 'received_by', 'notes', 'receipt_no'],
   expenses: ['branch'],
+  payroll:  ['basic', 'allowance', 'deductions', 'reference', 'branch'],
 };
 async function insertWithFallback(table, row) {
   const first = await supabase.from(table).insert([row]).select();
@@ -146,7 +147,7 @@ async addJob(userId, job) {
 
   // ─── PAYROLL ────────────────────────────────────────────────────────────────
 async getPayroll(userId) { const { data, error } = await supabase.from('payroll').select('*').eq('user_id', userId).order('date', { ascending: false }); return { data: data || [], error }; },
-async addPayroll(userId, item) { const { data, error } = await supabase.from('payroll').insert([{ ...item, user_id: userId }]).select(); return { data: data?.[0], error }; },
+async addPayroll(userId, item) { return insertWithFallback('payroll', { ...item, user_id: userId }); },
 async deletePayroll(id) { const { error } = await supabase.from('payroll').delete().eq('id', id); return { error }; },
 
 // ─── LOANS (Supabase) ────────────────────────────────────────────────────────
