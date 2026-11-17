@@ -12,11 +12,12 @@ let ctxBranch = null;
 let actor = { email: '', id: '' };
 let lookup = () => '';
 const EXTRA_COLS = {
+  debts:     ['branch'],
   jobs:      ['branch'],
   inventory: ['branch'],
   invoices:  ['branch'],
   loans:     ['branch'],
-  sales:    ['branch', 'customer', 'description', 'items', 'discount', 'total', 'balance', 'reference', 'received_by', 'notes', 'receipt_no'],
+  sales:    ['branch', 'customer', 'description', 'items', 'discount', 'total', 'balance', 'reference', 'received_by', 'notes', 'receipt_no', 'written_off', 'writeoff_date', 'writeoff_reason'],
   expenses: ['branch'],
   payroll:  ['basic', 'allowance', 'deductions', 'reference', 'branch'],
 };
@@ -37,6 +38,10 @@ const db = {
   setActor(email, id) { actor = { email, id }; },
   setLookup(fn) { lookup = fn; },
   async updateSale(id, updates) { const { data, error } = await supabase.from('sales').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
+  async getDebts(userId) { const { data, error } = await supabase.from('debts').select('*').eq('user_id', userId).order('date', { ascending: false }); return { data: data || [], error }; },
+  async addDebt(userId, debt) { return insertWithFallback('debts', { ...debt, user_id: userId }); },
+  async updateDebt(id, updates) { const { data, error } = await supabase.from('debts').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
+  async deleteDebt(id) { const { error } = await supabase.from('debts').delete().eq('id', id); return { error }; },
   async getActivity(userId, limit = 300) { const { data, error } = await supabase.from('activity_log').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit); return { data: data || [], error }; },
   async signup(email, password, name, role = 'user') {
     const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
@@ -194,7 +199,7 @@ async deleteJobMaterial(id) { const { error } = await supabase.from('job_materia
 const LOGGED = {
   Customer: ['customers', 'customer'], Job: ['jobs', 'job'], InventoryItem: ['inventory', 'stock item'], Invoice: ['invoices', 'invoice'],
   Sale: ['sales', 'sale'], Expense: ['expenses', 'expense'], Payroll: ['payroll', 'payroll'], Loan: ['loans', 'loan'],
-  RecurringExpense: ['recurring_expenses', 'recurring expense'], JobMaterial: ['job_materials', 'job material'],
+  Debt: ['debts', 'debt'], RecurringExpense: ['recurring_expenses', 'recurring expense'], JobMaterial: ['job_materials', 'job material'],
 };
 async function logActivity(action, table, entity, args, res) {
   try {
