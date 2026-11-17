@@ -205,6 +205,11 @@ table{border-collapse:collapse}
 .br-ribbon{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--blue-bg);border:1px solid var(--blue-line);color:var(--blue-ink);border-radius:12px;padding:8px 14px;margin-bottom:14px;font-size:13px}
 .br-ribbon button{margin-left:auto;border:0;background:none;color:var(--primary);font-weight:700;cursor:pointer}
 @media (max-width:860px){.branch-sel{max-width:132px;padding:6px 8px;font-size:12px}}
+
+.side-inst{margin:6px 4px 0;justify-content:center}
+.db-row{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.db-main{display:flex;gap:12px;align-items:center;cursor:pointer}.db-act{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.db-items{background:var(--surface-2);border-radius:10px;padding:8px 12px;margin-top:10px;font-size:12px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -269,6 +274,9 @@ export default function PrintingPressSystem() {
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('theme') || 'auto'; } catch { return 'auto'; } });
   const [moreOpen, setMoreOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [priceList, setPriceList] = useState([]);
+  const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
+  const [installEvt, setInstallEvt] = useState(null);
   useEffect(() => {
     const r = document.documentElement;
     if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
@@ -286,6 +294,22 @@ export default function PrintingPressSystem() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const on = () => setOnline(true), off = () => setOnline(false), bip = (e) => { e.preventDefault(); setInstallEvt(e); };
+    window.addEventListener('online', on); window.addEventListener('offline', off); window.addEventListener('beforeinstallprompt', bip);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); window.removeEventListener('beforeinstallprompt', bip); };
+  }, []);
+  useEffect(() => { if (!currentUser) return; db.getSetting(currentUser.id, 'price_list').then(({ data }) => { if (data?.value) { try { setPriceList(JSON.parse(data.value)); } catch {} } }); }, [currentUser]);
+  const savePriceList = async (list) => { setPriceList(list); await db.setSetting(currentUser.id, 'price_list', JSON.stringify(list)); };
+  useEffect(() => {
+    db.setActor(currentUser?.email || '', currentUser?.id || '');
+    db.setLookup((table, id) => { const src = { customers, jobs, inventory, invoices, sales, expenses, payroll, loans, recurring_expenses: recurringExpenses, job_materials: jobMaterials }[table]; const r = src?.find(x => x.id === id); return r ? [r.job_no, r.name, r.customer, r.staff_name, r.description].filter(Boolean).slice(0, 2).join(' · ') + (r.amount != null ? ` · GH₵${r.amount}` : r.price != null ? ` · GH₵${r.price}` : '') : ''; });
+  });
+  const installApp = async () => {
+    if (installEvt) { installEvt.prompt(); await installEvt.userChoice; setInstallEvt(null); }
+    else alert('To install: on iPhone tap Share → “Add to Home Screen”. On Android/Chrome open the ⋮ menu → “Install app”.');
+  };
+  const isStandalone = typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone);
   const firstB   = branches[0]?.name;
   const dbReady  = [sales, expenses, jobs, inventory, invoices, payroll, loans].every(a => a.length === 0 || Object.prototype.hasOwnProperty.call(a[0], 'branch'));
   const effBranch = dbReady && branches.some(b => b.name === activeBranch) ? activeBranch : 'all';
@@ -390,6 +414,9 @@ export default function PrintingPressSystem() {
     { id: 'finance',   label: '💰 Finance' },
     { id: 'branches',  label: '🏬 Branches' },
     { id: 'receipts',  label: '🧾 Receipts' },
+    { id: 'debtors',   label: '💳 Debtors' },
+    { id: 'prices',    label: '🏷️ Price list' },
+    { id: 'activity',  label: '📜 Activity' },
     { id: 'payroll',   label: '👷 Payroll' },
     { id: 'loans',     label: '🏦 Loans' },
     { id: 'reports',   label: '📈 Reports' },
@@ -416,6 +443,7 @@ export default function PrintingPressSystem() {
         ); })}
         <div className="grow" />
         <span className="who">👤 {currentUser.email}</span>
+        {!isStandalone && <button className="btn btn-ghost side-inst" onClick={installApp}>📲 Install app</button>}
         <button className="btn btn-ghost side-out" onClick={handleLogout}>Logout</button>
       </aside>
 
@@ -449,7 +477,9 @@ export default function PrintingPressSystem() {
           </div>
         </header>
 
+        <PriceCtx.Provider value={priceList}>
         <main className="main">
+        {!online && <div className="d-alert" style={{ marginBottom: 12 }}><span>📡</span><div><b>You're offline.</b> You can look around, but new records can't be saved until the connection is back.</div></div>}
         {branches.length > 1 && !dbReady && <DbWarn />}
         {effBranch !== 'all' && activeTab !== 'branches' && <div className="br-ribbon">🏬 Working in <b>{effBranch}</b> — you only see this branch's records <button onClick={() => switchBranch('all')}>View all</button></div>}
         {activeTab === 'dashboard' && <DashboardTab jobs={vJobs} sales={vSales} expenses={vExp} customers={customers} inventory={vInv} invoices={vInvoices} setActiveTab={setActiveTab} overdueJobs={overdueJobs} monthlyGoal={monthlyGoal} setMonthlyGoal={saveGoal} />}
@@ -461,10 +491,14 @@ export default function PrintingPressSystem() {
         {activeTab === 'branches'  && <BranchesTab openBranch={(n) => { switchBranch(n); go('dashboard'); }} branches={branches} saveBranches={saveBranches} sales={sales} setSales={setSales} expenses={expenses} customers={customers} addNotif={addNotif} userId={currentUser.id} />}
         {activeTab === 'payroll'   && <PayrollTab activeBranch={effBranch} branches={branches} payroll={vPayroll} setPayroll={scoped(setPayroll)} addNotif={addNotif} userId={currentUser.id} expenses={vExp} setExpenses={scoped(setExpenses)} />}
         {activeTab === 'loans'     && <LoansTab loans={vLoans} setLoans={scoped(setLoans)} addNotif={addNotif} userId={currentUser.id} sales={vSales} expenses={vExp} setExpenses={scoped(setExpenses)} />}
+        {activeTab === 'debtors'   && <DebtorsTab sales={vSales} setSales={scoped(setSales)} invoices={vInvoices} customers={customers} branches={branches} userId={currentUser.id} addNotif={addNotif} setActiveTab={go} />}
+        {activeTab === 'prices'    && <PricesTab priceList={priceList} savePriceList={savePriceList} addNotif={addNotif} />}
+        {activeTab === 'activity'  && <ActivityTab userId={currentUser.id} branches={branches} activeBranch={effBranch} />}
         {activeTab === 'receipts'  && <ReceiptsTab activeBranch={effBranch} branches={branches} customers={customers} userId={currentUser.id} addNotif={addNotif} setSales={scoped(setSales)} />}
         {activeTab === 'reports'   && <ReportsTab jobs={vJobs} sales={vSales} expenses={vExp} customers={customers} inventory={vInv} invoices={vInvoices} loans={vLoans} payroll={vPayroll} branches={effBranch === 'all' ? branches : []} />}
         {activeTab === 'whatsapp'  && <WhatsAppTab jobs={vJobs} customers={customers} sales={vSales} expenses={vExp} invoices={vInvoices} addNotif={addNotif} />}
         </main>
+        </PriceCtx.Provider>
       </div>
 
     </div>
@@ -1713,6 +1747,19 @@ alter table public.payroll
   add column if not exists basic numeric, add column if not exists allowance numeric default 0,
   add column if not exists deductions numeric default 0, add column if not exists reference text,
   add column if not exists branch text;
+create table if not exists public.activity_log (
+  id bigint generated by default as identity primary key,
+  user_id uuid references auth.users(id) on delete cascade,
+  actor text, action text, entity text, details text, branch text,
+  created_at timestamptz default now()
+);
+alter table public.activity_log enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename = 'activity_log' and policyname = 'own activity') then
+    create policy "own activity" on public.activity_log for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  end if;
+end $$;
+
 notify pgrst, 'reload schema';
 `;
 const branchColReady = (sales) => sales.length === 0 || Object.prototype.hasOwnProperty.call(sales[0], 'branch');
@@ -1723,6 +1770,7 @@ const DbWarn = () => (
   </div>
 );
 
+const PriceCtx = React.createContext([]);
 const PAY_METHODS = ['Cash', 'Mobile Money', 'Bank Transfer', 'Credit', 'Partial Payment', 'Other'];
 const QUICK_ITEMS = ['Printing', 'Photocopy', 'Banner', 'T-shirt', 'Business cards', 'Flyers', 'Lamination', 'Binding'];
 const parseItems = (x) => { if (!x) return []; if (Array.isArray(x)) return x; try { return JSON.parse(x) || []; } catch { return []; } };
@@ -1784,6 +1832,7 @@ function SaleReceipt({ sale, branch, customers = [], onClose, onNew }) {
 
 function SaleModal({ onClose, customers = [], branches = [], defaultBranch, userId, sales, setSales, addNotif }) {
   const brs = branches.length ? branches : [{ name: 'Main Branch' }];
+  const priceList = React.useContext(PriceCtx);
   const blank = { date: todayStr(), branch: defaultBranch || brs[0].name, customer: '', payment_method: 'Cash', reference: '', received_by: '', notes: '', discount: '' };
   const [f, setF] = useState(blank);
   const [items, setItems] = useState([{ desc: '', qty: 1, price: '' }]);
@@ -1801,7 +1850,7 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
   const received = Math.min(total, touched ? (parseFloat(recv) || 0) : total);
   const balance  = Math.max(0, total - received);
   const setItem  = (i, k, v) => setItems(items.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
-  const addItem  = (desc = '') => setItems([...items.filter(x => x.desc || x.price), { desc, qty: 1, price: '' }]);
+  const addItem  = (desc = '', price = '') => setItems([...items.filter(x => x.desc || x.price), { desc, qty: 1, price: price === '' ? '' : String(price) }]);
   const reset = () => { setDone(null); setF({ ...blank, branch: f.branch, date: f.date }); setItems([{ desc: '', qty: 1, price: '' }]); setRecv(''); setTouched(false); };
 
   const save = async () => {
@@ -1831,6 +1880,7 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
   return (
     <Modal title="💰 Record Sale" onClose={onClose} wide>
       <datalist id="sm-cx">{customers.slice(0, 2000).map(c => <option key={c.id} value={c.name} />)}</datalist>
+      <datalist id="sm-prices">{priceList.map(p => <option key={p.id || p.name} value={p.name}>{fmt(p.price)} per {p.unit}</option>)}</datalist>
       {!ready && <DbWarn />}
       {errMsg && <p className="err">{errMsg}</p>}
       {blocked && <p className="err">Saving to “{f.branch}” isn't possible until the database update is run — the sale would be recorded under {brs[0].name} instead.</p>}
@@ -1842,11 +1892,11 @@ function SaleModal({ onClose, customers = [], branches = [], defaultBranch, user
       </div>
 
       <div className="sm-sec">Items / services</div>
-      <div className="d-chips" style={{ marginBottom: 8 }}>{QUICK_ITEMS.map(q => <button key={q} type="button" className="d-act" style={{ padding: '4px 10px', fontSize: 12, boxShadow: 'none' }} onClick={() => addItem(q)}>+ {q}</button>)}</div>
+      <div className="d-chips" style={{ marginBottom: 8 }}>{(priceList.length ? priceList.slice(0, 10) : QUICK_ITEMS.map(n => ({ name: n }))).map(q => <button key={q.name} type="button" className="d-act" style={{ padding: '4px 10px', fontSize: 12, boxShadow: 'none' }} onClick={() => addItem(q.name, q.price ?? '')}>+ {q.name}{q.price != null ? ` · ${fmt(q.price)}` : ''}</button>)}</div>
       <div className="sm-item sm-head"><span>Description</span><span>Qty</span><span>Unit price</span><span>Total</span><span /></div>
       {items.map((it, i) => (
         <div key={i} className="sm-item">
-          <input placeholder="e.g. A3 colour print" value={it.desc} onChange={e => setItem(i, 'desc', e.target.value)} />
+          <input list="sm-prices" placeholder="e.g. A3 colour print" value={it.desc} onChange={e => { const v = e.target.value, m = priceList.find(p => p.name.toLowerCase() === v.toLowerCase()); setItems(items.map((x, j) => (j === i ? { ...x, desc: v, price: m && !x.price ? String(m.price) : x.price } : x))); }} />
           <input type="number" min="0" placeholder="Qty" value={it.qty} onChange={e => setItem(i, 'qty', e.target.value)} />
           <input type="number" min="0" placeholder="0.00" value={it.price} onChange={e => setItem(i, 'price', e.target.value)} />
           <b>{fmt((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0))}</b>
@@ -2863,6 +2913,216 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
 }
 /* ───────────── BRANCHES PAGE ───────────── */
 const EMPTY_BR = { name: '', address: '', phone: '', manager: '' };
+
+/* ───────────── DEBTORS ───────────── */
+function DebtorsTab({ sales, setSales, invoices, customers, branches = [], userId, addNotif, setActiveTab }) {
+  const [open, setOpen]       = useState(null);
+  const [collect, setCollect] = useState(null);
+  const [done, setDone]       = useState(null);
+  const [saving, setSaving]   = useState(false);
+  const [q, setQ]             = useState('');
+  const today = todayStr(), month = getCurrentMonth();
+  const ageOf = (d) => Math.max(0, Math.round((new Date(today) - new Date(d || today)) / 86400000));
+
+  const map = {};
+  const slot = (k) => (map[k] = map[k] || { name: k, items: [], inv: [], owed: 0, saleOwed: 0 });
+  sales.filter(s => (s.balance || 0) > 0).forEach(s => { const r = slot(s.customer || 'Walk-in'); r.items.push(s); r.owed += s.balance; r.saleOwed += s.balance; });
+  invoices.filter(i => i.status !== 'paid' && i.amount - i.paid > 0).forEach(i => { const r = slot(i.customer || 'Unknown'); r.inv.push(i); r.owed += i.amount - i.paid; });
+  const rows = Object.values(map).map(r => {
+    const dates = [...r.items.map(s => s.date), ...r.inv.map(i => i.date)].filter(Boolean).sort();
+    const cx = customers.find(c => c.name === r.name);
+    return { ...r, age: ageOf(dates[0]), phone: cx?.whatsapp || cx?.phone };
+  }).filter(r => !q.trim() || r.name.toLowerCase().includes(q.trim().toLowerCase())).sort((a, b) => b.owed - a.owed);
+
+  const total = rows.reduce((a, r) => a + r.owed, 0);
+  const over30 = rows.filter(r => r.age > 30).reduce((a, r) => a + r.owed, 0);
+  const collected = sales.filter(s => (s.description || '').startsWith('Debt payment') && (s.date || '').startsWith(month)).reduce((a, s) => a + s.amount, 0);
+  const buckets = [['0–30 days', 0, 30], ['31–60 days', 31, 60], ['61–90 days', 61, 90], ['90+ days', 91, 99999]].map(([l, lo, hi]) => ({ l, v: rows.filter(r => r.age >= lo && r.age <= hi).reduce((a, r) => a + r.owed, 0) }));
+
+  const remind = (r) => {
+    const lines = r.items.slice(0, 5).map(s => `• ${s.date} — ${s.description || 'Sale'}: ${fmt(s.balance)}`).join('\n');
+    openWhatsApp(r.phone, `Hi ${r.name}, this is a friendly reminder from *Bigbiney Printing Press* that you have an outstanding balance of *${fmt(r.owed)}*${r.age > 0 ? ` (oldest ${r.age} days)` : ''}.\n\n${lines}\n\nKindly settle at your earliest convenience. Thank you! 🙏`);
+  };
+  const openCollect = (r) => setCollect({ name: r.name, max: r.saleOwed, amount: String(r.saleOwed), method: 'Cash', reference: '', date: todayStr() });
+
+  const save = async () => {
+    const amt = Math.min(parseFloat(collect.amount) || 0, collect.max);
+    if (amt <= 0) { addNotif('Enter an amount to collect', 'warning'); return; }
+    setSaving(true);
+    const targets = [...map[collect.name].items].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    let left = amt; const alloc = [];
+    for (const s of targets) { if (left <= 0) break; const take = Math.min(left, s.balance); alloc.push({ s, take }); left -= take; }
+    const n = sales.filter(s => s.date === collect.date).length + 1;
+    const { data, error } = await db.addSale(userId, { date: collect.date, amount: amt, job_id: null, payment_method: collect.method, branch: alloc[0].s.branch || branches[0]?.name || null, customer: collect.name, description: `Debt payment — ${alloc.map(a => a.s.receipt_no || a.s.date).join(', ')}`, total: amt, balance: 0, reference: collect.reference, receipt_no: `RC-${collect.date.replace(/-/g, '')}-${String(n).padStart(3, '0')}` });
+    if (error) { addNotif('Could not record payment: ' + (error.message || error), 'warning'); setSaving(false); return; }
+    const upd = {};
+    for (const a of alloc) { const r = await db.updateSale(a.s.id, { balance: Math.max(0, a.s.balance - a.take) }); if (r.data) upd[a.s.id] = r.data; }
+    setSales(prev => { const next = prev.map(x => upd[x.id] || x); return data && !next.some(x => x.id === data.id) ? [...next, data] : next; });
+    addNotif(`${fmt(amt)} collected from ${collect.name}`, 'success');
+    setDone({ ...(data || {}), date: collect.date, amount: amt, customer: collect.name, payment_method: collect.method, total: amt, balance: 0, description: 'Debt payment', receipt_no: data?.receipt_no });
+    setCollect(null); setSaving(false);
+  };
+  const exportCSV = () => downloadCSV('debtors.csv', [['Customer', 'Owed', 'Oldest (days)', 'Phone', 'Sale debts', 'Invoices'], ...rows.map(r => [r.name, r.owed, r.age, r.phone || '', r.items.length, r.inv.length])]);
+
+  return (
+    <div>
+      <div className="d-hero"><div><h2>💳 Debtors</h2><p>Who owes you money, how old the debt is, and one-tap reminders</p></div>
+        <div className="d-actions"><button className="d-act" onClick={exportCSV}>⬇️ Export CSV</button></div></div>
+      <div className="d-kpis">
+        <Kpi label="Total owed to you" value={fmt(total)} icon="💳" color="var(--red-ink)" delta={null} sub={`${rows.length} customer${rows.length === 1 ? '' : 's'}`} />
+        <Kpi label="Older than 30 days" value={fmt(over30)} icon="⏳" color="var(--amber-ink)" delta={null} sub="Chase these first" />
+        <Kpi label="Collected this month" value={fmt(collected)} icon="✅" color="var(--green-ink)" delta={null} sub="Debt payments received" />
+        <Kpi label="Invoices unpaid" value={String(invoices.filter(i => i.status !== 'paid').length)} icon="🧾" color="var(--primary)" delta={null} sub="Handled in Invoices" />
+      </div>
+      <div className="d-grid g-2-1">
+        <div className="d-card">
+          <div className="d-head"><h3>Customers who owe</h3><div style={{ minWidth: 180 }}><Inp placeholder="Search customer…" value={q} onChange={e => setQ(e.target.value)} /></div></div>
+          {rows.length === 0 ? <p className="muted" style={{ margin: 0 }}>🎉 Nobody owes you anything right now.</p> : rows.map(r => (
+            <div key={r.name} className="db-row">
+              <div className="db-main" onClick={() => setOpen(open === r.name ? null : r.name)}>
+                <div className="pr-av">{initials(r.name)}</div>
+                <div style={{ minWidth: 0, flex: 1 }}><b className="ellip" style={{ display: 'block' }}>{r.name}</b><span className="muted" style={{ fontSize: 12 }}>{r.items.length + r.inv.length} item(s) · oldest {r.age} day{r.age === 1 ? '' : 's'}</span></div>
+                <div style={{ textAlign: 'right' }}><b style={{ color: 'var(--red-ink)' }}>{fmt(r.owed)}</b><div><span className={`d-tag ${r.age > 30 ? 'hot' : ''}`}>{r.age > 60 ? 'Very overdue' : r.age > 30 ? 'Overdue' : 'Current'}</span></div></div>
+              </div>
+              <div className="db-act">
+                <Btn small variant="success" disabled={r.saleOwed <= 0} onClick={() => openCollect(r)}>💰 Collect</Btn>
+                <Btn small variant="ghost" disabled={!r.phone} onClick={() => remind(r)}>{r.phone ? '📲 Remind' : 'No phone'}</Btn>
+                {r.inv.length > 0 && <Btn small variant="ghost" onClick={() => setActiveTab('invoices')}>🧾 Invoices ({r.inv.length})</Btn>}
+              </div>
+              {open === r.name && (
+                <div className="db-items">
+                  {r.items.map(s => <div key={s.id} className="ln-r"><span>{s.date} · {s.receipt_no || ''} <span className="muted">{s.description}</span></span><b>{fmt(s.balance)} <span className="muted" style={{ fontWeight: 400 }}>of {fmt(s.total ?? s.amount)}</span></b></div>)}
+                  {r.inv.map(i => <div key={i.id} className="ln-r"><span>Invoice {i.invoice_no || i.id} · {i.date}</span><b>{fmt(i.amount - i.paid)}</b></div>)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="d-card"><div className="d-head"><h3>Debt age</h3><span className="muted">{fmt(total)}</span></div>
+          <BarList rows={buckets.map((b, i) => ({ label: b.l, pct: total > 0 ? Math.round((b.v / total) * 100) : 0, color: i >= 2 ? 'var(--red-ink)' : i === 1 ? 'var(--amber-ink)' : 'var(--green-ink)', right: fmt(b.v) }))} />
+        </div>
+      </div>
+
+      {collect && (
+        <Modal title={`💰 Collect from ${collect.name}`} onClose={() => setCollect(null)}>
+          <p className="muted" style={{ marginTop: 0 }}>Owes {fmt(collect.max)} on sales. Payment is applied to the oldest debts first.</p>
+          <div className="sm-grid">
+            <Inp label="Amount (GH₵)" type="number" value={collect.amount} onChange={e => setCollect({ ...collect, amount: e.target.value })} />
+            <Inp label="Date" type="date" value={collect.date} onChange={e => setCollect({ ...collect, date: e.target.value })} />
+            <Sel label="Method" value={collect.method} onChange={e => setCollect({ ...collect, method: e.target.value })}>{['Cash', 'Mobile Money', 'Bank Transfer'].map(m => <option key={m}>{m}</option>)}</Sel>
+            <Inp label="Reference / MoMo ID" value={collect.reference} onChange={e => setCollect({ ...collect, reference: e.target.value })} />
+          </div>
+          <div className="sm-sum"><div className="ln-r"><span>Balance after payment</span><b>{fmt(Math.max(0, collect.max - (parseFloat(collect.amount) || 0)))}</b></div></div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}><Btn variant="ghost" onClick={() => setCollect(null)}>Cancel</Btn><Btn variant="success" disabled={saving} onClick={save}>{saving ? 'Saving…' : '✔ Record payment'}</Btn></div>
+        </Modal>
+      )}
+      {done && <SaleReceipt sale={done} branch={branches.find(b => b.name === done.branch)} customers={customers} onClose={() => setDone(null)} />}
+    </div>
+  );
+}
+
+/* ───────────── PRICE LIST ───────────── */
+const PRICE_UNITS = ['each', 'page', 'copy', 'sq. ft', 'sq. m', 'set', 'hour'];
+const PRICE_CATS  = ['Printing', 'Banners & Signs', 'Apparel', 'Stationery', 'Design', 'Other'];
+
+function PricesTab({ priceList, savePriceList, addNotif }) {
+  const [modal, setModal] = useState(null);
+  const [adj, setAdj]     = useState(null);
+  const [q, setQ]         = useState('');
+  const [cat, setCat]     = useState('all');
+  const cats = [...new Set([...PRICE_CATS, ...priceList.map(p => p.category).filter(Boolean)])];
+  const shown = priceList.filter(p => (cat === 'all' || p.category === cat) && (!q.trim() || p.name.toLowerCase().includes(q.trim().toLowerCase())));
+  const saveItem = async () => {
+    const name = modal.name.trim(), price = parseFloat(modal.price);
+    if (!name || !(price >= 0)) { addNotif('Enter a name and a price', 'warning'); return; }
+    if (!modal.id && priceList.some(p => p.name.toLowerCase() === name.toLowerCase())) { addNotif('That item already exists', 'warning'); return; }
+    const item = { id: modal.id || `p${Date.now()}`, name, category: modal.category || 'Other', unit: modal.unit || 'each', price };
+    await savePriceList(modal.id ? priceList.map(p => (p.id === item.id ? item : p)) : [...priceList, item]);
+    addNotif('Price saved', 'success'); setModal(null);
+  };
+  const applyAdj = async () => {
+    const pct = parseFloat(adj.pct); if (!pct) return;
+    await savePriceList(priceList.map(p => (adj.cat === 'all' || p.category === adj.cat ? { ...p, price: Math.round(p.price * (1 + pct / 100) * 100) / 100 } : p)));
+    addNotif(`Prices ${pct > 0 ? 'increased' : 'reduced'} by ${Math.abs(pct)}%`, 'success'); setAdj(null);
+  };
+  return (
+    <div>
+      <div className="d-hero"><div><h2>🏷️ Price List</h2><p>{priceList.length} items · used automatically in the Record Sale popup at every branch</p></div>
+        <div className="d-actions"><button className="d-act" disabled={!priceList.length} onClick={() => setAdj({ pct: '', cat: 'all' })}>± Adjust prices</button><button className="d-act p" onClick={() => setModal({ name: '', category: 'Printing', unit: 'each', price: '' })}>+ Add item</button></div></div>
+      <div className="d-card">
+        <div className="d-filters">
+          <Inp label="Search" value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. banner" />
+          <Sel label="Category" value={cat} onChange={e => setCat(e.target.value)}><option value="all">All categories</option>{cats.map(c => <option key={c}>{c}</option>)}</Sel>
+        </div>
+        {shown.length === 0 ? <p className="muted" style={{ margin: 0 }}>{priceList.length ? 'No items match.' : 'No prices yet. Click “+ Add item” — e.g. “A4 colour print”, 2.00, per page. When you record a sale, typing the name fills the price automatically.'}</p> : (
+          <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Item', 'Category', 'Unit', 'Price', ''].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+            <tbody>{[...shown].sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)).map(p => (
+              <tr key={p.id}><TD style={{ fontWeight: 600 }}>{p.name}</TD><TD><span className="d-tag">{p.category}</span></TD><TD>per {p.unit}</TD><TD style={{ fontWeight: 800, color: 'var(--primary)' }}>{fmt(p.price)}</TD>
+                <TD style={{ whiteSpace: 'nowrap' }}><button className="d-link" onClick={() => setModal({ ...p })}>Edit</button>{' '}<button className="d-link" style={{ color: 'var(--red-ink)' }} onClick={() => window.confirm(`Delete “${p.name}”?`) && savePriceList(priceList.filter(x => x.id !== p.id))}>Delete</button></TD></tr>))}</tbody>
+          </table></div>
+        )}
+      </div>
+      {modal && (
+        <Modal title={modal.id ? 'Edit price' : 'Add price'} onClose={() => setModal(null)}>
+          <datalist id="pr-cats">{cats.map(c => <option key={c} value={c} />)}</datalist>
+          <Inp label="Item / service name *" value={modal.name} onChange={e => setModal({ ...modal, name: e.target.value })} placeholder="e.g. A4 colour print" />
+          <div className="sm-grid" style={{ marginTop: 10 }}>
+            <Inp label="Price (GH₵) *" type="number" value={modal.price} onChange={e => setModal({ ...modal, price: e.target.value })} />
+            <Sel label="Unit" value={modal.unit} onChange={e => setModal({ ...modal, unit: e.target.value })}>{PRICE_UNITS.map(u => <option key={u}>{u}</option>)}</Sel>
+            <Inp label="Category" list="pr-cats" value={modal.category} onChange={e => setModal({ ...modal, category: e.target.value })} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}><Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn><Btn onClick={saveItem}>Save</Btn></div>
+        </Modal>
+      )}
+      {adj && (
+        <Modal title="± Adjust prices" onClose={() => setAdj(null)}>
+          <div className="sm-grid"><Inp label="Change by % (e.g. 10 or -5)" type="number" value={adj.pct} onChange={e => setAdj({ ...adj, pct: e.target.value })} />
+            <Sel label="Apply to" value={adj.cat} onChange={e => setAdj({ ...adj, cat: e.target.value })}><option value="all">All items</option>{cats.map(c => <option key={c}>{c}</option>)}</Sel></div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}><Btn variant="ghost" onClick={() => setAdj(null)}>Cancel</Btn><Btn onClick={applyAdj}>Apply</Btn></div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ───────────── ACTIVITY LOG ───────────── */
+function ActivityTab({ userId, branches = [], activeBranch = 'all' }) {
+  const [log, setLog]       = useState([]);
+  const [err, setErr]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [fAct, setFAct]     = useState('all');
+  const [fEnt, setFEnt]     = useState('all');
+  const [q, setQ]           = useState('');
+  const load = async () => { setLoading(true); const { data, error } = await db.getActivity(userId, 500); setErr(error ? error.message : null); setLog(data || []); setLoading(false); };
+  useEffect(() => { load(); }, [userId]);
+  const ago = (iso) => { const m = Math.round((Date.now() - new Date(iso)) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+  const first = branches[0]?.name;
+  const rows = log.filter(l => (fAct === 'all' || l.action === fAct) && (fEnt === 'all' || l.entity === fEnt) && (activeBranch === 'all' || (l.branch || first) === activeBranch) && (!q.trim() || `${l.details} ${l.actor} ${l.entity}`.toLowerCase().includes(q.trim().toLowerCase())));
+  const ents = [...new Set(log.map(l => l.entity))];
+  const color = { add: 'var(--green-ink)', update: 'var(--blue-ink)', delete: 'var(--red-ink)' };
+  const verb = { add: 'Added', update: 'Changed', delete: 'Deleted' };
+  return (
+    <div>
+      <div className="d-hero"><div><h2>📜 Activity Log</h2><p>Every record added, changed or deleted — with who and when</p></div><div className="d-actions"><button className="d-act" onClick={load}>↻ Refresh</button></div></div>
+      {err && <><DbWarn /><p className="err">Could not read the log: {err}</p></>}
+      <div className="d-card">
+        <div className="d-filters">
+          <Sel label="Action" value={fAct} onChange={e => setFAct(e.target.value)}><option value="all">All actions</option><option value="add">Added</option><option value="update">Changed</option><option value="delete">Deleted</option></Sel>
+          <Sel label="Type" value={fEnt} onChange={e => setFEnt(e.target.value)}><option value="all">Everything</option>{ents.map(e => <option key={e}>{e}</option>)}</Sel>
+          <Inp label="Search" value={q} onChange={e => setQ(e.target.value)} placeholder="Customer, amount, staff…" />
+        </div>
+        {loading ? <p className="muted">Loading…</p> : rows.length === 0 ? <p className="muted" style={{ margin: 0 }}>{log.length ? 'Nothing matches.' : 'No activity recorded yet — it starts logging from now on.'}</p> : rows.map(l => (
+          <div key={l.id} className="d-row" style={{ alignItems: 'flex-start' }}>
+            <span className="d-tag" style={{ color: color[l.action], flex: 'none', minWidth: 62, textAlign: 'center' }}>{verb[l.action] || l.action}</span>
+            <div style={{ flex: 1, minWidth: 0 }}><div><b>{l.entity}</b> <span style={{ overflowWrap: 'anywhere' }}>{l.details}</span></div><div className="muted" style={{ fontSize: 11 }}>{l.actor || 'unknown'}{l.branch ? ` · ${l.branch}` : ''}</div></div>
+            <span className="muted" style={{ fontSize: 11, whiteSpace: 'nowrap' }} title={new Date(l.created_at).toLocaleString()}>{ago(l.created_at)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function BranchesTab({ openBranch, branches, saveBranches, sales, setSales, expenses, customers, addNotif, userId }) {
   const list = branches.length ? branches : [{ ...EMPTY_BR, name: 'Main Branch' }];
