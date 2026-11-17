@@ -210,6 +210,8 @@ table{border-collapse:collapse}
 .db-row{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
 .db-main{display:flex;gap:12px;align-items:center;cursor:pointer}.db-act{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .db-items{background:var(--surface-2);border-radius:10px;padding:8px 12px;margin-top:10px;font-size:12px}
+
+.d-tag.ok{background:var(--green-bg);color:var(--green-ink)}.d-tag.warn{background:var(--amber-bg);color:var(--amber-ink)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -276,6 +278,8 @@ export default function PrintingPressSystem() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [priceList, setPriceList] = useState([]);
   const [debts, setDebts] = useState([]);
+  const [lastBackup, setLastBackup] = useState(undefined);
+  const [backupHidden, setBackupHidden] = useState(false);
   const [debtsErr, setDebtsErr] = useState(null);
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
   const [installEvt, setInstallEvt] = useState(null);
@@ -303,6 +307,7 @@ export default function PrintingPressSystem() {
   }, []);
   useEffect(() => { if (!currentUser) return; db.getSetting(currentUser.id, 'price_list').then(({ data }) => { if (data?.value) { try { setPriceList(JSON.parse(data.value)); } catch {} } }); }, [currentUser]);
   useEffect(() => { if (!currentUser) return; db.getDebts(currentUser.id).then(({ data, error }) => { setDebts(data || []); setDebtsErr(error ? error.message : null); }); }, [currentUser]);
+  useEffect(() => { if (!currentUser) return; db.getSetting(currentUser.id, 'last_backup').then(({ data }) => setLastBackup(data?.value || null)); }, [currentUser]);
   const savePriceList = async (list) => { setPriceList(list); await db.setSetting(currentUser.id, 'price_list', JSON.stringify(list)); };
   useEffect(() => {
     db.setActor(currentUser?.email || '', currentUser?.id || '');
@@ -421,6 +426,8 @@ export default function PrintingPressSystem() {
     { id: 'debtors',   label: '💳 Debtors' },
     { id: 'prices',    label: '🏷️ Price list' },
     { id: 'activity',  label: '📜 Activity' },
+    { id: 'momo',      label: '📱 MoMo recon' },
+    { id: 'backup',    label: '💾 Backup & export' },
     { id: 'payroll',   label: '👷 Payroll' },
     { id: 'loans',     label: '🏦 Loans' },
     { id: 'reports',   label: '📈 Reports' },
@@ -483,6 +490,7 @@ export default function PrintingPressSystem() {
 
         <PriceCtx.Provider value={priceList}>
         <main className="main">
+        {!backupHidden && lastBackup !== undefined && sales.length > 0 && (lastBackup === null || (Date.now() - new Date(lastBackup)) / 86400000 > 14) && activeTab !== 'backup' && <div className="d-alert" style={{ marginBottom: 12 }}><span style={{ fontSize: 18 }}>💾</span><div style={{ flex: 1, minWidth: 0 }}><b>{lastBackup ? 'It has been over 2 weeks since your last backup.' : 'You have never backed up your data.'}</b><div style={{ fontSize: 12 }}>It takes one tap and protects your records.</div></div><button className="d-wa" style={{ background: 'var(--primary)' }} onClick={() => go('backup')}>Back up now</button><button className="d-link" onClick={() => setBackupHidden(true)}>Later</button></div>}
         {!online && <div className="d-alert" style={{ marginBottom: 12 }}><span>📡</span><div><b>You're offline.</b> You can look around, but new records can't be saved until the connection is back.</div></div>}
         {branches.length > 1 && !dbReady && <DbWarn />}
         {effBranch !== 'all' && activeTab !== 'branches' && <div className="br-ribbon">🏬 Working in <b>{effBranch}</b> — you only see this branch's records <button onClick={() => switchBranch('all')}>View all</button></div>}
@@ -497,6 +505,8 @@ export default function PrintingPressSystem() {
         {activeTab === 'loans'     && <LoansTab loans={vLoans} setLoans={scoped(setLoans)} addNotif={addNotif} userId={currentUser.id} sales={vSales} expenses={vExp} setExpenses={scoped(setExpenses)} />}
         {activeTab === 'debtors'   && <DebtorsTab activeBranch={effBranch} debts={vDebts} setDebts={scoped(setDebts)} debtsErr={debtsErr} setCustomers={setCustomers} sales={vSales} setSales={scoped(setSales)} invoices={vInvoices} customers={customers} branches={branches} userId={currentUser.id} addNotif={addNotif} setActiveTab={go} />}
         {activeTab === 'prices'    && <PricesTab priceList={priceList} savePriceList={savePriceList} addNotif={addNotif} />}
+        {activeTab === 'momo'      && <MomoTab activeBranch={effBranch} sales={vSales} setSales={scoped(setSales)} payroll={vPayroll} customers={customers} branches={branches} userId={currentUser.id} addNotif={addNotif} />}
+        {activeTab === 'backup'    && <BackupTab data={{ customers, jobs, inventory, invoices, sales, expenses, payroll, loans, debts, jobMaterials, recurringExpenses }} branches={branches} priceList={priceList} userId={currentUser.id} addNotif={addNotif} lastBackup={lastBackup} onBackedUp={setLastBackup} />}
         {activeTab === 'activity'  && <ActivityTab userId={currentUser.id} branches={branches} activeBranch={effBranch} />}
         {activeTab === 'receipts'  && <ReceiptsTab activeBranch={effBranch} branches={branches} customers={customers} userId={currentUser.id} addNotif={addNotif} setSales={scoped(setSales)} />}
         {activeTab === 'reports'   && <ReportsTab jobs={vJobs} sales={vSales} expenses={vExp} customers={customers} inventory={vInv} invoices={vInvoices} loans={vLoans} payroll={vPayroll} branches={effBranch === 'all' ? branches : []} />}
@@ -3341,6 +3351,373 @@ function ActivityTab({ userId, branches = [], activeBranch = 'all' }) {
             <span className="muted" style={{ fontSize: 11, whiteSpace: 'nowrap' }} title={new Date(l.created_at).toLocaleString()}>{ago(l.created_at)}</span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────── EXPORT + MOMO HELPERS (pure functions) ───────────── */
+const _crcT = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = (u8) => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = _crcT[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+const zipStore = (files) => {
+  const enc = new TextEncoder(), chunks = [], central = []; let offset = 0;
+  files.forEach(f => {
+    const nameB = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data), len = data.length;
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, len, true); h.setUint32(22, len, true); h.setUint16(26, nameB.length, true);
+    chunks.push(new Uint8Array(h.buffer), nameB, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, len, true); c.setUint32(24, len, true); c.setUint16(28, nameB.length, true); c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), nameB);
+    offset += 30 + nameB.length + len;
+  });
+  const cd = central.reduce((a, b) => a + b.length, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cd, true); end.setUint32(16, offset, true);
+  return new Blob([...chunks, ...central, new Uint8Array(end.buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+};
+const _xe = (s) => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const _col = (i) => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+const _sheetXml = (rows) => {
+  const w = []; rows.forEach(r => r.forEach((v, i) => { w[i] = Math.min(60, Math.max(w[i] || 8, String(v ?? '').length + 2)); }));
+  const data = rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => {
+    if (v === null || v === undefined || v === '') return '';
+    const ref = _col(ci) + (ri + 1), s = ri === 0 ? ' s="1"' : '';
+    if (typeof v === 'number' && isFinite(v)) return `<c r="${ref}"${s}><v>${v}</v></c>`;
+    return `<c r="${ref}" t="inlineStr"${s}><is><t xml:space="preserve">${_xe(String(v).slice(0, 32000))}</t></is></c>`;
+  }).join('')}</row>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${w.map((x, i) => `<col min="${i + 1}" max="${i + 1}" width="${x}" customWidth="1"/>`).join('')}</cols><sheetData>${data}</sheetData></worksheet>`;
+};
+const makeXlsx = (sheets) => {
+  const used = new Set();
+  const named = sheets.map((s, i) => { let n = String(s.name || `Sheet${i + 1}`).replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 31) || `Sheet${i + 1}`, k = 2; while (used.has(n.toLowerCase())) n = n.slice(0, 28) + ' ' + k++; used.add(n.toLowerCase()); return { ...s, name: n }; });
+  const H = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const files = [
+    { name: '[Content_Types].xml', text: `${H}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${named.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>` },
+    { name: '_rels/.rels', text: `${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { name: 'xl/workbook.xml', text: `${H}<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${named.map((s, i) => `<sheet name="${_xe(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>` },
+    { name: 'xl/_rels/workbook.xml.rels', text: `${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${named.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${named.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { name: 'xl/styles.xml', text: `${H}<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0A7FC2"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` },
+    ...named.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, text: _sheetXml(s.rows.length ? s.rows : [['(no data)']]) })),
+  ];
+  return zipStore(files);
+};
+const downloadBlob = (name, blob) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+
+/* ── statement parsing ── */
+const parseTable = (text) => {
+  const lines = String(text || '').replace(/\r/g, '').split('\n').filter(l => l.trim());
+  if (!lines.length) return [];
+  const probe = lines.slice(0, 6).join('\n');
+  const delim = [',', '\t', ';', '|'].map(d => [d, (probe.match(new RegExp(d === '|' ? '\\|' : d, 'g')) || []).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const parseLine = (line) => { const out = []; let cur = '', q = false; for (let i = 0; i < line.length; i++) { const ch = line[i]; if (q) { if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; } else if (ch === '"') q = false; else cur += ch; } else if (ch === '"') q = true; else if (ch === delim) { out.push(cur.trim()); cur = ''; } else cur += ch; } out.push(cur.trim()); return out; };
+  return lines.map(parseLine);
+};
+const _p2 = (n) => String(n).padStart(2, '0');
+const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+const parseAnyDate = (v) => {
+  if (v === null || v === undefined) return '';
+  const s = String(v).trim(); if (!s) return '';
+  if (/^\d{5}(\.\d+)?$/.test(s)) return new Date((parseFloat(s) - 25569) * 86400000).toISOString().slice(0, 10);
+  let m = s.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/); if (m) return `${m[1]}-${_p2(m[2])}-${_p2(m[3])}`;
+  m = s.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/); if (m) { let d = +m[1], mo = +m[2]; if (mo > 12 && d <= 12) [d, mo] = [mo, d]; return `${m[3]}-${_p2(mo)}-${_p2(d)}`; }
+  m = s.match(/(\d{1,2})[\s-]+([A-Za-z]{3})[a-z]*[\s,-]+(\d{4})/); if (m && MON[m[2].toLowerCase()]) return `${m[3]}-${_p2(MON[m[2].toLowerCase()])}-${_p2(m[1])}`;
+  const t = Date.parse(s); return isNaN(t) ? '' : new Date(t).toISOString().slice(0, 10);
+};
+const parseAmt = (v) => {
+  let s = String(v ?? '').trim(); if (!s) return NaN;
+  const neg = /^\(.*\)$/.test(s) || /^-/.test(s) || /-$/.test(s);
+  s = s.replace(/[^0-9.,]/g, '');
+  if (s.includes(',') && s.includes('.')) s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, ''); else if (s.includes(',')) s = /,\d{1,2}$/.test(s) ? s.replace(',', '.') : s.replace(/,/g, '');
+  const n = parseFloat(s); return isNaN(n) ? NaN : (neg ? -n : n);
+};
+const detectCols = (header) => {
+  const find = (re, not) => header.findIndex(h => re.test(h.toLowerCase()) && !(not && not.test(h.toLowerCase())));
+  return {
+    date: find(/date|time/),
+    ref: (() => { const a = find(/(financial )?transaction ?id|txn ?id|trans(action)? ?ref|reference|external ?id/); return a >= 0 ? a : find(/\bid\b|ref/); })(),
+    amount: find(/^amount|amount$|^value$/, /balance|fee|charge/),
+    type: find(/^type|trans(action)? ?type|direction|dr\/cr/),
+    desc: find(/desc|narration|details|message|from name|to name|name|counterpart/),
+    credit: find(/credit|money in|cash in|received|paid in/),
+    debit: find(/debit|money out|cash out|paid out|withdraw/),
+  };
+};
+const buildStatementRows = (table, hasHeader, map, defaultDir) => {
+  const body = hasHeader ? table.slice(1) : table, out = [];
+  body.forEach((r, idx) => {
+    const date = parseAnyDate(r[map.date]); if (!date) return;
+    let amount = NaN, dir = defaultDir;
+    const cr = map.credit >= 0 ? parseAmt(r[map.credit]) : NaN, dr = map.debit >= 0 ? parseAmt(r[map.debit]) : NaN;
+    if (cr > 0) { amount = cr; dir = 'in'; } else if (dr > 0) { amount = dr; dir = 'out'; }
+    else if (map.amount >= 0) {
+      const a = parseAmt(r[map.amount]); if (isNaN(a) || a === 0) return;
+      amount = Math.abs(a); if (a < 0) dir = 'out';
+      if (map.type >= 0) { const t = String(r[map.type] || '').toLowerCase(); if (/(debit|out|sent|send|transfer|withdraw|payment made|cash out|paid)/.test(t)) dir = 'out'; else if (/(credit|in\b|receiv|deposit|cash in|payment received)/.test(t)) dir = 'in'; }
+    }
+    if (!(amount > 0)) return;
+    out.push({ idx, date, ref: map.ref >= 0 ? String(r[map.ref] || '').trim() : '', amount, dir, desc: map.desc >= 0 ? String(r[map.desc] || '').trim() : '' });
+  });
+  return out;
+};
+const normRef = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const refMatch = (a, b) => { const x = normRef(a), y = normRef(b); return !!x && !!y && (x === y || (Math.min(x.length, y.length) >= 6 && (x.includes(y) || y.includes(x)))); };
+const dayDiff = (a, b) => Math.abs(Math.round((new Date(a) - new Date(b)) / 86400000));
+const reconcile = (stRows, appRows, tol) => {
+  const used = new Set(), rows = stRows.map(s => ({ ...s, match: null, status: '', how: '' }));
+  rows.forEach(s => { if (!s.ref) return; const a = appRows.find(a => !used.has(a.key) && refMatch(a.ref, s.ref)); if (a) { used.add(a.key); s.match = a; s.status = Math.abs(a.amount - s.amount) <= 0.01 ? 'matched' : 'mismatch'; s.how = 'reference'; } });
+  rows.filter(s => !s.match).forEach(s => {
+    const c = appRows.filter(a => !used.has(a.key) && Math.abs(a.amount - s.amount) <= 0.01 && dayDiff(a.date, s.date) <= tol).sort((x, y) => dayDiff(x.date, s.date) - dayDiff(y.date, s.date))[0];
+    if (c) { used.add(c.key); s.match = c; s.status = 'matched'; s.how = 'amount & date'; }
+  });
+  rows.forEach(s => { if (!s.match) s.status = 'unrecorded'; });
+  return { rows, missing: appRows.filter(a => !used.has(a.key)) };
+};
+
+/* ───────────── MOMO RECONCILIATION ───────────── */
+const addDaysStr = (d, n) => { const x = new Date(d + 'T00:00:00'); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10); };
+
+function MomoTab({ sales, setSales, payroll = [], customers = [], branches = [], userId, addNotif, activeBranch = 'all' }) {
+  const [raw, setRaw]         = useState('');
+  const [table, setTable]     = useState([]);
+  const [hasHeader, setHasHeader] = useState(true);
+  const [map, setMap]         = useState(null);
+  const [defDir, setDefDir]   = useState('in');
+  const [tol, setTol]         = useState(1);
+  const [filter, setFilter]   = useState('all');
+  const [ignored, setIgnored] = useState({});
+  const [rec, setRec]         = useState(null);
+  const [saving, setSaving]   = useState(false);
+  const [fileName, setFileName] = useState('');
+  const defBranch = activeBranch !== 'all' ? activeBranch : (branches[0]?.name || '');
+
+  const load = (text) => {
+    const tb = parseTable(text);
+    if (!tb.length) { addNotif('Nothing to read — paste or upload the statement first', 'warning'); return; }
+    const hi = tb.findIndex((r, i) => i < 15 && r.filter(Boolean).length >= 3 && r.some(c => /date/i.test(c)) && r.some(c => /amount|credit|debit|money/i.test(c)));
+    const hh = hi >= 0, t2 = hh ? tb.slice(hi) : tb;
+    setTable(t2); setHasHeader(hh); setIgnored({}); setFilter('all');
+    setMap(detectCols(hh ? t2[0] : t2[0].map((_, i) => `col${i}`)));
+  };
+  const onFile = (e) => { const f = e.target.files?.[0]; if (!f) return; setFileName(f.name); const rd = new FileReader(); rd.onload = () => { setRaw(String(rd.result)); load(String(rd.result)); }; rd.readAsText(f); };
+  const heads = table[0] ? table[0].map((h, i) => (hasHeader && h ? h : `Column ${i + 1}`)) : [];
+
+  const st = map && table.length ? buildStatementRows(table, hasHeader, map, defDir) : [];
+  const dates = st.map(s => s.date).sort(), dMin = dates[0], dMax = dates[dates.length - 1];
+  const inP = (a) => dMin && a.date >= addDaysStr(dMin, -tol) && a.date <= addDaysStr(dMax, tol);
+  const appIn = sales.filter(s => s.payment_method === 'Mobile Money' && s.amount > 0).map(s => ({ key: 's:' + s.id, id: s.id, kind: 'sale', date: s.date, amount: s.amount, ref: s.reference || '', label: `${s.customer || 'Walk-in'}${s.description ? ' · ' + s.description : ''}` })).filter(inP);
+  const appOut = payroll.filter(p => p.payment_method === 'Mobile Money' && p.amount > 0).map(p => ({ key: 'p:' + p.id, id: p.id, kind: 'payroll', date: p.date, amount: p.amount, ref: p.reference || '', label: `Salary · ${p.staff_name}` })).filter(inP);
+  const active = st.filter(s => !ignored[s.idx]);
+  const rIn = reconcile(active.filter(s => s.dir === 'in'), appIn, tol), rOut = reconcile(active.filter(s => s.dir === 'out'), appOut, tol);
+  const items = [
+    ...rIn.rows.concat(rOut.rows).map(s => ({ status: s.status, date: s.date, ref: s.ref, amount: s.amount, dir: s.dir, st: s, app: s.match })),
+    ...rIn.missing.map(a => ({ status: 'missing', date: a.date, ref: a.ref, amount: a.amount, dir: 'in', app: a })),
+    ...rOut.missing.map(a => ({ status: 'missing', date: a.date, ref: a.ref, amount: a.amount, dir: 'out', app: a })),
+  ].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const cnt = (k) => items.filter(i => i.status === k).length, sumS = (k, dir = 'in') => items.filter(i => i.status === k && i.dir === dir).reduce((a, i) => a + i.amount, 0);
+  const stIn = rIn.rows.reduce((a, r) => a + r.amount, 0), appInTot = appIn.reduce((a, r) => a + r.amount, 0);
+  const shown = items.filter(i => filter === 'all' || i.status === filter);
+  const TAG = { matched: ['✅ Matched', 'ok'], mismatch: ['⚠️ Amount differs', 'warn'], unrecorded: ['❓ Not in app', 'hot'], missing: ['❌ Not on statement', 'hot'] };
+
+  const changeToCash = async (a) => { const r = await db.updateSale(a.id, { payment_method: 'Cash' }); if (r.error) addNotif('Could not update', 'warning'); else { setSales(prev => prev.map(x => (x.id === a.id ? r.data : x))); addNotif('Changed to Cash', 'success'); } };
+  const saveRec = async () => {
+    const amt = parseFloat(rec.amount); if (!(amt > 0)) { addNotif('Enter the amount', 'warning'); return; }
+    setSaving(true);
+    const n = sales.filter(s => s.date === rec.date).length + 1;
+    const { data, error } = await db.addSale(userId, { date: rec.date, amount: amt, job_id: null, payment_method: 'Mobile Money', branch: rec.branch || null, customer: rec.customer.trim() || 'Walk-in', description: rec.description || 'MoMo payment', items: JSON.stringify([{ desc: rec.description || 'MoMo payment', qty: 1, price: amt }]), total: amt, balance: 0, discount: 0, reference: rec.reference, receipt_no: `RC-${rec.date.replace(/-/g, '')}-${String(n).padStart(3, '0')}` });
+    setSaving(false);
+    if (error) { addNotif('Could not save: ' + (error.message || error), 'warning'); return; }
+    if (data) setSales(prev => (prev.some(s => s.id === data.id) ? prev : [...prev, data]));
+    addNotif('Sale recorded from MoMo statement', 'success'); setRec(null);
+  };
+  const exportResults = () => {
+    const row = (i) => [TAG[i.status][0].replace(/^\S+\s/, ''), i.dir === 'in' ? 'Money in' : 'Money out', i.date, i.ref, i.amount, i.st?.desc || '', i.app ? i.app.label : '', i.app ? i.app.date : '', i.app ? i.app.amount : ''];
+    const head = ['Status', 'Direction', 'Date', 'Reference', 'Amount', 'Statement details', 'App record', 'App date', 'App amount'];
+    downloadBlob('momo-reconciliation.xlsx', makeXlsx([
+      { name: 'Summary', rows: [['Item', 'Value'], ['Statement period', `${dMin} to ${dMax}`], ['Money in on statement', stIn], ['MoMo sales recorded in app', appInTot], ['Matched', cnt('matched')], ['Amount differs', cnt('mismatch')], ['Not in app (unrecorded)', cnt('unrecorded')], ['Not on statement', cnt('missing')]] },
+      ...['matched', 'mismatch', 'unrecorded', 'missing'].map(k => ({ name: TAG[k][0].replace(/^\S+\s/, ''), rows: [head, ...items.filter(i => i.status === k).map(row)] })),
+    ]));
+  };
+  const sel = (label, key) => <Sel label={label} value={map[key]} onChange={e => setMap({ ...map, [key]: parseInt(e.target.value, 10) })}><option value={-1}>— none —</option>{heads.map((h, i) => <option key={i} value={i}>{h}</option>)}</Sel>;
+
+  return (
+    <div>
+      <div className="d-hero"><div><h2>📱 MoMo Reconciliation</h2><p>Check that every Mobile Money payment you recorded really arrived — and find payments you forgot to record{activeBranch !== 'all' ? ` · ${activeBranch}` : ''}</p></div>
+        {st.length > 0 && <div className="d-actions"><button className="d-act" onClick={exportResults}>⬇️ Export results (Excel)</button></div>}</div>
+
+      <div className="d-card" style={{ marginBottom: 14 }}>
+        <div className="d-head"><h3>1 · Load your MoMo statement</h3>{fileName && <span className="muted">{fileName}</span>}</div>
+        <div className="sm-grid">
+          <div className="fld"><label>Upload statement (CSV)</label><input type="file" accept=".csv,.txt,.tsv,text/csv" onChange={onFile} /></div>
+          <div className="muted" style={{ fontSize: 12, alignSelf: 'end' }}>Got Excel or PDF? Open it, then <b>Save as CSV</b> — or simply select the rows, copy, and paste below.</div>
+        </div>
+        <div className="fld" style={{ marginTop: 10 }}><label>…or paste the statement rows here</label><textarea rows={4} value={raw} onChange={e => setRaw(e.target.value)} placeholder="Date, Transaction ID, Type, Amount, …" /></div>
+        <div style={{ marginTop: 10 }}><Btn onClick={() => load(raw)}>Read statement</Btn></div>
+        <p className="muted" style={{ fontSize: 12, marginBottom: 0 }}>Tip: when recording MoMo sales, type the <b>MoMo transaction ID</b> in the “Reference” box — then matching is exact. Without it, payments are matched by amount and date.</p>
+      </div>
+
+      {map && table.length > 0 && (
+        <div className="d-card" style={{ marginBottom: 14 }}>
+          <div className="d-head"><h3>2 · Check the columns</h3><span className="muted">{st.length} transaction{st.length === 1 ? '' : 's'} read{dMin ? ` · ${dMin} → ${dMax}` : ''}</span></div>
+          <div className="sm-grid">{sel('Date column', 'date')}{sel('Transaction ID / reference', 'ref')}{sel('Amount', 'amount')}{sel('Type / direction (optional)', 'type')}{sel('Money IN column (optional)', 'credit')}{sel('Money OUT column (optional)', 'debit')}{sel('Details / name (optional)', 'desc')}
+            <Sel label="Match dates within" value={tol} onChange={e => setTol(parseInt(e.target.value, 10))}>{[0, 1, 2, 3].map(n => <option key={n} value={n}>{n === 0 ? 'Same day only' : `±${n} day${n > 1 ? 's' : ''}`}</option>)}</Sel>
+            <Sel label="If direction is unknown, treat as" value={defDir} onChange={e => setDefDir(e.target.value)}><option value="in">Money received</option><option value="out">Money sent</option></Sel></div>
+          {st.length === 0 && <p className="err">No transactions could be read — choose the correct Date and Amount columns above.</p>}
+        </div>
+      )}
+
+      {st.length > 0 && (<>
+        <div className="d-kpis">
+          <Kpi label="Money in — statement" value={fmt(stIn)} icon="📥" color="var(--primary)" delta={null} sub={`${rIn.rows.length} payments`} />
+          <Kpi label="MoMo sales — your records" value={fmt(appInTot)} icon="🧾" color="var(--green-ink)" delta={null} sub={`${appIn.length} recorded`} />
+          <Kpi label="On statement, not in app" value={fmt(sumS('unrecorded'))} icon="❓" color="var(--red-ink)" delta={null} sub={`${items.filter(i => i.status === 'unrecorded' && i.dir === 'in').length} unrecorded receipts`} />
+          <Kpi label="In app, not on statement" value={fmt(sumS('missing'))} icon="❌" color="var(--amber-ink)" delta={null} sub={`${items.filter(i => i.status === 'missing' && i.dir === 'in').length} to investigate`} />
+        </div>
+        <div className="d-card">
+          <div className="d-head"><h3>3 · Results</h3>
+            <div className="d-seg" style={{ overflowX: 'auto' }}>{[['all', `All (${items.length})`], ['matched', `Matched (${cnt('matched')})`], ['mismatch', `Differs (${cnt('mismatch')})`], ['unrecorded', `Not in app (${cnt('unrecorded')})`], ['missing', `Not on statement (${cnt('missing')})`]].map(([k, l]) => <button key={k} className={filter === k ? 'on' : ''} onClick={() => setFilter(k)}>{l}</button>)}</div></div>
+          {shown.length === 0 ? <p className="muted" style={{ margin: 0 }}>Nothing here.</p> : (
+            <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Status', 'Date', 'Reference', 'Amount', 'Statement', 'Your record', ''].map(h => <TH key={h}>{h}</TH>)}</tr></thead>
+              <tbody>{shown.map((i, k) => (
+                <tr key={k}>
+                  <TD><span className={`d-tag ${TAG[i.status][1]}`}>{TAG[i.status][0]}</span></TD>
+                  <TD>{i.date}</TD><TD style={{ fontSize: 12 }}>{i.ref || '—'}</TD>
+                  <TD style={{ fontWeight: 700, color: i.dir === 'in' ? 'var(--green-ink)' : 'var(--red-ink)' }}>{i.dir === 'in' ? '+' : '−'}{fmt(i.amount)}</TD>
+                  <TD style={{ fontSize: 12, maxWidth: 170 }}>{i.st ? (i.st.desc || '—') : <span className="muted">—</span>}</TD>
+                  <TD style={{ fontSize: 12, maxWidth: 200 }}>{i.app ? <>{i.app.label}<div className="muted">{i.app.date} · {fmt(i.app.amount)}{i.how ? '' : ''}</div></> : <span className="muted">—</span>}</TD>
+                  <TD style={{ whiteSpace: 'nowrap' }}>
+                    {i.status === 'unrecorded' && i.dir === 'in' && <button className="d-link" onClick={() => setRec({ amount: String(i.amount), date: i.date, reference: i.ref, customer: (i.st.desc || '').replace(/^(from|to)\s+/i, ''), description: '', branch: defBranch })}>➕ Record sale</button>}
+                    {i.status === 'missing' && i.app?.kind === 'sale' && <button className="d-link" onClick={() => changeToCash(i.app)}>Change to Cash</button>}
+                    {i.st && <>{' '}<button className="d-link" style={{ color: 'var(--muted)' }} onClick={() => setIgnored({ ...ignored, [i.st.idx]: true })}>Ignore</button></>}
+                  </TD>
+                </tr>))}</tbody>
+            </table></div>
+          )}
+          {Object.keys(ignored).length > 0 && <p className="muted" style={{ fontSize: 12, marginBottom: 0 }}>{Object.keys(ignored).length} statement row(s) ignored. <button className="d-link" onClick={() => setIgnored({})}>Restore all</button></p>}
+        </div>
+      </>)}
+
+      {rec && (
+        <Modal title="➕ Record sale from statement" onClose={() => setRec(null)}>
+          <datalist id="mm-cx">{customers.slice(0, 2000).map(c => <option key={c.id} value={c.name} />)}</datalist>
+          <div className="sm-grid">
+            <Inp label="Amount (GH₵)" type="number" value={rec.amount} onChange={e => setRec({ ...rec, amount: e.target.value })} />
+            <Inp label="Date" type="date" value={rec.date} onChange={e => setRec({ ...rec, date: e.target.value })} />
+            <Inp label="Customer" list="mm-cx" value={rec.customer} onChange={e => setRec({ ...rec, customer: e.target.value })} />
+            <Inp label="What was it for?" value={rec.description} onChange={e => setRec({ ...rec, description: e.target.value })} placeholder="e.g. Flyers" />
+            <Inp label="MoMo reference" value={rec.reference} onChange={e => setRec({ ...rec, reference: e.target.value })} />
+            {branches.length > 0 && <Sel label="Branch" value={rec.branch} onChange={e => setRec({ ...rec, branch: e.target.value })}>{branches.map(b => <option key={b.name}>{b.name}</option>)}</Sel>}
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}><Btn variant="ghost" onClick={() => setRec(null)}>Cancel</Btn><Btn variant="success" disabled={saving} onClick={saveRec}>{saving ? 'Saving…' : '✔ Record as sale'}</Btn></div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ───────────── BACKUP & EXPORT ───────────── */
+const genericCols = (rows) => { const keys = []; rows.forEach(r => Object.keys(r).forEach(k => { if (k !== 'user_id' && !keys.includes(k)) keys.push(k); })); return keys.map(k => [k.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()), k]); };
+const toSheetRows = (cols, rows) => [cols.map(c => c[0]), ...rows.map(r => cols.map(([, a]) => { const v = typeof a === 'function' ? a(r) : r[a]; return v === undefined || v === null ? '' : typeof v === 'object' ? JSON.stringify(v) : v; }))];
+
+function BackupTab({ data, branches = [], priceList = [], userId, addNotif, lastBackup, onBackedUp }) {
+  const [busy, setBusy] = useState(false);
+  const [ds, setDs]     = useState('sales');
+  const [month, setMonth] = useState('all');
+  const [br, setBr]     = useState('all');
+  const [kind, setKind] = useState('xlsx');
+  const first = branches[0]?.name;
+  const SETS = {
+    sales:     { label: 'Sales', rows: data.sales, cols: [['Date', 'date'], ['Receipt no', 'receipt_no'], ['Branch', s => s.branch || first || ''], ['Customer', 'customer'], ['Description', 'description'], ['Total', s => s.total ?? s.amount], ['Paid', 'amount'], ['Balance', s => s.balance || 0], ['Written off', s => s.written_off || 0], ['Method', 'payment_method'], ['Reference', 'reference'], ['Served by', 'received_by'], ['Notes', 'notes']] },
+    expenses:  { label: 'Expenses', rows: data.expenses, cols: [['Date', 'date'], ['Branch', x => x.branch || first || ''], ['Category', 'category'], ['Description', 'description'], ['Amount', 'amount']] },
+    jobs:      { label: 'Jobs', rows: data.jobs, cols: [['Job no', 'job_no'], ['Customer', 'customer'], ['Description', 'description'], ['Type', 'type'], ['Status', 'status'], ['Priority', 'priority'], ['Start', 'start_date'], ['Due', 'due_date'], ['Price', 'price'], ['Cost', 'cost'], ['Profit', j => (j.price || 0) - (j.cost || 0)], ['Machine', 'machine'], ['Assigned to', 'assigned_to'], ['Payment', 'payment_method'], ['Delivery', 'delivery_status'], ['Branch', j => j.branch || first || ''], ['Notes', 'notes']] },
+    customers: { label: 'Customers', rows: data.customers, cols: [['Name', 'name'], ['Phone', 'phone'], ['WhatsApp', 'whatsapp'], ['Email', 'email'], ['Address', 'address']] },
+    inventory: { label: 'Inventory', rows: data.inventory },
+    invoices:  { label: 'Invoices', rows: data.invoices },
+    payroll:   { label: 'Payroll', rows: data.payroll, cols: [['Date', 'date'], ['Staff', 'staff_name'], ['Period', 'period'], ['Basic', p => p.basic ?? p.amount], ['Allowance', p => p.allowance || 0], ['Deductions', p => p.deductions || 0], ['Net paid', 'amount'], ['Method', 'payment_method'], ['Reference', 'reference'], ['Notes', 'notes']] },
+    loans:     { label: 'Loans', rows: data.loans },
+    debts:     { label: 'Debtors (manual)', rows: data.debts, cols: [['Customer', 'customer'], ['Phone', 'phone'], ['Type', 'kind'], ['Reason', 'reason'], ['Date', 'date'], ['Due', 'due_date'], ['Amount', 'amount'], ['Paid', 'paid'], ['Written off', d => d.written_off || 0], ['Balance', d => Math.max(0, d.amount - d.paid - (d.written_off || 0))], ['Branch', d => d.branch || first || ''], ['Notes', 'notes']] },
+  };
+  const dateOf = (x) => x.date || x.start_date || x.due_date || (x.created_at || '').slice(0, 10) || '';
+  const colsFor = (s) => s.cols || genericCols(s.rows);
+  const months = [...new Set(Object.values(SETS).flatMap(s => s.rows.map(dateOf).map(d => d.slice(0, 7)).filter(Boolean)))].sort().reverse().slice(0, 36);
+  const set = SETS[ds];
+  const filtered = set.rows.filter(x => (month === 'all' || dateOf(x).startsWith(month) || ds === 'customers') && (br === 'all' || ds === 'customers' || (x.branch || first) === br));
+  const days = lastBackup ? Math.floor((Date.now() - new Date(lastBackup)) / 86400000) : null;
+
+  const stamp = () => new Date().toISOString().slice(0, 10);
+  const exportOne = () => {
+    const rows = toSheetRows(colsFor(set), filtered);
+    if (kind === 'csv') downloadCSV(`${ds}-${stamp()}.csv`, rows); else downloadBlob(`${ds}-${stamp()}.xlsx`, makeXlsx([{ name: set.label, rows }]));
+    addNotif(`${set.label} exported (${filtered.length} rows)`, 'success');
+  };
+  const gatherSettings = async () => {
+    const keys = ['branches', 'price_list', 'staff_list', 'staff_profiles', 'official_receipts', 'expense_budgets', 'monthly_goal', ...branches.map(b => `monthly_goal:${b.name}`)];
+    const res = await Promise.all(keys.map(k => db.getSetting(userId, k)));
+    const out = {}; keys.forEach((k, i) => { const v = res[i].data?.value; if (v !== undefined && v !== null) { try { out[k] = JSON.parse(v); } catch { out[k] = v; } } }); return out;
+  };
+  const markDone = async () => { const iso = new Date().toISOString(); await db.setSetting(userId, 'last_backup', iso); onBackedUp(iso); };
+  const fullExcel = async () => {
+    setBusy(true);
+    try {
+      const settings = await gatherSettings(), act = await db.getActivity(userId, 3000);
+      const sheets = Object.entries(SETS).map(([k, s]) => ({ name: s.label, rows: toSheetRows(colsFor(s), s.rows) }));
+      sheets.push({ name: 'Branches', rows: [['Name', 'Address', 'Phone', 'Manager'], ...(settings.branches || branches).map(b => [b.name, b.address || '', b.phone || '', b.manager || ''])] });
+      sheets.push({ name: 'Price list', rows: [['Item', 'Category', 'Unit', 'Price'], ...priceList.map(p => [p.name, p.category, p.unit, p.price])] });
+      sheets.push({ name: 'Staff', rows: [['Name', 'Role', 'Monthly salary', 'Phone', 'Branch', 'Start date', 'Removed'], ...Object.entries(settings.staff_profiles || {}).map(([n, p]) => [n, p.role || '', parseFloat(p.salary) || '', p.phone || '', p.branch || '', p.start_date || '', p.archived ? 'Yes' : ''])] });
+      sheets.push({ name: 'Official receipts', rows: [['No', 'Date', 'Branch', 'Received from', 'Amount', 'Being', 'Mode', 'Reference', 'Balance', 'Received by'], ...(settings.official_receipts || []).map(r => [r.no, r.date, r.branch, r.received_from, r.amount, r.being, r.mode, r.cheque_no, r.balance, r.received_by])] });
+      sheets.push({ name: 'Activity log', rows: [['When', 'Who', 'Action', 'Type', 'Details', 'Branch'], ...(act.data || []).map(l => [l.created_at, l.actor, l.action, l.entity, l.details, l.branch || ''])] });
+      downloadBlob(`Bigbiney-backup-${stamp()}.xlsx`, makeXlsx(sheets)); await markDone(); addNotif('Excel backup downloaded', 'success');
+    } catch (e) { addNotif('Backup failed: ' + (e.message || e), 'warning'); }
+    setBusy(false);
+  };
+  const fullJson = async () => {
+    setBusy(true);
+    try {
+      const settings = await gatherSettings(), act = await db.getActivity(userId, 3000);
+      const tables = {}; Object.keys(SETS).forEach(k => { tables[k] = SETS[k].rows; }); tables.job_materials = data.jobMaterials || []; tables.recurring_expenses = data.recurringExpenses || []; tables.activity_log = act.data || [];
+      const blob = new Blob([JSON.stringify({ app: 'Bigbiney Printing Press', version: 1, exported_at: new Date().toISOString(), tables, settings }, null, 1)], { type: 'application/json' });
+      downloadBlob(`Bigbiney-backup-${stamp()}.json`, blob); await markDone(); addNotif('JSON backup downloaded', 'success');
+    } catch (e) { addNotif('Backup failed: ' + (e.message || e), 'warning'); }
+    setBusy(false);
+  };
+
+  return (
+    <div>
+      <div className="d-hero"><div><h2>💾 Backup & Export</h2><p>Your own copy of all business data, and Excel exports for your accountant</p></div></div>
+      <div className="d-grid g-2">
+        <div className="d-card">
+          <div className="d-head"><h3>Full backup</h3><span className={`d-tag ${days === null || days > 14 ? 'hot' : days > 7 ? 'warn' : 'ok'}`}>{lastBackup ? (days === 0 ? 'Backed up today' : `Last backup ${days} day${days === 1 ? '' : 's'} ago`) : 'Never backed up'}</span></div>
+          <p className="muted" style={{ marginTop: 0 }}>Downloads <b>everything</b> — all branches, customers, sales, expenses, jobs, stock, invoices, payroll, loans, debtors, price list, staff, official receipts and the activity log.</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Btn disabled={busy} onClick={fullExcel}>{busy ? 'Preparing…' : '⬇️ Excel backup (.xlsx)'}</Btn>
+            <Btn variant="ghost" disabled={busy} onClick={fullJson}>⬇️ JSON backup (for restoring)</Btn>
+          </div>
+          <div className="db-items" style={{ marginTop: 14 }}>
+            {Object.values(SETS).map(s => <div key={s.label} className="ln-r"><span>{s.label}</span><b>{s.rows.length.toLocaleString()}</b></div>)}
+          </div>
+        </div>
+        <div className="d-card">
+          <div className="d-head"><h3>Good habits</h3></div>
+          <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+            ✅ Back up <b>once a week</b> (the app reminds you after 14 days).<br />
+            ✅ Keep a copy <b>off this device</b> — email it to yourself or save it to Google Drive.<br />
+            ✅ The file contains customer phone numbers and payroll, so <b>don't share it</b> publicly.<br />
+            ✅ Your database provider also keeps its own backups, but this download is a copy <b>you control</b>.<br />
+            ℹ️ The JSON file is what we'd use to restore your data if something ever went wrong.
+          </div>
+        </div>
+      </div>
+      <div className="d-card">
+        <div className="d-head"><h3>Export one list (Excel or CSV)</h3><span className="muted">{filtered.length.toLocaleString()} rows</span></div>
+        <div className="d-filters">
+          <Sel label="What to export" value={ds} onChange={e => setDs(e.target.value)}>{Object.entries(SETS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}</Sel>
+          <Sel label="Month" value={month} onChange={e => setMonth(e.target.value)}><option value="all">All time</option>{months.map(m => <option key={m}>{m}</option>)}</Sel>
+          {branches.length > 1 && <Sel label="Branch" value={br} onChange={e => setBr(e.target.value)}><option value="all">All branches</option>{branches.map(b => <option key={b.name}>{b.name}</option>)}</Sel>}
+          <Sel label="Format" value={kind} onChange={e => setKind(e.target.value)}><option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV</option></Sel>
+          <Btn onClick={exportOne} disabled={!filtered.length}>⬇️ Download</Btn>
+        </div>
       </div>
     </div>
   );
