@@ -8,3 +8,10 @@ root.render(
     <PrintingPressSystem />
   </React.StrictMode>
 );
+
+// Register the service worker (installable app + fast start). Production builds only.
+if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  });
+}
