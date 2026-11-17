@@ -8,12 +8,18 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Columns added for branches / detailed sales (see branches_setup.sql).
 // If the database doesn't have them yet, the insert is retried without them so nothing is lost.
+let ctxBranch = null;
 const EXTRA_COLS = {
+  jobs:      ['branch'],
+  inventory: ['branch'],
+  invoices:  ['branch'],
+  loans:     ['branch'],
   sales:    ['branch', 'customer', 'description', 'items', 'discount', 'total', 'balance', 'reference', 'received_by', 'notes', 'receipt_no'],
   expenses: ['branch'],
   payroll:  ['basic', 'allowance', 'deductions', 'reference', 'branch'],
 };
 async function insertWithFallback(table, row) {
+  if (ctxBranch && !row.branch && EXTRA_COLS[table]?.includes('branch')) row = { ...row, branch: ctxBranch };
   const first = await supabase.from(table).insert([row]).select();
   if (first.error && /column|schema cache/i.test(first.error.message || '')) {
     const base = { ...row };
@@ -25,6 +31,7 @@ async function insertWithFallback(table, row) {
 }
 
 const db = {
+  setBranchContext(name) { ctxBranch = name; },
   async signup(email, password, name, role = 'user') {
     const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
     if (authError) return { error: authError.message };
@@ -84,37 +91,21 @@ async getCustomers(userId) {
   async getJobs(userId) { const { data, error } = await supabase.from('jobs').select('*').eq('user_id', userId).order('job_no', { ascending: false }); return { data: data || [], error }; },
 async addJob(userId, job) {
   const payload = {
-    user_id:         userId,
-    job_no:          job.job_no          || '',
-    customer:        job.customer        || '',
-    customer_id:     job.customer_id     || null,
-    description:     job.description     || '',
-    type:            job.type            || 'Digital',
-    status:          job.status          || 'queued',
-    priority:        job.priority        || 'normal',
-    due_date:        job.due_date        || null,
-    start_date:      job.start_date      || null,
-    price:           job.price           || 0,
-    cost:            job.cost            || 0,
-    machine:         job.machine         || '',
-    notes:           job.notes           || '',
-    qr_code:         job.qr_code         || '',
-    delivery_status: job.delivery_status || 'pending',
-    assigned_to:     job.assigned_to     || '',
-    payment_method:  job.payment_method  || 'Cash',
-    whatsapp:        job.whatsapp        || '',
+    user_id: userId, job_no: job.job_no || '', customer: job.customer || '', customer_id: job.customer_id || null,
+    description: job.description || '', type: job.type || 'Digital', status: job.status || 'queued', priority: job.priority || 'normal',
+    due_date: job.due_date || null, start_date: job.start_date || null, price: job.price || 0, cost: job.cost || 0,
+    machine: job.machine || '', notes: job.notes || '', qr_code: job.qr_code || '', delivery_status: job.delivery_status || 'pending',
+    assigned_to: job.assigned_to || '', payment_method: job.payment_method || 'Cash', whatsapp: job.whatsapp || '',
+    branch: job.branch || null,
   };
-  const { data, error } = await supabase
-    .from('jobs')
-    .insert([payload])
-    .select();
-  if (error) console.error('ADD JOB ERROR:', error.message, error.details, error.hint);
-  return { data: data?.[0], error };
+  const r = await insertWithFallback('jobs', payload);
+  if (r.error) console.error('ADD JOB ERROR:', r.error.message);
+  return r;
 },
   async updateJob(id, updates) {
   const allowed = ['customer','customer_id','description','type','status','priority',
     'due_date','start_date','price','cost','machine','notes','qr_code',
-    'delivery_status','assigned_to','payment_method','whatsapp','job_no'];
+    'delivery_status','assigned_to','payment_method','whatsapp','job_no','branch'];
   const clean = {};
   allowed.forEach(k => { if (updates[k] !== undefined) clean[k] = updates[k]; });
   const { data, error } = await supabase
@@ -128,12 +119,12 @@ async addJob(userId, job) {
   async deleteJob(id) { const { error } = await supabase.from('jobs').delete().eq('id', id); return { error }; },
 
   async getInventory(userId) { const { data, error } = await supabase.from('inventory').select('*').eq('user_id', userId).order('name'); return { data: data || [], error }; },
-  async addInventoryItem(userId, item) { const { data, error } = await supabase.from('inventory').insert([{ ...item, user_id: userId }]).select(); return { data: data?.[0], error }; },
+  async addInventoryItem(userId, item) { return insertWithFallback('inventory', { ...item, user_id: userId }); },
   async updateInventoryItem(id, updates) { const { data, error } = await supabase.from('inventory').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
   async deleteInventoryItem(id) { const { error } = await supabase.from('inventory').delete().eq('id', id); return { error }; },
 
   async getInvoices(userId) { const { data, error } = await supabase.from('invoices').select('*').eq('user_id', userId).order('date', { ascending: false }); return { data: data || [], error }; },
-  async addInvoice(userId, invoice) { const { data, error } = await supabase.from('invoices').insert([{ ...invoice, user_id: userId }]).select(); return { data: data?.[0], error }; },
+  async addInvoice(userId, invoice) { return insertWithFallback('invoices', { ...invoice, user_id: userId }); },
   async updateInvoice(id, updates) { const { data, error } = await supabase.from('invoices').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
   async deleteInvoice(id) { const { error } = await supabase.from('invoices').delete().eq('id', id); return { error }; },
 
@@ -152,13 +143,7 @@ async deletePayroll(id) { const { error } = await supabase.from('payroll').delet
 
 // ─── LOANS (Supabase) ────────────────────────────────────────────────────────
 async getLoans(userId) { const { data, error } = await supabase.from('loans').select('*').eq('user_id', userId).order('created_at', { ascending: false }); return { data: data || [], error }; },
-async addLoan(userId, loan) {
-  const { data, error } = await supabase
-    .from('loans')
-    .insert([{ ...loan, user_id: userId }])
-    .select();
-  return { data: data?.[0], error };
-},
+async addLoan(userId, loan) { return insertWithFallback('loans', { ...loan, user_id: userId }); },
 async updateLoan(id, updates) {
   const { data, error } = await supabase
     .from('loans')
