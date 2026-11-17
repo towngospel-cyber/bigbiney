@@ -9,6 +9,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // Columns added for branches / detailed sales (see branches_setup.sql).
 // If the database doesn't have them yet, the insert is retried without them so nothing is lost.
 let ctxBranch = null;
+let actor = { email: '', id: '' };
+let lookup = () => '';
 const EXTRA_COLS = {
   jobs:      ['branch'],
   inventory: ['branch'],
@@ -32,6 +34,10 @@ async function insertWithFallback(table, row) {
 
 const db = {
   setBranchContext(name) { ctxBranch = name; },
+  setActor(email, id) { actor = { email, id }; },
+  setLookup(fn) { lookup = fn; },
+  async updateSale(id, updates) { const { data, error } = await supabase.from('sales').update(updates).eq('id', id).select(); return { data: data?.[0], error }; },
+  async getActivity(userId, limit = 300) { const { data, error } = await supabase.from('activity_log').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(limit); return { data: data || [], error }; },
   async signup(email, password, name, role = 'user') {
     const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
     if (authError) return { error: authError.message };
@@ -182,5 +188,39 @@ async deleteJobMaterial(id) { const { error } = await supabase.from('job_materia
     return () => supabase.removeChannel(channel);
   },
 };
+
+
+// ─── Activity log: wraps every add/update/delete so all changes are recorded ───
+const LOGGED = {
+  Customer: ['customers', 'customer'], Job: ['jobs', 'job'], InventoryItem: ['inventory', 'stock item'], Invoice: ['invoices', 'invoice'],
+  Sale: ['sales', 'sale'], Expense: ['expenses', 'expense'], Payroll: ['payroll', 'payroll'], Loan: ['loans', 'loan'],
+  RecurringExpense: ['recurring_expenses', 'recurring expense'], JobMaterial: ['job_materials', 'job material'],
+};
+async function logActivity(action, table, entity, args, res) {
+  try {
+    if (!actor.id) return;
+    let details = '';
+    if (action === 'add') {
+      const r = args[1] || {};
+      details = [r.job_no, r.name, r.customer, r.staff_name, r.description, r.amount != null ? `GH₵${r.amount}` : r.price != null ? `GH₵${r.price}` : ''].filter(Boolean).slice(0, 4).join(' · ');
+    } else if (action === 'update') {
+      const u = args[1] || {};
+      details = `${lookup(table, args[0]) || '#' + String(args[0]).slice(0, 8)} → ` + Object.entries(u).filter(([, v]) => v === null || typeof v !== 'object').slice(0, 4).map(([k, v]) => `${k}=${String(v).slice(0, 24)}`).join(', ');
+    } else details = lookup(table, args[0]) || `#${String(args[0]).slice(0, 8)}`;
+    await supabase.from('activity_log').insert([{ user_id: actor.id, actor: actor.email, action, entity, details: details.slice(0, 300), branch: ctxBranch }]);
+  } catch (e) { /* logging must never break the app */ }
+}
+Object.keys(db).forEach((k) => {
+  const m = k.match(/^(add|update|delete)(.+)$/);
+  if (!m || !LOGGED[m[2]]) return;
+  const [table, entity] = LOGGED[m[2]], orig = db[k].bind(db);
+  db[k] = async (...args) => {
+    // for deletes, capture the description BEFORE the row disappears
+    const pre = m[1] === 'delete' ? lookup(table, args[0]) : null;
+    const res = await orig(...args);
+    if (!res || !res.error) { if (pre) { const keep = lookup; lookup = () => pre; await logActivity(m[1], table, entity, args, res); lookup = keep; } else await logActivity(m[1], table, entity, args, res); }
+    return res;
+  };
+});
 
 export default db;
