@@ -200,6 +200,11 @@ table{border-collapse:collapse}
   .d-hero h2{font-size:21px}.d-card{padding:14px}.d-seg{max-width:100%;overflow-x:auto}.d-act{padding:7px 11px;font-size:13px}.d-readout{gap:10px}
   .pr-staff{grid-template-columns:minmax(0,1fr)}.d-filters .fld{min-width:100%}.d-hero{align-items:flex-start}.d-actions{width:100%}
 }
+
+.branch-sel{width:auto;max-width:190px;font-weight:700;border-radius:999px;padding:7px 12px;border:1px solid var(--primary);color:var(--primary);background:var(--surface)}
+.br-ribbon{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--blue-bg);border:1px solid var(--blue-line);color:var(--blue-ink);border-radius:12px;padding:8px 14px;margin-bottom:14px;font-size:13px}
+.br-ribbon button{margin-left:auto;border:0;background:none;color:var(--primary);font-weight:700;cursor:pointer}
+@media (max-width:860px){.branch-sel{max-width:132px;padding:6px 8px;font-size:12px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -260,6 +265,7 @@ export default function PrintingPressSystem() {
   const [notifs,            setNotifs]            = useState([]);
   const [monthlyGoal,       setMonthlyGoalState]  = useState(0);
   const [branches,          setBranches]          = useState([]);
+  const [activeBranch,      setActiveBranch]      = useState(() => { try { return localStorage.getItem('bb_branch') || 'all'; } catch { return 'all'; } });
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('theme') || 'auto'; } catch { return 'auto'; } });
   const [moreOpen, setMoreOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -280,6 +286,15 @@ export default function PrintingPressSystem() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const firstB   = branches[0]?.name;
+  const dbReady  = [sales, expenses, jobs, inventory, invoices, payroll, loans].every(a => a.length === 0 || Object.prototype.hasOwnProperty.call(a[0], 'branch'));
+  const effBranch = dbReady && branches.some(b => b.name === activeBranch) ? activeBranch : 'all';
+  const inB      = (x) => effBranch === 'all' || (x.branch || firstB) === effBranch;
+  const scoped   = (setter) => (v) => (typeof v === 'function' ? setter(v) : setter(prev => (effBranch === 'all' ? v : [...prev.filter(x => !inB(x)), ...v])));
+  const switchBranch = (name) => { setActiveBranch(name); try { localStorage.setItem('bb_branch', name); } catch {} };
+  const goalKey  = effBranch === 'all' || effBranch === firstB ? 'monthly_goal' : `monthly_goal:${effBranch}`;
+  useEffect(() => { db.setBranchContext(effBranch === 'all' ? null : effBranch); }, [effBranch]);
+  useEffect(() => { if (!currentUser) return; db.getSetting(currentUser.id, goalKey).then(({ data }) => setMonthlyGoalState(data ? parseFloat(data.value) || 0 : 0)); }, [currentUser, goalKey]);
   const loadAllData = useCallback(async (userId) => {
     setLoading(true);
     const [c, j, inv, inv2, s, e, l, p, re, jm, goalRes, brRes] = await Promise.all([
@@ -320,7 +335,7 @@ export default function PrintingPressSystem() {
 
   const addNotif = (message, type = 'info') => setNotifs(n => [{ id: Date.now(), type, message, read: false }, ...n.slice(0, 19)]);
   const saveBranches = async (list) => { setBranches(list); await db.setSetting(currentUser.id, 'branches', JSON.stringify(list)); };
-  const saveGoal = async (val) => { setMonthlyGoalState(val); await db.setSetting(currentUser.id, 'monthly_goal', String(val)); };
+  const saveGoal = async (val) => { setMonthlyGoalState(val); await db.setSetting(currentUser.id, goalKey, String(val)); };
 
   const handleLogin = async () => {
     setLoginError('');
@@ -362,8 +377,9 @@ export default function PrintingPressSystem() {
   }
 
   const unread      = notifs.filter(n => !n.read).length;
-  const lowStock    = inventory.filter(i => i.quantity <= i.reorder_point);
-  const overdueJobs = jobs.filter(j => !['completed','cancelled'].includes(j.status) && j.due_date && j.due_date < todayStr());
+  const vJobs = jobs.filter(inB), vSales = sales.filter(inB), vExp = expenses.filter(inB), vInv = inventory.filter(inB), vInvoices = invoices.filter(inB), vPayroll = payroll.filter(inB), vLoans = loans.filter(inB);
+  const lowStock    = vInv.filter(i => i.quantity <= i.reorder_point);
+  const overdueJobs = vJobs.filter(j => !['completed','cancelled'].includes(j.status) && j.due_date && j.due_date < todayStr());
 
   const TABS = [
     { id: 'dashboard', label: '📊 Dashboard' },
@@ -407,6 +423,7 @@ export default function PrintingPressSystem() {
         <header className="top">
           <button className="iconbtn menu-btn" onClick={() => setMenuOpen(v => !v)} aria-label="Open menu" aria-expanded={menuOpen}>☰</button>
           <h1 className="page-title" style={{ marginRight: 'auto' }}><span>{curIcon}</span> {curName}</h1>
+          {branches.length > 1 && <select className="branch-sel" value={effBranch} disabled={!dbReady} onChange={e => switchBranch(e.target.value)} aria-label="Switch branch"><option value="all">🏬 All branches</option>{branches.map(b => <option key={b.name} value={b.name}>🏬 {b.name}</option>)}</select>}
           <div className="top-actions">
             {lowStock.length > 0 && <button className="chip bad" onClick={() => go('inventory')}>{lowStock.length} low stock</button>}
             {overdueJobs.length > 0 && <button className="chip warn" onClick={() => go('jobs')}>{overdueJobs.length} overdue</button>}
@@ -433,18 +450,20 @@ export default function PrintingPressSystem() {
         </header>
 
         <main className="main">
-        {activeTab === 'dashboard' && <DashboardTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} setActiveTab={setActiveTab} overdueJobs={overdueJobs} monthlyGoal={monthlyGoal} setMonthlyGoal={saveGoal} />}
-        {activeTab === 'jobs'      && <JobsTab jobs={jobs} setJobs={setJobs} customers={customers} addNotif={addNotif} userId={currentUser.id} inventory={inventory} setInventory={setInventory} jobMaterials={jobMaterials} setJobMaterials={setJobMaterials} />}
-        {activeTab === 'customers' && <CustomersTab customers={customers} setCustomers={setCustomers} jobs={jobs} invoices={invoices} addNotif={addNotif} userId={currentUser.id} />}
-        {activeTab === 'inventory' && <InventoryTab inventory={inventory} setInventory={setInventory} addNotif={addNotif} userId={currentUser.id} />}
-        {activeTab === 'invoices'  && <InvoicesTab invoices={invoices} setInvoices={setInvoices} jobs={jobs} customers={customers} setSales={setSales} addNotif={addNotif} userId={currentUser.id} />}
-        {activeTab === 'finance'   && <FinanceTab customers={customers} branches={branches} sales={sales} setSales={setSales} expenses={expenses} setExpenses={setExpenses} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
-        {activeTab === 'branches'  && <BranchesTab branches={branches} saveBranches={saveBranches} sales={sales} setSales={setSales} expenses={expenses} customers={customers} addNotif={addNotif} userId={currentUser.id} />}
-        {activeTab === 'payroll'   && <PayrollTab branches={branches} payroll={payroll} setPayroll={setPayroll} addNotif={addNotif} userId={currentUser.id} expenses={expenses} setExpenses={setExpenses} />}
-        {activeTab === 'loans'     && <LoansTab loans={loans} setLoans={setLoans} addNotif={addNotif} userId={currentUser.id} sales={sales} expenses={expenses} setExpenses={setExpenses} />}
-        {activeTab === 'receipts'  && <ReceiptsTab branches={branches} customers={customers} userId={currentUser.id} addNotif={addNotif} setSales={setSales} />}
-        {activeTab === 'reports'   && <ReportsTab jobs={jobs} sales={sales} expenses={expenses} customers={customers} inventory={inventory} invoices={invoices} loans={loans} payroll={payroll} branches={branches} />}
-        {activeTab === 'whatsapp'  && <WhatsAppTab jobs={jobs} customers={customers} sales={sales} expenses={expenses} invoices={invoices} addNotif={addNotif} />}
+        {branches.length > 1 && !dbReady && <DbWarn />}
+        {effBranch !== 'all' && activeTab !== 'branches' && <div className="br-ribbon">🏬 Working in <b>{effBranch}</b> — you only see this branch's records <button onClick={() => switchBranch('all')}>View all</button></div>}
+        {activeTab === 'dashboard' && <DashboardTab jobs={vJobs} sales={vSales} expenses={vExp} customers={customers} inventory={vInv} invoices={vInvoices} setActiveTab={setActiveTab} overdueJobs={overdueJobs} monthlyGoal={monthlyGoal} setMonthlyGoal={saveGoal} />}
+        {activeTab === 'jobs'      && <JobsTab allJobs={jobs} jobs={vJobs} setJobs={scoped(setJobs)} customers={customers} addNotif={addNotif} userId={currentUser.id} inventory={vInv} setInventory={scoped(setInventory)} jobMaterials={jobMaterials} setJobMaterials={setJobMaterials} />}
+        {activeTab === 'customers' && <CustomersTab customers={customers} setCustomers={setCustomers} jobs={vJobs} invoices={vInvoices} addNotif={addNotif} userId={currentUser.id} />}
+        {activeTab === 'inventory' && <InventoryTab inventory={vInv} setInventory={scoped(setInventory)} addNotif={addNotif} userId={currentUser.id} />}
+        {activeTab === 'invoices'  && <InvoicesTab invoices={vInvoices} setInvoices={scoped(setInvoices)} jobs={vJobs} customers={customers} setSales={scoped(setSales)} addNotif={addNotif} userId={currentUser.id} />}
+        {activeTab === 'finance'   && <FinanceTab activeBranch={effBranch} customers={customers} branches={branches} sales={vSales} setSales={scoped(setSales)} expenses={vExp} setExpenses={scoped(setExpenses)} addNotif={addNotif} userId={currentUser.id} recurringExpenses={recurringExpenses} setRecurringExpenses={setRecurringExpenses} />}
+        {activeTab === 'branches'  && <BranchesTab openBranch={(n) => { switchBranch(n); go('dashboard'); }} branches={branches} saveBranches={saveBranches} sales={sales} setSales={setSales} expenses={expenses} customers={customers} addNotif={addNotif} userId={currentUser.id} />}
+        {activeTab === 'payroll'   && <PayrollTab activeBranch={effBranch} branches={branches} payroll={vPayroll} setPayroll={scoped(setPayroll)} addNotif={addNotif} userId={currentUser.id} expenses={vExp} setExpenses={scoped(setExpenses)} />}
+        {activeTab === 'loans'     && <LoansTab loans={vLoans} setLoans={scoped(setLoans)} addNotif={addNotif} userId={currentUser.id} sales={vSales} expenses={vExp} setExpenses={scoped(setExpenses)} />}
+        {activeTab === 'receipts'  && <ReceiptsTab activeBranch={effBranch} branches={branches} customers={customers} userId={currentUser.id} addNotif={addNotif} setSales={scoped(setSales)} />}
+        {activeTab === 'reports'   && <ReportsTab jobs={vJobs} sales={vSales} expenses={vExp} customers={customers} inventory={vInv} invoices={vInvoices} loans={vLoans} payroll={vPayroll} branches={effBranch === 'all' ? branches : []} />}
+        {activeTab === 'whatsapp'  && <WhatsAppTab jobs={vJobs} customers={customers} sales={vSales} expenses={vExp} invoices={vInvoices} addNotif={addNotif} />}
         </main>
       </div>
 
@@ -747,7 +766,7 @@ function DashboardTab({ jobs, sales, expenses, customers, inventory, invoices, s
 
 const EMPTY_JOB = { customer: '', customer_id: '', description: '', type: 'Digital', status: 'queued', priority: 'normal', due_date: '', start_date: '', price: '', cost: '', machine: '', notes: '', delivery_status: 'pending', assigned_to: '', payment_method: 'Cash', whatsapp: '' };
 
-function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInventory, jobMaterials, setJobMaterials }) {
+function JobsTab({ allJobs, jobs, setJobs, customers, addNotif, userId, inventory, setInventory, jobMaterials, setJobMaterials }) {
   const [filter,     setFilter]     = useState('all');
   const [search,     setSearch]     = useState('');
   const [modal,      setModal]      = useState(false);
@@ -776,7 +795,7 @@ function JobsTab({ jobs, setJobs, customers, addNotif, userId, inventory, setInv
   }).sort((a, b) => (b.job_no||'').localeCompare(a.job_no||''));
 
   const nextNo = () => {
-    const nums = jobs.map(j => parseInt((j.job_no||'PSM-000').split('-')[1] || 0));
+    const nums = (allJobs || jobs).map(j => parseInt((j.job_no||'PSM-000').split('-')[1] || 0));
     return `PSM-${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`;
   };
 
@@ -1686,6 +1705,10 @@ alter table public.sales
   add column if not exists received_by text, add column if not exists notes text,
   add column if not exists receipt_no text;
 alter table public.expenses add column if not exists branch text;
+alter table public.jobs      add column if not exists branch text;
+alter table public.inventory add column if not exists branch text;
+alter table public.invoices  add column if not exists branch text;
+alter table public.loans     add column if not exists branch text;
 alter table public.payroll
   add column if not exists basic numeric, add column if not exists allowance numeric default 0,
   add column if not exists deductions numeric default 0, add column if not exists reference text,
@@ -1929,10 +1952,10 @@ const printOfficialReceipt = (r, branch) => {
   w.document.write(officialReceiptHTML(r, branch, true)); w.document.close();
 };
 
-function ReceiptsTab({ branches = [], customers = [], userId, addNotif, setSales }) {
+function ReceiptsTab({ branches = [], customers = [], userId, addNotif, setSales, activeBranch = 'all' }) {
   const list = branches.length ? branches : [{ name: 'Main Branch' }];
   const [rcpts, setRcpts] = useState([]);
-  const blank = () => ({ date: todayStr(), branch: list[0].name, received_from: '', amount: '', words: '', being: '', mode: 'Cash', cheque_no: '', balance: '', received_by: '', also_income: false });
+  const blank = () => ({ date: todayStr(), branch: activeBranch !== 'all' ? activeBranch : list[0].name, received_from: '', amount: '', words: '', being: '', mode: 'Cash', cheque_no: '', balance: '', received_by: '', also_income: false });
   const [f, setF] = useState(blank());
   const [wordsEdited, setWordsEdited] = useState(false);
   const [q, setQ] = useState('');
@@ -1961,7 +1984,7 @@ function ReceiptsTab({ branches = [], customers = [], userId, addNotif, setSales
     setF({ ...blank(), branch: f.branch, date: f.date }); setWordsEdited(false); setPreview(null);
   };
   const del = async (r) => { if (window.confirm(`Delete receipt ${r.no}?`)) { await persist(rcpts.filter(x => x.id !== r.id)); if (preview?.id === r.id) setPreview(null); } };
-  const shown = rcpts.filter(r => !q.trim() || `${r.no} ${r.received_from} ${r.being} ${r.date}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const shown = rcpts.filter(r => (activeBranch === 'all' || (r.branch || list[0].name) === activeBranch) && (!q.trim() || `${r.no} ${r.received_from} ${r.being} ${r.date}`.toLowerCase().includes(q.trim().toLowerCase())));
 
   return (
     <div>
@@ -2023,12 +2046,14 @@ function ReceiptsTab({ branches = [], customers = [], userId, addNotif, setSales
   );
 }
 
-function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, recurringExpenses, setRecurringExpenses, customers = [], branches = [] }) {
+function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, recurringExpenses, setRecurringExpenses, customers = [], branches = [], activeBranch = 'all' }) {
   const [viewSale, setViewSale] = useState(null);
   const [fBranch, setFBranch]   = useState('all');
   const firstBranch = branches[0]?.name;
+  const defBranch = activeBranch !== 'all' ? activeBranch : (branches[0]?.name || '');
+  useEffect(() => { setEf(x => ({ ...x, branch: defBranch })); }, [defBranch]);
   const [sf, setSf]         = useState({ date: todayStr(), amount: '', payment_method: 'Cash' });
-  const [ef, setEf]         = useState({ date: todayStr(), category: 'Paper', description: '', amount: '', branch: branches[0]?.name || '' });
+  const [ef, setEf]         = useState({ date: todayStr(), category: 'Paper', description: '', amount: '', branch: defBranch });
   const [showSF, setShowSF] = useState(false);
   const [showEF, setShowEF] = useState(false);
   const [showRE, setShowRE] = useState(false);
@@ -2186,7 +2211,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
         </div>
       )}
 
-      {showSF && <SaleModal onClose={() => setShowSF(false)} customers={customers} branches={branches} userId={userId} sales={sales} setSales={setSales} addNotif={addNotif} />}
+      {showSF && <SaleModal onClose={() => setShowSF(false)} defaultBranch={defBranch} customers={customers} branches={branches} userId={userId} sales={sales} setSales={setSales} addNotif={addNotif} />}
       {viewSale && <SaleReceipt sale={viewSale} branch={branches.find(b => b.name === (viewSale.branch || firstBranch))} customers={customers} onClose={() => setViewSale(null)} />}
 
       {showEF && (
@@ -2235,7 +2260,7 @@ function FinanceTab({ sales, setSales, expenses, setExpenses, addNotif, userId, 
       <div className="d-card" style={{ marginBottom: 14 }}>
         <div className="d-filters">
           <Sel label="Month" value={fMonth} onChange={e => setFMonth(e.target.value)}><option value="all">All time</option>{monthOpts.map(m => <option key={m} value={m}>{m}</option>)}</Sel>
-          {branches.length > 1 && <Sel label="Branch" value={fBranch} onChange={e => setFBranch(e.target.value)}><option value="all">All branches</option>{branches.map(b => <option key={b.name}>{b.name}</option>)}</Sel>}
+          {branches.length > 1 && activeBranch === 'all' && <Sel label="Branch" value={fBranch} onChange={e => setFBranch(e.target.value)}><option value="all">All branches</option>{branches.map(b => <option key={b.name}>{b.name}</option>)}</Sel>}
           <Inp label="Search" value={q} onChange={e => setQ(e.target.value)} placeholder="Category, description, method, amount…" />
           <Btn variant="ghost" onClick={exportLedger}>⬇️ Export CSV</Btn>
         </div>
@@ -2304,7 +2329,7 @@ const printPayslip = (p, pr = {}, branch) => {
   w.document.close();
 };
 
-function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpenses, branches = [] }) {
+function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpenses, branches = [], activeBranch = 'all' }) {
   const [pay, setPay]             = useState(null);
   const [staffModal, setStaffModal] = useState(null);
   const [saving, setSaving]       = useState(false);
@@ -2325,7 +2350,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
 
   const now = new Date(), cm = getCurrentMonth(), pm = monthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
   const sumP = (pred) => payroll.filter(pred).reduce((a, p) => a + (p.amount || 0), 0);
-  const names = [...new Set([...staffList, ...payroll.map(p => p.staff_name).filter(Boolean)])].filter(n => !profiles[n]?.archived);
+  const names = [...new Set([...staffList, ...payroll.map(p => p.staff_name).filter(Boolean)])].filter(n => !profiles[n]?.archived && (activeBranch === 'all' || (profiles[n]?.branch || branches[0]?.name) === activeBranch));
   const staffRows = names.map(name => {
     const pr = profiles[name] || {}, rows = payroll.filter(p => p.staff_name === name), salary = parseFloat(pr.salary) || 0;
     const mPaid = rows.filter(p => (p.date || '').startsWith(cm)).reduce((a, p) => a + (p.amount || 0), 0);
@@ -2348,7 +2373,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
     setSaving(true);
     const basic = parseFloat(pay.basic) || 0, allowance = parseFloat(pay.allowance) || 0, deductions = parseFloat(pay.deductions) || 0, pr = profiles[pay.staff_name] || {};
     const breakdown = (allowance || deductions) ? `(Basic ${fmt(basic)}${allowance ? ` + Allowance ${fmt(allowance)}` : ''}${deductions ? ` − Deductions ${fmt(deductions)}` : ''})` : '';
-    const payload = { staff_name: pay.staff_name, amount: net, period: `${pay.month} ${pay.year}`, date: pay.date, payment_method: pay.payment_method, notes: [pay.notes, breakdown].filter(Boolean).join(' '), basic, allowance, deductions, reference: pay.reference, branch: pr.branch || '' };
+    const payload = { staff_name: pay.staff_name, amount: net, period: `${pay.month} ${pay.year}`, date: pay.date, payment_method: pay.payment_method, notes: [pay.notes, breakdown].filter(Boolean).join(' '), basic, allowance, deductions, reference: pay.reference, branch: pr.branch || (activeBranch !== 'all' ? activeBranch : '') };
     const { data, error, degraded } = await db.addPayroll(userId, payload);
     if (error) { addNotif('Error saving payroll record', 'warning'); setSaving(false); return; }
     if (data) setPayroll(prev => [data, ...prev.filter(x => x.id !== data.id)]);
@@ -2383,7 +2408,7 @@ function PayrollTab({ payroll, setPayroll, addNotif, userId, expenses, setExpens
       <div className="d-hero">
         <div><h2>👷 Staff Payroll</h2><p>{names.length} staff · salary payments are recorded as expenses automatically</p></div>
         <div className="d-actions">
-          <button className="d-act" onClick={() => setStaffModal({ name: '', role: '', salary: '', phone: '', branch: branches[0]?.name || '', start_date: '' })}>+ Add staff</button>
+          <button className="d-act" onClick={() => setStaffModal({ name: '', role: '', salary: '', phone: '', branch: activeBranch !== 'all' ? activeBranch : (branches[0]?.name || ''), start_date: '' })}>+ Add staff</button>
           <button className="d-act p" onClick={() => openPay('')}>💸 Record payment</button>
         </div>
       </div>
@@ -2839,7 +2864,7 @@ function LoansTab({ loans, setLoans, addNotif, userId, sales, expenses, setExpen
 /* ───────────── BRANCHES PAGE ───────────── */
 const EMPTY_BR = { name: '', address: '', phone: '', manager: '' };
 
-function BranchesTab({ branches, saveBranches, sales, setSales, expenses, customers, addNotif, userId }) {
+function BranchesTab({ openBranch, branches, saveBranches, sales, setSales, expenses, customers, addNotif, userId }) {
   const list = branches.length ? branches : [{ ...EMPTY_BR, name: 'Main Branch' }];
   const first = list[0].name;
   const [period, setPeriod] = useState('month');
@@ -2908,6 +2933,7 @@ function BranchesTab({ branches, saveBranches, sales, setSales, expenses, custom
               <div><b style={{ color: owed > 0 ? 'var(--red-ink)' : undefined }}>{fmt(owed)}</b><span>Owed to you</span></div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Btn small onClick={() => openBranch && openBranch(b.name)}>➡️ Open workspace</Btn>
               <Btn variant="success" small onClick={() => setSaleFor(b.name)}>💰 Record sale</Btn>
               <Btn variant="ghost" small onClick={() => setSel(b.name)}>📊 View details</Btn>
               <Btn variant="ghost" small onClick={() => setModal({ ...EMPTY_BR, ...b, isEdit: true })}>Edit</Btn>
